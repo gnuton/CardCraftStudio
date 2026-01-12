@@ -529,7 +529,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                             <div key={card.id || index} className="group relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
                                 <div className="aspect-[2.5/3.5] bg-slate-100 relative overflow-hidden">
                                     <div className="absolute inset-0 flex items-center justify-center transform scale-[0.8] origin-center pointer-events-none">
-                                        <Card {...card} />
+                                        <Card {...card} deckStyle={deckStyle} />
                                     </div>
                                     {/* Overlay Actions */}
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
@@ -575,7 +575,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
             </div>
 
             {/* Hidden Print Layout */}
-            <DeckPrintLayout pages={pages} ref={printRef} />
+            <DeckPrintLayout pages={pages} deckStyle={deckStyle} ref={printRef} />
 
             {/* Hidden File Input for Import */}
             <input

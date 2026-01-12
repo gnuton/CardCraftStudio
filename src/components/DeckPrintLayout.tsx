@@ -1,12 +1,14 @@
 import React from 'react';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
+import type { DeckStyle } from '../App';
 
 interface DeckPrintLayoutProps {
     pages: CardConfig[][];
+    deckStyle: DeckStyle;
 }
 
-export const DeckPrintLayout = React.forwardRef<HTMLDivElement, DeckPrintLayoutProps>(({ pages }, ref) => {
+export const DeckPrintLayout = React.forwardRef<HTMLDivElement, DeckPrintLayoutProps>(({ pages, deckStyle }, ref) => {
     return (
         <div
             style={{
@@ -72,6 +74,7 @@ export const DeckPrintLayout = React.forwardRef<HTMLDivElement, DeckPrintLayoutP
                                 <div key={i} className="relative z-10" style={{ width: '63.5mm', height: '88.9mm' }}>
                                     <Card
                                         {...card}
+                                        deckStyle={deckStyle}
                                         style={{
                                             width: '100%',
                                             height: '100%',
