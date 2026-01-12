@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
-import { Plus, Trash2, Edit, Settings, X, Download, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit, Settings, X, Download, Loader2, Upload, Archive } from 'lucide-react';
 import { DeckPrintLayout } from './DeckPrintLayout';
 import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
+import JSZip from 'jszip';
 
 interface DeckStudioProps {
     deck: CardConfig[];
@@ -21,10 +22,135 @@ export const DeckStudio = ({ deck, projectName, onAddCard, onEditCard, onDeleteC
     const [tempName, setTempName] = useState(projectName);
     const [isGenerating, setIsGenerating] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveSettings = () => {
         onUpdateProjectName(tempName);
         setIsSettingsOpen(false);
+    };
+
+    const handleExportDeck = async () => {
+        try {
+            const zip = new JSZip();
+
+            // Prepare deck data with image references
+            const deckData = {
+                deckName: projectName,
+                version: '1.0',
+                cards: [] as any[]
+            };
+
+            // Process each card
+            for (let i = 0; i < deck.length; i++) {
+                const card = deck[i];
+                const cardData = { ...card };
+
+                // If card has an image, extract it
+                if (card.centerImage) {
+                    const imageFileName = `card-${card.id}.${card.centerImage.startsWith('data:image/png') ? 'png' : 'jpg'}`;
+
+                    // Convert data URL to blob
+                    const response = await fetch(card.centerImage);
+                    const blob = await response.blob();
+
+                    // Add image to ZIP
+                    zip.folder('images')!.file(imageFileName, blob);
+
+                    // Update card reference to relative path
+                    cardData.centerImage = `images/${imageFileName}`;
+                }
+
+                deckData.cards.push(cardData);
+            }
+
+            // Add deck.json to ZIP
+            zip.file('deck.json', JSON.stringify(deckData, null, 2));
+
+            // Generate and download ZIP
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}.zip`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Failed to export deck');
+        }
+    };
+
+    const handleImportDeck = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const zip = new JSZip();
+            const zipData = await zip.loadAsync(file);
+
+            // Read deck.json
+            const deckJsonFile = zipData.file('deck.json');
+            if (!deckJsonFile) {
+                alert('Invalid deck file: missing deck.json');
+                return;
+            }
+
+            const deckJsonText = await deckJsonFile.async('text');
+            const deckData = JSON.parse(deckJsonText);
+
+            // Restore images
+            const restoredCards: CardConfig[] = [];
+            for (const cardData of deckData.cards) {
+                const card = { ...cardData };
+
+                // If card references an image, restore it
+                if (card.centerImage && card.centerImage.startsWith('images/')) {
+                    const imageFile = zipData.file(card.centerImage);
+                    if (imageFile) {
+                        const blob = await imageFile.async('blob');
+                        const dataUrl = await new Promise<string>((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.readAsDataURL(blob);
+                        });
+                        card.centerImage = dataUrl;
+                    }
+                }
+
+                restoredCards.push(card);
+            }
+
+            // Update deck name
+            onUpdateProjectName(deckData.deckName);
+            setTempName(deckData.deckName);
+
+            // Clear existing deck and add imported cards
+            // We need to delete all existing cards first
+            for (let i = deck.length - 1; i >= 0; i--) {
+                onDeleteCard(i);
+            }
+
+            // Add imported cards
+            restoredCards.forEach(() => onAddCard());
+
+            // Update each card with imported data
+            // We need to wait a bit for the cards to be added
+            setTimeout(() => {
+                restoredCards.forEach((card, index) => {
+                    onUpdateCard(index, card);
+                });
+            }, 100);
+
+            alert(`Successfully imported "${deckData.deckName}" with ${restoredCards.length} cards`);
+        } catch (error) {
+            console.error('Import failed:', error);
+            alert('Failed to import deck. Please ensure the file is a valid deck export.');
+        } finally {
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
     };
 
     const handleGenerateDeckPdf = async () => {
@@ -32,7 +158,7 @@ export const DeckStudio = ({ deck, projectName, onAddCard, onEditCard, onDeleteC
 
         try {
             setIsGenerating(true);
-            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for render
+            // No need for artificial delay with toJpeg as it's already async and robust
 
             // 1. Flatten deck based on counts
             const flatDeck: CardConfig[] = [];
@@ -131,6 +257,23 @@ export const DeckStudio = ({ deck, projectName, onAddCard, onEditCard, onDeleteC
                         <p className="text-slate-500 mt-1">{flatDeck.length} Cards to Print ({deck.length} unique)</p>
                     </div>
                     <div className="flex gap-2">
+                        <button
+                            onClick={handleExportDeck}
+                            disabled={deck.length === 0}
+                            className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Export deck as ZIP"
+                        >
+                            <Archive className="w-5 h-5 mr-2" />
+                            Export Deck
+                        </button>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                            title="Import deck from ZIP"
+                        >
+                            <Upload className="w-5 h-5 mr-2" />
+                            Import Deck
+                        </button>
                         <button
                             onClick={handleGenerateDeckPdf}
                             disabled={isGenerating || flatDeck.length === 0}
@@ -267,6 +410,15 @@ export const DeckStudio = ({ deck, projectName, onAddCard, onEditCard, onDeleteC
 
             {/* Hidden Print Layout */}
             <DeckPrintLayout pages={pages} ref={printRef} />
+
+            {/* Hidden File Input for Import */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept=".zip"
+                onChange={handleImportDeck}
+                style={{ display: 'none' }}
+            />
 
             {isGenerating && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center flex-col gap-4 text-white">
