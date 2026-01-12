@@ -104,6 +104,23 @@ function App() {
     });
   };
 
+  const handleDuplicateCard = (index: number) => {
+    setCards(prev => {
+      const cardToDuplicate = prev[index];
+      if (!cardToDuplicate) return prev;
+
+      const duplicatedCard: CardConfig = {
+        ...cardToDuplicate,
+        id: crypto.randomUUID()
+      };
+
+      // Insert the duplicate right after the original
+      const newCards = [...prev];
+      newCards.splice(index + 1, 0, duplicatedCard);
+      return newCards;
+    });
+  };
+
   return (
     <div className="min-h-screen">
       {view === 'deck' ? (
@@ -116,6 +133,7 @@ function App() {
           onDeleteCard={handleDeleteCard}
           onUpdateProjectName={setDeckName}
           onUpdateCard={handleUpdateCard}
+          onDuplicateCard={handleDuplicateCard}
           onUpdateDeckStyle={setDeckStyle}
         />
       ) : (

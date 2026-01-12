@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
-import { Plus, Trash2, Edit, Settings, X, Download, Loader2, Upload, Archive, Palette } from 'lucide-react';
+import { Plus, Trash2, Edit, Copy, Settings, X, Download, Loader2, Upload, Archive, Palette } from 'lucide-react';
 import { DeckPrintLayout } from './DeckPrintLayout';
 import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
@@ -17,10 +17,11 @@ interface DeckStudioProps {
     onDeleteCard: (index: number) => void;
     onUpdateProjectName: (name: string) => void;
     onUpdateCard: (index: number, updates: Partial<CardConfig>) => void;
+    onDuplicateCard: (index: number) => void;
     onUpdateDeckStyle: (style: DeckStyle) => void;
 }
 
-export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard, onDeleteCard, onUpdateProjectName, onUpdateCard, onUpdateDeckStyle }: DeckStudioProps) => {
+export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard, onDeleteCard, onUpdateProjectName, onUpdateCard, onDuplicateCard, onUpdateDeckStyle }: DeckStudioProps) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isStylesOpen, setIsStylesOpen] = useState(false);
     const [tempName, setTempName] = useState(projectName);
@@ -539,6 +540,13 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                                             title="Edit Card"
                                         >
                                             <Edit className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => onDuplicateCard(index)}
+                                            className="p-2 bg-white text-slate-700 rounded-full shadow-lg hover:text-green-600 transition-colors"
+                                            title="Duplicate Card"
+                                        >
+                                            <Copy className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => onDeleteCard(index)}
