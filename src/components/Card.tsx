@@ -2,8 +2,6 @@ import React from 'react';
 import { cn } from '../utils/cn';
 
 interface CardProps {
-    borderColor?: string;
-    borderWidth?: number;
     topLeftContent?: string;
     bottomRightContent?: string;
     centerImage?: string | null;
@@ -17,8 +15,6 @@ interface CardProps {
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     (
         {
-            borderColor = '#000000',
-            borderWidth = 5,
             topLeftContent = 'A',
             bottomRightContent = 'A',
             centerImage,
@@ -41,7 +37,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 style={{
                     width: '300px',
                     height: '420px', // 2.5 x 3.5 aspect ratio (300/420 = 0.714, 2.5/3.5 = 0.714)
-                    border: `${borderWidth}px solid ${borderColor}`,
+                    border: '1px solid #000000',
                     ...style
                 }}
             >

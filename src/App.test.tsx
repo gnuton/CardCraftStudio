@@ -24,6 +24,10 @@ describe('App Component SVG Export', () => {
 
         render(<App />);
 
+        // Navigate to Editor
+        const addCardBtn = screen.getByText('Add New Card');
+        fireEvent.click(addCardBtn);
+
         const exportBtn = screen.getByRole('button', { name: /Export SVG/i });
         expect(exportBtn).toBeInTheDocument();
 

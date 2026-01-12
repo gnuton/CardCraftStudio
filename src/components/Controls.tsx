@@ -13,12 +13,11 @@ interface ControlsProps {
         description: string;
     };
     onChange: (key: string, value: any) => void;
-    onGeneratePdf: () => void;
     onGenerateSvg: () => void;
     isGenerating: boolean;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGeneratePdf, onGenerateSvg, isGenerating }) => {
+export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerateSvg, isGenerating }) => {
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -36,34 +35,8 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
             <h1 className="text-2xl font-bold mb-6 text-slate-800">Card Studio</h1>
 
             <div className="space-y-6">
-                {/* Border Settings */}
-                <div className="space-y-3">
-                    <label className="text-sm font-medium text-slate-700">Border Settings</label>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs text-slate-500 mb-1 block">Color</label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="color"
-                                    value={config.borderColor}
-                                    onChange={(e) => onChange('borderColor', e.target.value)}
-                                    className="h-9 w-full cursor-pointer rounded border border-input p-1"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-xs text-slate-500 mb-1 block">Width ({config.borderWidth}px)</label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="20"
-                                value={config.borderWidth}
-                                onChange={(e) => onChange('borderWidth', parseInt(e.target.value))}
-                                className="w-full mt-2"
-                            />
-                        </div>
-                    </div>
-                </div>
+                {/* Border Settings Removed - enforced to 1px Black */
+                }
 
                 {/* Content Settings */}
                 <div className="space-y-3">
@@ -136,13 +109,6 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
 
                 <div className="pt-6 border-t border-border">
                     <div className="flex gap-2">
-                        <button
-                            onClick={onGeneratePdf}
-                            disabled={isGenerating}
-                            className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isGenerating ? 'Generating...' : 'Download PDF'}
-                        </button>
                         <button
                             onClick={onGenerateSvg}
                             disabled={isGenerating}
