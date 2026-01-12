@@ -4,7 +4,18 @@ import { DeckStudio } from './components/DeckStudio';
 
 type ViewMode = 'deck' | 'editor';
 
+export interface DeckStyle {
+  cornerColor: string;
+  titleColor: string;
+  descriptionColor: string;
+  cornerFont: string;
+  titleFont: string;
+  descriptionFont: string;
+  backgroundImage: string | null;
+}
+
 const STORAGE_KEY = 'velvet-sojourner-deck';
+const STYLE_STORAGE_KEY = 'velvet-sojourner-style';
 
 function App() {
   const [cards, setCards] = useState<CardConfig[]>(() => {
@@ -14,6 +25,19 @@ function App() {
 
   const [deckName, setDeckName] = useState(() => {
     return localStorage.getItem(STORAGE_KEY + '-name') || "My Game Deck";
+  });
+
+  const [deckStyle, setDeckStyle] = useState<DeckStyle>(() => {
+    const saved = localStorage.getItem(STYLE_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {
+      cornerColor: '#000000',
+      titleColor: '#000000',
+      descriptionColor: '#000000',
+      cornerFont: 'serif',
+      titleFont: 'sans-serif',
+      descriptionFont: 'sans-serif',
+      backgroundImage: null
+    };
   });
 
   const [view, setView] = useState<ViewMode>('deck');
@@ -27,6 +51,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY + '-name', deckName);
   }, [deckName]);
+
+  useEffect(() => {
+    localStorage.setItem(STYLE_STORAGE_KEY, JSON.stringify(deckStyle));
+  }, [deckStyle]);
 
   const handleAddCard = () => {
     setActiveCardIndex(null);
@@ -77,26 +105,29 @@ function App() {
   };
 
   return (
-    <>
+    <div className="h-screen overflow-hidden">
       {view === 'deck' ? (
         <DeckStudio
           deck={cards}
           projectName={deckName}
+          deckStyle={deckStyle}
           onAddCard={handleAddCard}
           onEditCard={handleEditCard}
           onDeleteCard={handleDeleteCard}
           onUpdateProjectName={setDeckName}
           onUpdateCard={handleUpdateCard}
+          onUpdateDeckStyle={setDeckStyle}
         />
       ) : (
         <CardStudio
           key={editorKey}
           initialCard={activeCardIndex !== null ? cards[activeCardIndex] : undefined}
+          deckStyle={deckStyle}
           onSave={handleSaveCard}
           onCancel={handleCancel}
         />
       )}
-    </>
+    </div>
   );
 }
 

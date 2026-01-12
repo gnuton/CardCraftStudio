@@ -1,23 +1,26 @@
 import { useState, useRef } from 'react';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
-import { Plus, Trash2, Edit, Settings, X, Download, Loader2, Upload, Archive } from 'lucide-react';
+import { Plus, Trash2, Edit, Settings, X, Download, Loader2, Upload, Archive, Palette } from 'lucide-react';
 import { DeckPrintLayout } from './DeckPrintLayout';
 import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
 import JSZip from 'jszip';
+import type { DeckStyle } from '../App';
 
 interface DeckStudioProps {
     deck: CardConfig[];
     projectName: string;
+    deckStyle: DeckStyle;
     onAddCard: () => void;
     onEditCard: (index: number) => void;
     onDeleteCard: (index: number) => void;
     onUpdateProjectName: (name: string) => void;
     onUpdateCard: (index: number, updates: Partial<CardConfig>) => void;
+    onUpdateDeckStyle: (style: DeckStyle) => void;
 }
 
-export const DeckStudio = ({ deck, projectName, onAddCard, onEditCard, onDeleteCard, onUpdateProjectName, onUpdateCard }: DeckStudioProps) => {
+export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard, onDeleteCard, onUpdateProjectName, onUpdateCard, onUpdateDeckStyle }: DeckStudioProps) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [tempName, setTempName] = useState(projectName);
     const [isGenerating, setIsGenerating] = useState(false);

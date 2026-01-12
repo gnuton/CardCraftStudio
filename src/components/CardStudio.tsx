@@ -3,6 +3,7 @@ import { Card } from './Card';
 import { Controls } from './Controls';
 import { toSvg } from 'html-to-image';
 import { Loader2, ArrowLeft, Save } from 'lucide-react';
+import type { DeckStyle } from '../App';
 
 export interface CardConfig {
     id?: string;
@@ -20,11 +21,12 @@ export interface CardConfig {
 
 interface CardStudioProps {
     initialCard?: CardConfig;
+    deckStyle: DeckStyle;
     onSave: (card: CardConfig) => void;
     onCancel: () => void;
 }
 
-export const CardStudio = ({ initialCard, onSave, onCancel }: CardStudioProps) => {
+export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStudioProps) => {
     const [config, setConfig] = useState<CardConfig>(initialCard || {
         id: crypto.randomUUID(),
         borderColor: '#000000',
@@ -105,7 +107,7 @@ export const CardStudio = ({ initialCard, onSave, onCancel }: CardStudioProps) =
                 <div className="flex flex-col items-center gap-6 z-0">
                     <div className="text-sm font-medium text-slate-400">Preview (Poker Size)</div>
                     <div className="transform transition-transform hover:scale-105 duration-300">
-                        <Card {...config} ref={cardRef} />
+                        <Card {...config} deckStyle={deckStyle} ref={cardRef} />
                     </div>
                 </div>
             </div>
