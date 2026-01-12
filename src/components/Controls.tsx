@@ -8,6 +8,8 @@ interface ControlsProps {
         borderWidth: number;
         topLeftContent: string;
         bottomRightContent: string;
+        topLeftImage: string | null;
+        bottomRightImage: string | null;
         centerImage: string | null;
         title: string;
         description: string;
@@ -19,12 +21,12 @@ interface ControlsProps {
 
 export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerateSvg, isGenerating }) => {
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () => {
-                onChange('centerImage', reader.result as string);
+                onChange(key, reader.result as string);
             };
             reader.readAsDataURL(file);
         }
@@ -44,23 +46,61 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs text-slate-500 mb-1 block">Top Left</label>
-                            <input
-                                type="text"
-                                value={config.topLeftContent}
-                                onChange={(e) => onChange('topLeftContent', e.target.value)}
-                                className="w-full px-3 py-2 rounded border border-input focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                                maxLength={3}
-                            />
+                            {config.topLeftImage ? (
+                                <div className="relative">
+                                    <img src={config.topLeftImage} alt="Top Left" className="w-full h-20 object-cover rounded border" />
+                                    <button
+                                        onClick={() => onChange('topLeftImage', null)}
+                                        className="absolute top-1 right-1 text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <input
+                                        type="text"
+                                        value={config.topLeftContent}
+                                        onChange={(e) => onChange('topLeftContent', e.target.value)}
+                                        className="w-full px-3 py-2 rounded border border-input focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm mb-2"
+                                        maxLength={3}
+                                        placeholder="Text"
+                                    />
+                                    <label className="flex items-center justify-center w-full h-10 border border-dashed border-input rounded cursor-pointer hover:bg-slate-50 text-xs text-slate-500">
+                                        <Upload className="w-4 h-4 mr-1" /> Upload Image
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload('topLeftImage')} />
+                                    </label>
+                                </div>
+                            )}
                         </div>
                         <div>
                             <label className="text-xs text-slate-500 mb-1 block">Bottom Right</label>
-                            <input
-                                type="text"
-                                value={config.bottomRightContent}
-                                onChange={(e) => onChange('bottomRightContent', e.target.value)}
-                                className="w-full px-3 py-2 rounded border border-input focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                                maxLength={3}
-                            />
+                            {config.bottomRightImage ? (
+                                <div className="relative">
+                                    <img src={config.bottomRightImage} alt="Bottom Right" className="w-full h-20 object-cover rounded border" />
+                                    <button
+                                        onClick={() => onChange('bottomRightImage', null)}
+                                        className="absolute top-1 right-1 text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    <input
+                                        type="text"
+                                        value={config.bottomRightContent}
+                                        onChange={(e) => onChange('bottomRightContent', e.target.value)}
+                                        className="w-full px-3 py-2 rounded border border-input focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm mb-2"
+                                        maxLength={3}
+                                        placeholder="Text"
+                                    />
+                                    <label className="flex items-center justify-center w-full h-10 border border-dashed border-input rounded cursor-pointer hover:bg-slate-50 text-xs text-slate-500">
+                                        <Upload className="w-4 h-4 mr-1" /> Upload Image
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload('bottomRightImage')} />
+                                    </label>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -95,7 +135,7 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                             <Upload className="w-8 h-8 text-slate-400 mb-2" />
                             <p className="text-xs text-slate-500">Click to upload image</p>
                         </div>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload('centerImage')} />
                     </label>
                     {config.centerImage && (
                         <button
@@ -117,7 +157,6 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                             Export SVG
                         </button>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2 text-center">PDF: 9 cards on A4 | SVG: Single card</p>
                 </div>
 
             </div>

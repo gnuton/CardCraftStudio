@@ -5,11 +5,13 @@ import { toSvg } from 'html-to-image';
 import { Loader2, ArrowLeft, Save } from 'lucide-react';
 
 export interface CardConfig {
-    id?: string; // Add ID for identification in deck
+    id?: string;
     borderColor: string;
     borderWidth: number;
     topLeftContent: string;
     bottomRightContent: string;
+    topLeftImage: string | null;  // New: image for top-left corner
+    bottomRightImage: string | null;  // New: image for bottom-right corner
     centerImage: string | null;
     title: string;
     description: string;
@@ -29,6 +31,8 @@ export const CardStudio = ({ initialCard, onSave, onCancel }: CardStudioProps) =
         borderWidth: 8,
         topLeftContent: 'A',
         bottomRightContent: 'A',
+        topLeftImage: null,
+        bottomRightImage: null,
         centerImage: null,
         title: 'Card Title',
         description: 'This is a description of the card ability or effect.'

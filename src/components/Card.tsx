@@ -4,6 +4,8 @@ import { cn } from '../utils/cn';
 interface CardProps {
     topLeftContent?: string;
     bottomRightContent?: string;
+    topLeftImage?: string | null;
+    bottomRightImage?: string | null;
     centerImage?: string | null;
     title?: string;
     description?: string;
@@ -17,6 +19,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         {
             topLeftContent = 'A',
             bottomRightContent = 'A',
+            topLeftImage,
+            bottomRightImage,
             centerImage,
             title,
             description,
@@ -43,7 +47,11 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             >
                 {/* Top Left */}
                 <div className="absolute top-2 left-2 flex flex-col items-center">
-                    <span className="text-2xl font-bold font-serif leading-none">{topLeftContent}</span>
+                    {topLeftImage ? (
+                        <img src={topLeftImage} alt="Top Left" className="w-12 h-12 object-cover rounded" />
+                    ) : (
+                        <span className="text-2xl font-bold font-serif leading-none">{topLeftContent}</span>
+                    )}
                 </div>
 
                 {/* Center Content Area */}
@@ -78,7 +86,11 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
 
                 {/* Bottom Right */}
                 <div className="absolute bottom-2 right-2 flex flex-col items-center rotate-180">
-                    <span className="text-2xl font-bold font-serif leading-none">{bottomRightContent}</span>
+                    {bottomRightImage ? (
+                        <img src={bottomRightImage} alt="Bottom Right" className="w-12 h-12 object-cover rounded" />
+                    ) : (
+                        <span className="text-2xl font-bold font-serif leading-none">{bottomRightContent}</span>
+                    )}
                 </div>
             </div>
         );

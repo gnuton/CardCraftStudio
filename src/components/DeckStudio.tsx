@@ -283,16 +283,6 @@ export const DeckStudio = ({ deck, projectName, onAddCard, onEditCard, onDeleteC
                             Download PDF
                         </button>
                         <button
-                            onClick={() => {
-                                setTempName(projectName);
-                                setIsSettingsOpen(true);
-                            }}
-                            className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-                            title="Deck Settings"
-                        >
-                            <Settings className="w-5 h-5" />
-                        </button>
-                        <button
                             onClick={onAddCard}
                             className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
                         >
@@ -362,7 +352,7 @@ export const DeckStudio = ({ deck, projectName, onAddCard, onEditCard, onDeleteC
                         {deck.map((card, index) => (
                             <div key={card.id || index} className="group relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
                                 <div className="aspect-[2.5/3.5] bg-slate-100 relative overflow-hidden">
-                                    <div className="absolute inset-0 flex items-center justify-center transform scale-[0.4] origin-top-left w-[250%] h-[250%] pointer-events-none">
+                                    <div className="absolute inset-0 flex items-center justify-center transform scale-[0.6] origin-center pointer-events-none">
                                         <Card {...card} />
                                     </div>
                                     {/* Overlay Actions */}
