@@ -1,5 +1,6 @@
 import React from 'react';
 import { Upload } from 'lucide-react';
+import { RichTextEditor } from './RichTextEditor';
 
 interface ControlsProps {
     config: {
@@ -106,11 +107,9 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                     </div>
                     <div>
                         <label className="text-xs text-slate-500 mb-1 block">Description</label>
-                        <textarea
+                        <RichTextEditor
                             value={config.description}
-                            onChange={(e) => onChange('description', e.target.value)}
-                            className="w-full px-3 py-2 rounded border border-input focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm resize-none h-20"
-                            placeholder="Card Description..."
+                            onChange={(value) => onChange('description', value)}
                         />
                     </div>
                 </div>

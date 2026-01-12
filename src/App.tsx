@@ -45,17 +45,26 @@ function App() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(printRef.current, {
-        scale: 2, // Higher scale for better quality
+        scale: 4, // Higher scale for better quality
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        width: 794, // 210mm at 96 DPI
+        height: 1123, // 297mm at 96 DPI
+        windowWidth: 794,
+        windowHeight: 1123
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const pdfWidth = 210;
+      const pdfHeight = 297;
 
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save('game-cards.pdf');
@@ -72,7 +81,11 @@ function App() {
 
     try {
       setIsGenerating(true);
-      const dataUrl = await toSvg(cardRef.current);
+      const dataUrl = await toSvg(cardRef.current, {
+        cacheBust: true,
+        backgroundColor: '#ffffff', // Correct handling for transparent backgrounds
+        // filter: (node) => node.tagName !== 'i', // Example filter if icons caused issues, but verified working without
+      });
       const link = document.createElement('a');
       link.download = 'card.svg';
       link.href = dataUrl;

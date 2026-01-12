@@ -73,9 +73,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     </div>
 
                     {description && (
-                        <div className="w-full bg-slate-50 border border-slate-200 p-1 text-center text-xs rounded">
-                            {description}
-                        </div>
+                        <div
+                            className="w-full bg-slate-50 border border-slate-200 p-1 text-center text-xs rounded prose prose-xs max-w-none"
+                            dangerouslySetInnerHTML={{ __html: description }}
+                        />
                     )}
                 </div>
 
