@@ -40,10 +40,11 @@ vi.mock('./Card', () => ({
 
 // Mock DeckPrintLayout - simpler version without forwardRef complexity
 vi.mock('./DeckPrintLayout', () => ({
-    DeckPrintLayout: React.forwardRef(({ pages }: any, ref: any) => {
+    DeckPrintLayout: React.forwardRef(({ pages, deckStyle }: any, ref: any) => {
         // Create a simple div that will have the ref attached
         return (
             <div ref={ref} data-testid="print-layout" style={{ position: 'absolute', left: '-9999px' }}>
+                <div data-testid="mock-deck-style">{JSON.stringify(deckStyle)}</div>
                 {pages.map((_: any, i: number) => (
                     <div key={i} className="print-page" data-testid={`print-page-${i}`}>
                         Page {i}
@@ -53,6 +54,16 @@ vi.mock('./DeckPrintLayout', () => ({
         );
     })
 }));
+
+const mockDeckStyle = {
+    cornerColor: '#000000',
+    titleColor: '#000000',
+    descriptionColor: '#000000',
+    cornerFont: 'serif',
+    titleFont: 'sans-serif',
+    descriptionFont: 'sans-serif',
+    backgroundImage: null
+};
 
 describe('DeckStudio PDF Export', () => {
     const mockDeck: CardConfig[] = [
@@ -147,11 +158,14 @@ describe('DeckStudio PDF Export', () => {
             <DeckStudio
                 deck={mockDeck}
                 projectName="Test Deck"
+                deckStyle={mockDeckStyle}
                 onAddCard={() => { }}
                 onEditCard={() => { }}
                 onDeleteCard={() => { }}
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onUpdateDeckStyle={() => { }}
             />
         );
 
@@ -164,11 +178,14 @@ describe('DeckStudio PDF Export', () => {
             <DeckStudio
                 deck={mockDeck}
                 projectName="Test Deck"
+                deckStyle={mockDeckStyle}
                 onAddCard={() => { }}
                 onEditCard={() => { }}
                 onDeleteCard={() => { }}
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onUpdateDeckStyle={() => { }}
             />
         );
 
@@ -182,11 +199,14 @@ describe('DeckStudio PDF Export', () => {
             <DeckStudio
                 deck={mockDeck}
                 projectName="Test Deck"
+                deckStyle={mockDeckStyle}
                 onAddCard={() => { }}
                 onEditCard={() => { }}
                 onDeleteCard={() => { }}
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onUpdateDeckStyle={() => { }}
             />
         );
 
@@ -257,11 +277,14 @@ describe('DeckStudio Import/Export', () => {
             <DeckStudio
                 deck={mockDeck}
                 projectName="Test Deck"
+                deckStyle={mockDeckStyle}
                 onAddCard={() => { }}
                 onEditCard={() => { }}
                 onDeleteCard={() => { }}
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onUpdateDeckStyle={() => { }}
             />
         );
 
@@ -274,11 +297,14 @@ describe('DeckStudio Import/Export', () => {
             <DeckStudio
                 deck={mockDeck}
                 projectName="Test Deck"
+                deckStyle={mockDeckStyle}
                 onAddCard={() => { }}
                 onEditCard={() => { }}
                 onDeleteCard={() => { }}
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onUpdateDeckStyle={() => { }}
             />
         );
 
@@ -300,11 +326,14 @@ describe('DeckStudio Import/Export', () => {
             <DeckStudio
                 deck={[]}
                 projectName="Empty Deck"
+                deckStyle={mockDeckStyle}
                 onAddCard={() => { }}
                 onEditCard={() => { }}
                 onDeleteCard={() => { }}
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onUpdateDeckStyle={() => { }}
             />
         );
 
@@ -322,11 +351,14 @@ describe('DeckStudio Import/Export', () => {
             <DeckStudio
                 deck={[]}
                 projectName="Test Deck"
+                deckStyle={mockDeckStyle}
                 onAddCard={mockOnAddCard}
                 onEditCard={() => { }}
                 onDeleteCard={mockOnDeleteCard}
                 onUpdateProjectName={mockOnUpdateProjectName}
                 onUpdateCard={mockOnUpdateCard}
+                onDuplicateCard={() => { }}
+                onUpdateDeckStyle={() => { }}
             />
         );
 

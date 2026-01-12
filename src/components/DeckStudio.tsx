@@ -247,55 +247,57 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
         <div className="min-h-screen bg-slate-50 p-8 font-sans">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsSettingsOpen(true)}>
-                            <h1 className="text-3xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{projectName}</h1>
-                            <Settings className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all" />
+                <div className="sticky top-0 z-40 -mx-8 px-8 py-4 mb-4 bg-slate-50/80 backdrop-blur-md border-b border-transparent transition-all overflow-hidden">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsSettingsOpen(true)}>
+                                <h1 className="text-3xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{projectName}</h1>
+                                <Settings className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all" />
+                            </div>
+                            <p className="text-slate-500 mt-1">{flatDeck.length} Cards to Print ({deck.length} unique)</p>
                         </div>
-                        <p className="text-slate-500 mt-1">{flatDeck.length} Cards to Print ({deck.length} unique)</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setIsStylesOpen(true)}
-                            className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
-                            title="Global Deck Styles"
-                        >
-                            <Palette className="w-5 h-5 mr-2 text-indigo-500" />
-                            Deck Styles
-                        </button>
-                        <button
-                            onClick={handleExportDeck}
-                            disabled={deck.length === 0}
-                            className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Export deck as ZIP"
-                        >
-                            <Archive className="w-5 h-5 mr-2" />
-                            Export Deck
-                        </button>
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
-                            title="Import deck from ZIP"
-                        >
-                            <Upload className="w-5 h-5 mr-2" />
-                            Import Deck
-                        </button>
-                        <button
-                            onClick={handleGenerateDeckPdf}
-                            disabled={isGenerating || flatDeck.length === 0}
-                            className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isGenerating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Download className="w-5 h-5 mr-2" />}
-                            Download PDF
-                        </button>
-                        <button
-                            onClick={onAddCard}
-                            className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                        >
-                            <Plus className="w-5 h-5 mr-2" />
-                            Add New Card
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setIsStylesOpen(true)}
+                                className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                                title="Global Deck Styles"
+                            >
+                                <Palette className="w-5 h-5 mr-2 text-indigo-500" />
+                                Deck Styles
+                            </button>
+                            <button
+                                onClick={handleExportDeck}
+                                disabled={deck.length === 0}
+                                className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Export deck as ZIP"
+                            >
+                                <Archive className="w-5 h-5 mr-2" />
+                                Export Deck
+                            </button>
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                                title="Import deck from ZIP"
+                            >
+                                <Upload className="w-5 h-5 mr-2" />
+                                Import Deck
+                            </button>
+                            <button
+                                onClick={handleGenerateDeckPdf}
+                                disabled={isGenerating || flatDeck.length === 0}
+                                className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isGenerating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Download className="w-5 h-5 mr-2" />}
+                                Download PDF
+                            </button>
+                            <button
+                                onClick={onAddCard}
+                                className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                            >
+                                <Plus className="w-5 h-5 mr-2" />
+                                Add New Card
+                            </button>
+                        </div>
                     </div>
                 </div>
 
