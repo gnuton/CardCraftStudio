@@ -244,22 +244,22 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 p-8 font-sans">
+        <div className="min-h-screen bg-background p-8 font-sans transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="sticky top-0 z-40 -mx-8 px-8 py-4 mb-4 bg-slate-50/80 backdrop-blur-md border-b border-transparent transition-all overflow-hidden">
+                <div className="sticky top-16 z-40 -mx-8 px-8 py-4 mb-4 bg-background/80 backdrop-blur-md border-b border-transparent transition-all overflow-hidden">
                     <div className="flex items-center justify-between">
                         <div>
                             <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsSettingsOpen(true)}>
-                                <h1 className="text-3xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{projectName}</h1>
-                                <Settings className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all" />
+                                <h1 className="text-3xl font-bold text-foreground group-hover:text-indigo-600 transition-colors">{projectName}</h1>
+                                <Settings className="w-5 h-5 text-muted-foreground group-hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all" />
                             </div>
-                            <p className="text-slate-500 mt-1">{flatDeck.length} Cards to Print ({deck.length} unique)</p>
+                            <p className="text-muted-foreground mt-1">{flatDeck.length} Cards to Print ({deck.length} unique)</p>
                         </div>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setIsStylesOpen(true)}
-                                className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                                className="flex items-center px-4 py-2 bg-card border border-border text-foreground font-medium rounded-lg hover:bg-accent transition-colors shadow-sm"
                                 title="Global Deck Styles"
                             >
                                 <Palette className="w-5 h-5 mr-2 text-indigo-500" />
@@ -268,7 +268,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                             <button
                                 onClick={handleExportDeck}
                                 disabled={deck.length === 0}
-                                className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center px-4 py-2 bg-card border border-border text-foreground font-medium rounded-lg hover:bg-accent transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Export deck as ZIP"
                             >
                                 <Archive className="w-5 h-5 mr-2" />
@@ -276,7 +276,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                             </button>
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                                className="flex items-center px-4 py-2 bg-card border border-border text-foreground font-medium rounded-lg hover:bg-accent transition-colors shadow-sm"
                                 title="Import deck from ZIP"
                             >
                                 <Upload className="w-5 h-5 mr-2" />
@@ -285,7 +285,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                             <button
                                 onClick={handleGenerateDeckPdf}
                                 disabled={isGenerating || flatDeck.length === 0}
-                                className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center px-4 py-2 bg-card border border-border text-foreground font-medium rounded-lg hover:bg-accent transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isGenerating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Download className="w-5 h-5 mr-2" />}
                                 Download PDF
@@ -529,8 +529,8 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {deck.map((card, index) => (
-                            <div key={card.id || index} className="group relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-                                <div className="aspect-[2.5/3.5] bg-slate-100 relative overflow-hidden">
+                            <div key={card.id || index} className="group relative bg-card rounded-xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow">
+                                <div className="aspect-[2.5/3.5] bg-muted relative overflow-hidden">
                                     <div className="absolute inset-0 flex items-center justify-center transform scale-[0.8] origin-center pointer-events-none">
                                         <Card {...card} deckStyle={deckStyle} />
                                     </div>
@@ -538,34 +538,34 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
                                         <button
                                             onClick={() => onEditCard(index)}
-                                            className="p-2 bg-white text-slate-700 rounded-full shadow-lg hover:text-indigo-600 transition-colors"
+                                            className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-indigo-600 transition-colors"
                                             title="Edit Card"
                                         >
                                             <Edit className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => onDuplicateCard(index)}
-                                            className="p-2 bg-white text-slate-700 rounded-full shadow-lg hover:text-green-600 transition-colors"
+                                            className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-green-600 transition-colors"
                                             title="Duplicate Card"
                                         >
                                             <Copy className="w-5 h-5" />
                                         </button>
                                         <button
                                             onClick={() => onDeleteCard(index)}
-                                            className="p-2 bg-white text-slate-700 rounded-full shadow-lg hover:text-red-600 transition-colors"
+                                            className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-red-600 transition-colors"
                                             title="Delete Card"
                                         >
                                             <Trash2 className="w-5 h-5" />
                                         </button>
                                     </div>
                                 </div>
-                                <div className="p-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                                <div className="p-3 border-t border-border flex items-center justify-between gap-3">
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="font-medium text-slate-900 truncate">{card.title || 'Untitled Card'}</h3>
-                                        <p className="text-xs text-slate-500 truncate mt-0.5">{card.description ? 'Has description' : 'No description'}</p>
+                                        <h3 className="font-medium text-foreground truncate">{card.title || 'Untitled Card'}</h3>
+                                        <p className="text-xs text-muted-foreground truncate mt-0.5">{card.description ? 'Has description' : 'No description'}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <label className="text-xs text-slate-400 font-medium">Qty</label>
+                                        <label className="text-xs text-muted-foreground font-medium">Qty</label>
                                         <input
                                             type="number"
                                             min="0"
@@ -574,7 +574,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                                                 const val = parseInt(e.target.value) || 0;
                                                 onUpdateCard(index, { count: val });
                                             }}
-                                            className="w-12 h-7 text-sm text-center border border-slate-200 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                            className="w-12 h-7 text-sm text-center bg-muted border border-border text-foreground rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
                                         />
                                     </div>
                                 </div>

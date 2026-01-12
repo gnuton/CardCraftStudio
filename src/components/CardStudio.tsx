@@ -71,20 +71,20 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
     };
 
     return (
-        <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+        <div className="flex h-[calc(100vh-4rem)] bg-background overflow-hidden font-sans transition-colors duration-300">
             {/* Sidebar Controls */}
-            <div className="w-[400px] flex-shrink-0 h-full shadow-xl z-10 flex flex-col bg-white">
-                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <div className="w-[400px] flex-shrink-0 h-full shadow-xl z-10 flex flex-col bg-card border-r border-border">
+                <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
                     <button
                         onClick={onCancel}
-                        className="flex items-center text-sm text-slate-600 hover:text-slate-900 transition-colors"
+                        className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4 mr-1" />
                         Back to Deck
                     </button>
                     <button
                         onClick={() => onSave(config)}
-                        className="flex items-center px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-md hover:bg-slate-800 transition-colors shadow-sm"
+                        className="flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-medium rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm"
                     >
                         <Save className="w-4 h-4 mr-2" />
                         Save Card
@@ -101,11 +101,11 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
             </div>
 
             {/* Main Preview Area */}
-            <div className="flex-1 h-full flex items-center justify-center p-10 bg-slate-100 relative">
-                <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] opacity-50 pointer-events-none"></div>
+            <div className="flex-1 h-full flex items-center justify-center p-10 bg-muted/20 relative">
+                <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none"></div>
 
                 <div className="flex flex-col items-center gap-6 z-0">
-                    <div className="text-sm font-medium text-slate-400">Preview (Poker Size)</div>
+                    <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Preview (Poker Size)</div>
                     <div className="transform transition-transform hover:scale-105 duration-300">
                         <Card {...config} deckStyle={deckStyle} ref={cardRef} />
                     </div>

@@ -33,8 +33,8 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
     };
 
     return (
-        <div className="w-full h-full bg-white p-6 border-r border-border overflow-y-auto">
-            <h1 className="text-2xl font-bold mb-6 text-slate-800">Card Studio</h1>
+        <div className="w-full h-full bg-card p-6 border-r border-border overflow-y-auto overflow-x-hidden">
+            <h1 className="text-2xl font-bold mb-6 text-foreground">Card Editor</h1>
 
             <div className="space-y-6">
                 {/* Border Settings Removed - enforced to 1px Black */
@@ -42,20 +42,20 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
 
                 {/* Content Settings */}
                 <div className="space-y-3">
-                    <label className="text-sm font-medium text-slate-700">Corner Content (Top-Left & Bottom-Right)</label>
-                    <div>
+                    <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Corner Content</label>
+                    <div className="space-y-4">
                         {config.topLeftImage ? (
-                            <div className="relative">
-                                <img src={config.topLeftImage} alt="Corner" className="w-full h-24 object-cover rounded border" />
+                            <div className="relative group">
+                                <img src={config.topLeftImage} alt="Corner" className="w-full h-24 object-cover rounded-lg border border-border shadow-sm" />
                                 <button
                                     onClick={() => onChange('topLeftImage', null)}
-                                    className="absolute top-1 right-1 text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                                    className="absolute top-2 right-2 text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded shadow-lg hover:bg-destructive/90 transition-colors"
                                 >
                                     Remove
                                 </button>
                             </div>
                         ) : (
-                            <div>
+                            <div className="space-y-3">
                                 <input
                                     type="text"
                                     value={config.topLeftContent}
@@ -63,12 +63,15 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                                         onChange('topLeftContent', e.target.value);
                                         onChange('bottomRightContent', e.target.value);
                                     }}
-                                    className="w-full px-3 py-2 rounded border border-input focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm mb-2"
+                                    className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all"
                                     maxLength={3}
-                                    placeholder="Text (e.g., A, K, Q)"
+                                    placeholder="Corner Text (e.g., A, 10, 心)"
                                 />
-                                <label className="flex items-center justify-center w-full h-12 border border-dashed border-input rounded cursor-pointer hover:bg-slate-50 text-xs text-slate-500">
-                                    <Upload className="w-4 h-4 mr-1" /> Upload Image for Corners
+                                <label className="flex flex-col items-center justify-center w-full h-16 border border-dashed border-input rounded-lg cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-all text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-2">
+                                        <Upload className="w-4 h-4" />
+                                        <span>Upload Corner Image</span>
+                                    </div>
                                     <input type="file" className="hidden" accept="image/*" onChange={(e) => {
                                         const file = e.target.files?.[0];
                                         if (file) {
@@ -89,58 +92,65 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
 
                 {/* Text Features */}
                 <div className="space-y-3">
-                    <label className="text-sm font-medium text-slate-700">Card Text</label>
-                    <div>
-                        <label className="text-xs text-slate-500 mb-1 block">Title</label>
-                        <input
-                            type="text"
-                            value={config.title}
-                            onChange={(e) => onChange('title', e.target.value)}
-                            className="w-full px-3 py-2 rounded border border-input focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                            placeholder="Card Title"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs text-slate-500 mb-1 block">Description</label>
-                        <RichTextEditor
-                            value={config.description}
-                            onChange={(value) => onChange('description', value)}
-                        />
+                    <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Card Content</label>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">Title</label>
+                            <input
+                                type="text"
+                                value={config.title}
+                                onChange={(e) => onChange('title', e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all"
+                                placeholder="Enter card title..."
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">Description</label>
+                            <RichTextEditor
+                                value={config.description}
+                                onChange={(value) => onChange('description', value)}
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* Image Upload */}
                 <div className="space-y-3">
-                    <label className="text-sm font-medium text-slate-700">Center Image</label>
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-input rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-8 h-8 text-slate-400 mb-2" />
-                            <p className="text-xs text-slate-500">Click to upload image</p>
-                        </div>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload('centerImage')} />
-                    </label>
-                    {config.centerImage && (
-                        <button
-                            onClick={() => onChange('centerImage', null)}
-                            className="text-xs text-red-500 hover:text-red-600 font-medium"
-                        >
-                            Remove Image
-                        </button>
-                    )}
-                </div>
-
-                <div className="pt-6 border-t border-border">
-                    <div className="flex gap-2">
-                        <button
-                            onClick={onGenerateSvg}
-                            disabled={isGenerating}
-                            className="flex-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Export SVG
-                        </button>
+                    <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Illustration</label>
+                    <div className="space-y-3">
+                        {config.centerImage ? (
+                            <div className="relative group">
+                                <img src={config.centerImage} alt="Center" className="w-full h-40 object-cover rounded-lg border border-border shadow-md" />
+                                <button
+                                    onClick={() => onChange('centerImage', null)}
+                                    className="absolute top-2 right-2 text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded shadow-lg hover:bg-destructive/90 transition-colors"
+                                >
+                                    Remove Photo
+                                </button>
+                            </div>
+                        ) : (
+                            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-input rounded-xl cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-all border-spacing-4">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <Upload className="w-8 h-8 text-muted-foreground/50 mb-2" />
+                                    <p className="text-sm font-medium text-muted-foreground">Drop illustration here</p>
+                                    <p className="text-xs text-muted-foreground/70 mt-1">PNG, JPG or SVG</p>
+                                </div>
+                                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload('centerImage')} />
+                            </label>
+                        )}
                     </div>
                 </div>
 
+                <div className="pt-6 border-t border-border">
+                    <button
+                        onClick={onGenerateSvg}
+                        disabled={isGenerating}
+                        className="w-full bg-card border border-border hover:bg-accent text-foreground font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    >
+                        <Upload className="w-4 h-4 rotate-180" />
+                        Export SVG Layout
+                    </button>
+                </div>
             </div>
         </div>
     );

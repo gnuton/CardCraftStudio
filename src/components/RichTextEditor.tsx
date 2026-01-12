@@ -16,7 +16,7 @@ export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm max-w-none focus:outline-none min-h-[80px] p-2'
+                class: 'prose dark:prose-invert prose-sm max-w-none focus:outline-none min-h-[80px] p-2 text-foreground'
             }
         }
     })
@@ -26,12 +26,12 @@ export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
     }
 
     return (
-        <div className="border border-input rounded-md overflow-hidden bg-white">
-            <div className="flex items-center gap-1 p-1 border-b border-input bg-slate-50">
+        <div className="border border-input rounded-lg overflow-hidden bg-card transition-colors">
+            <div className="flex items-center gap-1 p-1 border-b border-input bg-muted/50">
                 <button
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     disabled={!editor.can().chain().focus().toggleBold().run()}
-                    className={`p-1 rounded hover:bg-slate-200 transition-colors ${editor.isActive('bold') ? 'bg-slate-200 text-slate-900' : 'text-slate-500'}`}
+                    className={`p-1.5 rounded-md hover:bg-accent transition-colors ${editor.isActive('bold') ? 'bg-accent text-accent-foreground shadow-sm' : 'text-muted-foreground'}`}
                     title="Bold"
                 >
                     <Bold className="w-4 h-4" />
@@ -39,7 +39,7 @@ export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
                 <button
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                     disabled={!editor.can().chain().focus().toggleItalic().run()}
-                    className={`p-1 rounded hover:bg-slate-200 transition-colors ${editor.isActive('italic') ? 'bg-slate-200 text-slate-900' : 'text-slate-500'}`}
+                    className={`p-1.5 rounded-md hover:bg-accent transition-colors ${editor.isActive('italic') ? 'bg-accent text-accent-foreground shadow-sm' : 'text-muted-foreground'}`}
                     title="Italic"
                 >
                     <Italic className="w-4 h-4" />
@@ -47,28 +47,28 @@ export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
                 <button
                     onClick={() => editor.chain().focus().toggleStrike().run()}
                     disabled={!editor.can().chain().focus().toggleStrike().run()}
-                    className={`p-1 rounded hover:bg-slate-200 transition-colors ${editor.isActive('strike') ? 'bg-slate-200 text-slate-900' : 'text-slate-500'}`}
+                    className={`p-1.5 rounded-md hover:bg-accent transition-colors ${editor.isActive('strike') ? 'bg-accent text-accent-foreground shadow-sm' : 'text-muted-foreground'}`}
                     title="Strikethrough"
                 >
                     <Strikethrough className="w-4 h-4" />
                 </button>
-                <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                <div className="w-px h-4 bg-border mx-1"></div>
                 <button
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
-                    className={`p-1 rounded hover:bg-slate-200 transition-colors ${editor.isActive('bulletList') ? 'bg-slate-200 text-slate-900' : 'text-slate-500'}`}
+                    className={`p-1.5 rounded-md hover:bg-accent transition-colors ${editor.isActive('bulletList') ? 'bg-accent text-accent-foreground shadow-sm' : 'text-muted-foreground'}`}
                     title="Bullet List"
                 >
                     <List className="w-4 h-4" />
                 </button>
                 <button
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                    className={`p-1 rounded hover:bg-slate-200 transition-colors ${editor.isActive('orderedList') ? 'bg-slate-200 text-slate-900' : 'text-slate-500'}`}
+                    className={`p-1.5 rounded-md hover:bg-accent transition-colors ${editor.isActive('orderedList') ? 'bg-accent text-accent-foreground shadow-sm' : 'text-muted-foreground'}`}
                     title="Ordered List"
                 >
                     <ListOrdered className="w-4 h-4" />
                 </button>
             </div>
-            <EditorContent editor={editor} className="bg-white" />
+            <EditorContent editor={editor} className="bg-card" />
         </div>
     )
 }
