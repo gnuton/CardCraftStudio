@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '../utils/cn';
+import type { DeckStyle } from '../App';
 
 interface CardProps {
     topLeftContent?: string;
@@ -12,6 +13,7 @@ interface CardProps {
     className?: string;
     style?: React.CSSProperties;
     id?: string;
+    deckStyle?: DeckStyle;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -26,7 +28,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             description,
             className,
             style,
-            id
+            id,
+            deckStyle
         },
         ref
     ) => {
@@ -35,13 +38,17 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 ref={ref}
                 id={id}
                 className={cn(
-                    "relative bg-white rounded-xl shadow-2xl overflow-hidden print:shadow-none flex flex-col justify-between select-none",
+                    "relative rounded-xl shadow-2xl overflow-hidden print:shadow-none flex flex-col justify-between select-none",
                     className
                 )}
                 style={{
                     width: '300px',
-                    height: '420px', // 2.5 x 3.5 aspect ratio (300/420 = 0.714, 2.5/3.5 = 0.714)
+                    height: '420px',
                     border: '1px solid #000000',
+                    backgroundImage: deckStyle?.backgroundImage ? `url(${deckStyle.backgroundImage})` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundColor: deckStyle?.backgroundImage ? 'transparent' : 'white',
                     ...style
                 }}
             >
@@ -50,14 +57,28 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     {topLeftImage ? (
                         <img src={topLeftImage} alt="Top Left" className="w-12 h-12 object-cover rounded" />
                     ) : (
-                        <span className="text-2xl font-bold font-serif leading-none">{topLeftContent}</span>
+                        <span
+                            className="text-2xl font-bold leading-none"
+                            style={{
+                                color: deckStyle?.cornerColor || '#000000',
+                                fontFamily: deckStyle?.cornerFont || 'serif'
+                            }}
+                        >
+                            {topLeftContent}
+                        </span>
                     )}
                 </div>
 
                 {/* Center Content Area */}
                 <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-hidden gap-2">
                     {title && (
-                        <div className="w-full bg-slate-100 border border-slate-300 p-1 text-center font-bold text-sm rounded shadow-sm">
+                        <div
+                            className="w-full bg-slate-100 border border-slate-300 p-1 text-center font-bold text-sm rounded shadow-sm"
+                            style={{
+                                color: deckStyle?.titleColor || '#000000',
+                                fontFamily: deckStyle?.titleFont || 'sans-serif'
+                            }}
+                        >
                             {title}
                         </div>
                     )}
@@ -79,6 +100,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     {description && (
                         <div
                             className="w-full bg-slate-50 border border-slate-200 p-1 text-center text-xs rounded prose prose-xs max-w-none"
+                            style={{
+                                color: deckStyle?.descriptionColor || '#000000',
+                                fontFamily: deckStyle?.descriptionFont || 'sans-serif'
+                            }}
                             dangerouslySetInnerHTML={{ __html: description }}
                         />
                     )}
@@ -89,7 +114,15 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     {bottomRightImage ? (
                         <img src={bottomRightImage} alt="Bottom Right" className="w-12 h-12 object-cover rounded" />
                     ) : (
-                        <span className="text-2xl font-bold font-serif leading-none">{bottomRightContent}</span>
+                        <span
+                            className="text-2xl font-bold leading-none"
+                            style={{
+                                color: deckStyle?.cornerColor || '#000000',
+                                fontFamily: deckStyle?.cornerFont || 'serif'
+                            }}
+                        >
+                            {bottomRightContent}
+                        </span>
                     )}
                 </div>
             </div>
