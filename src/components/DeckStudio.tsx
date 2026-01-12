@@ -352,7 +352,7 @@ export const DeckStudio = ({ deck, projectName, onAddCard, onEditCard, onDeleteC
                         {deck.map((card, index) => (
                             <div key={card.id || index} className="group relative bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
                                 <div className="aspect-[2.5/3.5] bg-slate-100 relative overflow-hidden">
-                                    <div className="absolute inset-0 flex items-center justify-center transform scale-[0.6] origin-center pointer-events-none">
+                                    <div className="absolute inset-0 flex items-center justify-center transform scale-[0.8] origin-center pointer-events-none">
                                         <Card {...card} />
                                     </div>
                                     {/* Overlay Actions */}
