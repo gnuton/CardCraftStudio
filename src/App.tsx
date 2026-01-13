@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, ArrowLeft } from 'lucide-react';
 import logo from './assets/logo.png';
 import { CardStudio, type CardConfig } from './components/CardStudio';
 import { DeckStudio } from './components/DeckStudio';
 import { LoadingScreen } from './components/LoadingScreen';
+import { DeckLibrary, type Deck } from './components/DeckLibrary';
 
-const APP_VERSION = '1.0.0-30ce4c6';
-
-type ViewMode = 'deck' | 'editor';
-type Theme = 'light' | 'dark';
+const APP_VERSION = '1.1.0-multi-deck';
+const DECKS_STORAGE_KEY = 'velvet-sojourner-decks';
+const THEME_STORAGE_KEY = 'velvet-sojourner-theme';
 
 export interface DeckStyle {
   cornerColor: string;
@@ -21,61 +21,23 @@ export interface DeckStyle {
   backgroundImage: string | null;
 }
 
-const STORAGE_KEY = 'velvet-sojourner-deck';
-const STYLE_STORAGE_KEY = 'velvet-sojourner-style';
-const THEME_STORAGE_KEY = 'velvet-sojourner-theme';
+const defaultDeckStyle: DeckStyle = {
+  cornerColor: '#000000',
+  titleColor: '#000000',
+  descriptionColor: '#000000',
+  cornerFont: 'serif',
+  titleFont: 'sans-serif',
+  descriptionFont: 'sans-serif',
+  backgroundImage: null
+};
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const [cards, setCards] = useState<CardConfig[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+  // Theme State
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem(THEME_STORAGE_KEY) as 'light' | 'dark') || 'light';
   });
-
-  const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem(THEME_STORAGE_KEY) as Theme) || 'light';
-  });
-
-  const [deckName, setDeckName] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY + '-name') || "My Game Deck";
-  });
-
-  const [deckStyle, setDeckStyle] = useState<DeckStyle>(() => {
-    const saved = localStorage.getItem(STYLE_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : {
-      cornerColor: '#000000',
-      titleColor: '#000000',
-      descriptionColor: '#000000',
-      cornerFont: 'serif',
-      titleFont: 'sans-serif',
-      descriptionFont: 'sans-serif',
-      backgroundImage: null
-    };
-  });
-
-  const [view, setView] = useState<ViewMode>('deck');
-  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
-
-  // Persistence
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-  }, [cards]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY + '-name', deckName);
-  }, [deckName]);
-
-  useEffect(() => {
-    localStorage.setItem(STYLE_STORAGE_KEY, JSON.stringify(deckStyle));
-  }, [deckStyle]);
 
   useEffect(() => {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
@@ -85,6 +47,89 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  // Loader Timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Decks State
+  const [decks, setDecks] = useState<Deck[]>(() => {
+    const saved = localStorage.getItem(DECKS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse decks", e);
+      }
+    }
+
+    // Migration for legacy single-deck data
+    const legacyCards = localStorage.getItem('velvet-sojourner-deck');
+    if (legacyCards) {
+      try {
+        const style = localStorage.getItem('velvet-sojourner-style');
+        return [{
+          id: crypto.randomUUID(),
+          name: localStorage.getItem('velvet-sojourner-deck-name') || "My First Deck",
+          cards: JSON.parse(legacyCards),
+          style: style ? JSON.parse(style) : defaultDeckStyle,
+          updatedAt: Date.now()
+        }];
+      } catch (e) { console.error("Migration failed", e); }
+    }
+    return [];
+  });
+
+  const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
+  const [view, setView] = useState<'library' | 'deck' | 'editor'>('library');
+  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
+
+  // Persistence
+  useEffect(() => {
+    localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(decks));
+  }, [decks]);
+
+  const activeDeck = activeDeckId ? decks.find(d => d.id === activeDeckId) : null;
+
+  // Deck Management Helpers
+  const handleCreateDeck = () => {
+    const newDeck: Deck = {
+      id: crypto.randomUUID(),
+      name: 'New Deck',
+      cards: [],
+      style: { ...defaultDeckStyle },
+      updatedAt: Date.now()
+    };
+    setDecks(prev => [...prev, newDeck]);
+    setActiveDeckId(newDeck.id);
+    setView('deck');
+  };
+
+  const handleDeleteDeck = (id: string) => {
+    setDecks(prev => prev.filter(d => d.id !== id));
+    if (activeDeckId === id) {
+      setActiveDeckId(null);
+      setView('library');
+    }
+  };
+
+  const handleSelectDeck = (id: string) => {
+    setActiveDeckId(id);
+    setView('deck');
+  };
+
+  const updateActiveDeck = (updates: Partial<Deck>) => {
+    if (!activeDeckId) return;
+    setDecks(prev => prev.map(d => d.id === activeDeckId ? { ...d, ...updates, updatedAt: Date.now() } : d));
+  };
+
+  // Card & Deck Studio Delegates
+  const handleUpdateProjectName = (name: string) => updateActiveDeck({ name });
+  const handleUpdateDeckStyle = (style: DeckStyle) => updateActiveDeck({ style });
 
   const handleAddCard = () => {
     setActiveCardIndex(null);
@@ -97,59 +142,65 @@ function App() {
   };
 
   const handleDeleteCard = (index: number) => {
+    if (!activeDeck) return;
     if (confirm('Are you sure you want to delete this card?')) {
-      setCards(prev => prev.filter((_, i) => i !== index));
+      const newCards = activeDeck.cards.filter((_, i) => i !== index);
+      updateActiveDeck({ cards: newCards });
     }
   };
 
-  const handleSaveCard = (updatedCard: CardConfig) => {
-    setCards(prev => {
-      if (activeCardIndex !== null) {
-        // Update existing
-        const newCards = [...prev];
-        newCards[activeCardIndex] = updatedCard;
-        return newCards;
-      } else {
-        // Add new
-        return [...prev, updatedCard];
-      }
-    });
-    setView('deck');
-    setActiveCardIndex(null);
-  };
-
-  const handleCancel = () => {
-    setView('deck');
-    setActiveCardIndex(null);
-  };
-
-  // Determine key for editor to reset state when adding new
-  const editorKey = activeCardIndex !== null && cards[activeCardIndex] ? cards[activeCardIndex].id : 'new';
-
-  const handleUpdateCard = (index: number, updates: Partial<CardConfig>) => {
-    setCards(prev => {
-      const newCards = [...prev];
-      newCards[index] = { ...newCards[index], ...updates };
-      return newCards;
-    });
-  };
-
   const handleDuplicateCard = (index: number) => {
-    setCards(prev => {
-      const cardToDuplicate = prev[index];
-      if (!cardToDuplicate) return prev;
+    if (!activeDeck) return;
+    const cardToDuplicate = activeDeck.cards[index];
+    if (!cardToDuplicate) return;
 
-      const duplicatedCard: CardConfig = {
-        ...cardToDuplicate,
-        id: crypto.randomUUID()
-      };
-
-      // Insert the duplicate right after the original
-      const newCards = [...prev];
-      newCards.splice(index + 1, 0, duplicatedCard);
-      return newCards;
-    });
+    const duplicatedCard: CardConfig = {
+      ...cardToDuplicate,
+      id: crypto.randomUUID()
+    };
+    const newCards = [...activeDeck.cards];
+    newCards.splice(index + 1, 0, duplicatedCard);
+    updateActiveDeck({ cards: newCards });
   };
+
+  const handleUpdateCardInDeck = (index: number, updates: Partial<CardConfig>) => {
+    if (!activeDeck) return;
+    const newCards = [...activeDeck.cards];
+    newCards[index] = { ...newCards[index], ...updates };
+    updateActiveDeck({ cards: newCards });
+  };
+
+  const handleSaveCard = (updatedCard: CardConfig) => {
+    if (!activeDeck) return;
+
+    const newCards = [...activeDeck.cards];
+    if (activeCardIndex !== null) {
+      // Update existing
+      newCards[activeCardIndex] = updatedCard;
+    } else {
+      // Add new
+      newCards.push(updatedCard);
+    }
+
+    updateActiveDeck({ cards: newCards });
+    setView('deck');
+    setActiveCardIndex(null);
+  };
+
+  const handleCancelEditor = () => {
+    setView('deck');
+    setActiveCardIndex(null);
+  };
+
+  const handleBackToLibrary = () => {
+    setActiveDeckId(null);
+    setView('library');
+  };
+
+  // Editor Key
+  const editorKey = activeDeck && activeCardIndex !== null && activeDeck.cards[activeCardIndex]
+    ? activeDeck.cards[activeCardIndex].id
+    : 'new';
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -160,30 +211,65 @@ function App() {
       {/* Global Top Bar */}
       <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-8 mx-auto max-w-7xl">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm" />
+          <div
+            className="flex items-center gap-3 cursor-pointer group"
+            onClick={handleBackToLibrary}
+            title="Back to Library"
+          >
+            <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform" />
             <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
               CardCraft Studio
             </span>
           </div>
 
-          <button
-            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
-            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-          >
-            {theme === 'light' ? (
-              <Moon className="w-5 h-5 text-slate-700 hover:text-indigo-600" />
-            ) : (
-              <Sun className="w-5 h-5 text-amber-400" />
+          <div className="flex items-center gap-4">
+            {view !== 'library' && (
+              <button
+                onClick={handleBackToLibrary}
+                className="hidden sm:flex items-center text-sm font-medium text-muted-foreground hover:text-indigo-600 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to Library
+              </button>
             )}
-          </button>
+
+            <div className="h-6 w-px bg-border mx-2 hidden sm:block"></div>
+
+            <button
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              className="p-2 rounded-full hover:bg-muted transition-colors"
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5 text-slate-700 hover:text-indigo-600" />
+              ) : (
+                <Sun className="w-5 h-5 text-amber-400" />
+              )}
+            </button>
+          </div>
         </div>
       </nav>
 
-      <main className="relative overflow-hidden">
+      <main className="relative overflow-hidden min-h-[calc(100vh-4rem)]">
         <AnimatePresence mode="wait">
-          {view === 'deck' ? (
+          {view === 'library' && (
+            <motion.div
+              key="library-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <DeckLibrary
+                decks={decks}
+                onCreateDeck={handleCreateDeck}
+                onSelectDeck={handleSelectDeck}
+                onDeleteDeck={handleDeleteDeck}
+              />
+            </motion.div>
+          )}
+
+          {view === 'deck' && activeDeck && (
             <motion.div
               key="deck-view"
               initial={{ opacity: 0, scale: 0.98 }}
@@ -192,19 +278,21 @@ function App() {
               transition={{ duration: 0.3, ease: 'circOut' }}
             >
               <DeckStudio
-                deck={cards}
-                projectName={deckName}
-                deckStyle={deckStyle}
+                deck={activeDeck.cards}
+                projectName={activeDeck.name}
+                deckStyle={activeDeck.style}
                 onAddCard={handleAddCard}
                 onEditCard={handleEditCard}
                 onDeleteCard={handleDeleteCard}
-                onUpdateProjectName={setDeckName}
-                onUpdateCard={handleUpdateCard}
+                onUpdateProjectName={handleUpdateProjectName}
+                onUpdateCard={handleUpdateCardInDeck}
                 onDuplicateCard={handleDuplicateCard}
-                onUpdateDeckStyle={setDeckStyle}
+                onUpdateDeckStyle={handleUpdateDeckStyle}
               />
             </motion.div>
-          ) : (
+          )}
+
+          {view === 'editor' && activeDeck && (
             <motion.div
               key="editor-view"
               initial={{ opacity: 0, scale: 1.05 }}
@@ -214,10 +302,10 @@ function App() {
             >
               <CardStudio
                 key={editorKey}
-                initialCard={activeCardIndex !== null ? cards[activeCardIndex] : undefined}
-                deckStyle={deckStyle}
+                initialCard={activeCardIndex !== null ? activeDeck.cards[activeCardIndex] : undefined}
+                deckStyle={activeDeck.style}
                 onSave={handleSaveCard}
-                onCancel={handleCancel}
+                onCancel={handleCancelEditor}
               />
             </motion.div>
           )}

@@ -24,8 +24,12 @@ describe('App Component SVG Export', () => {
 
         render(<App />);
 
-        // Navigate to Editor
-        const addCardBtn = screen.getByText('Add New Card');
+        // Navigate: Library -> Deck Studio
+        const createDeckBtn = screen.getByRole('button', { name: /Create New Deck/i });
+        fireEvent.click(createDeckBtn);
+
+        // Navigate: Deck Studio -> Editor
+        const addCardBtn = await screen.findByText('Add New Card');
         fireEvent.click(addCardBtn);
 
         const exportBtn = await screen.findByRole('button', { name: /Export SVG/i });
