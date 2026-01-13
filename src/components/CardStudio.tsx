@@ -70,13 +70,33 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
         }
     };
 
+    const [zoom, setZoom] = useState(2);
+
+    const handleWheel = (e: React.WheelEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            setZoom(prev => Math.min(Math.max(0.5, prev + delta), 3));
+        }
+    };
+
+    const zoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3));
+    const zoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
+    const resetZoom = () => setZoom(1);
+
     return (
         <div className="flex h-[calc(100vh-4rem)] bg-background overflow-hidden font-sans transition-colors duration-300">
             {/* Sidebar Controls */}
             <div className="w-[400px] flex-shrink-0 h-full shadow-xl z-10 flex flex-col bg-card border-r border-border">
                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
                     <button
-                        onClick={onCancel}
+                        onClick={() => {
+                            if (window.confirm('Do you want to save changes before leaving?')) {
+                                onSave(config);
+                            } else {
+                                onCancel();
+                            }
+                        }}
                         className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4 mr-1" />
@@ -101,16 +121,51 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
             </div>
 
             {/* Main Preview Area */}
-            <div className="flex-1 h-full flex items-center justify-center p-10 bg-muted/20 relative">
+            <div
+                className="flex-1 h-full flex items-center justify-center p-10 bg-muted/20 relative cursor-zoom-in"
+                onWheel={handleWheel}
+            >
                 <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none"></div>
+
+                {/* Zoom Controls Overlay */}
+                <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-border p-2 rounded-xl shadow-lg z-20">
+                    <button
+                        onClick={zoomOut}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                        title="Zoom Out"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                    </button>
+                    <button
+                        onClick={resetZoom}
+                        className="px-3 py-1 text-xs font-bold hover:bg-muted rounded-lg transition-colors min-w-[60px] text-center"
+                        title="Reset Zoom"
+                    >
+                        {Math.round(zoom * 100)}%
+                    </button>
+                    <button
+                        onClick={zoomIn}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                        title="Zoom In"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    </button>
+                </div>
 
                 <div className="flex flex-col items-center gap-6 z-0">
                     <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Preview (Poker Size)</div>
-                    <div className="transform transition-transform hover:scale-105 duration-300">
+                    <div
+                        className="transition-transform duration-200 ease-out shadow-2xl rounded-[16px]"
+                        style={{ transform: `scale(${zoom})` }}
+                    >
                         <Card {...config} deckStyle={deckStyle} ref={cardRef} />
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-4 italic">
+                        Tip: Hold Ctrl + Mouse Wheel to zoom
                     </div>
                 </div>
             </div>
+
 
 
 
