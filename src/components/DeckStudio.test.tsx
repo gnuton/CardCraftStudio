@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { DeckStudio } from './DeckStudio';
@@ -76,6 +77,8 @@ describe('DeckStudio PDF Export', () => {
             centerImage: null,
             topLeftContent: 'A',
             bottomRightContent: 'A',
+            topLeftImage: null,
+            bottomRightImage: null,
             count: 2
         }
     ];
@@ -155,6 +158,7 @@ describe('DeckStudio PDF Export', () => {
 
     it('renders deck studio with cards', () => {
         render(
+
             <DeckStudio
                 deck={mockDeck}
                 projectName="Test Deck"
@@ -244,6 +248,8 @@ describe('DeckStudio Import/Export', () => {
             centerImage: 'data:image/png;base64,mockdata',
             topLeftContent: 'A',
             bottomRightContent: 'A',
+            topLeftImage: 'data:image/png;base64,mockdata',
+            bottomRightImage: 'data:image/png;base64,mockdata',
             count: 1
         }
     ];

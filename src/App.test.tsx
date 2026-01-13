@@ -28,7 +28,7 @@ describe('App Component SVG Export', () => {
         const addCardBtn = screen.getByText('Add New Card');
         fireEvent.click(addCardBtn);
 
-        const exportBtn = screen.getByRole('button', { name: /Export SVG/i });
+        const exportBtn = await screen.findByRole('button', { name: /Export SVG/i });
         expect(exportBtn).toBeInTheDocument();
 
         fireEvent.click(exportBtn);
