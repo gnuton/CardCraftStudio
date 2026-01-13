@@ -4,6 +4,9 @@ import { Sun, Moon } from 'lucide-react';
 import logo from './assets/logo.png';
 import { CardStudio, type CardConfig } from './components/CardStudio';
 import { DeckStudio } from './components/DeckStudio';
+import { LoadingScreen } from './components/LoadingScreen';
+
+const APP_VERSION = '1.0.0-30ce4c6';
 
 type ViewMode = 'deck' | 'editor';
 type Theme = 'light' | 'dark';
@@ -23,6 +26,15 @@ const STYLE_STORAGE_KEY = 'velvet-sojourner-style';
 const THEME_STORAGE_KEY = 'velvet-sojourner-theme';
 
 function App() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [cards, setCards] = useState<CardConfig[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
@@ -141,6 +153,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+      <AnimatePresence>
+        {isLoading && <LoadingScreen version={APP_VERSION} />}
+      </AnimatePresence>
+
       {/* Global Top Bar */}
       <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-8 mx-auto max-w-7xl">
