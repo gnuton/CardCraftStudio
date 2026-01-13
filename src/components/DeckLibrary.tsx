@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Calendar, Layers, FolderOpen } from 'lucide-react';
+import { Plus, Trash2, Calendar, Layers } from 'lucide-react';
 import type { DeckStyle } from '../App';
 import type { CardConfig } from './CardStudio';
 
