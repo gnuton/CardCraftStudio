@@ -311,6 +311,12 @@ function App() {
           )}
         </AnimatePresence>
       </main>
+
+      <footer className="py-6 border-t bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/30 text-center">
+        <p className="text-sm text-muted-foreground">
+          &copy; 2026 Antonio 'GNUton' Aloisio. Released under GPL-3.0.
+        </p>
+      </footer>
     </div>
   );
 }
