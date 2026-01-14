@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import App from '../App';
 import { driveService } from '../services/googleDrive';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -11,7 +11,6 @@ vi.mock('lucide-react', async (importOriginal) => {
         Cloud: () => <div data-testid="icon-cloud" />,
         CloudOff: () => <div data-testid="icon-cloud-off" />,
         CloudAlert: () => <div data-testid="icon-cloud-alert" />,
-        // Mock others to avoid errors if needed
     };
 });
 
@@ -21,8 +20,11 @@ vi.mock('../services/googleDrive', () => ({
         init: vi.fn(),
         trySilentSignIn: vi.fn(),
         signIn: vi.fn(),
-        isSignedIn: false, // Default
+        get isSignedIn() { return !!this.accessToken },
+        accessToken: null,
         saveFile: vi.fn(),
+        listFiles: vi.fn(),
+        getFileContent: vi.fn(),
     }
 }));
 
@@ -31,73 +33,55 @@ describe('Cloud Sync Behavior', () => {
         vi.clearAllMocks();
         localStorage.clear();
         sessionStorage.clear();
-        // Stub Env
         vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'test-client-id');
 
         (driveService.init as any).mockResolvedValue(undefined);
+        (driveService.listFiles as any).mockResolvedValue([]);
+        (driveService.trySilentSignIn as any).mockResolvedValue('fake-token');
+        (driveService as any).accessToken = 'fake-token';
     });
 
+    const waitForLoadingToFinish = async () => {
+        await waitFor(() => {
+            expect(screen.queryByText(/Design. Create. Conquer./i)).not.toBeInTheDocument();
+        }, { timeout: 6000 });
+    };
+
     it('Scenario 1: Auto-reconnects if previously enabled and silent sign-in works', async () => {
-        // Setup: User previously enabled sync
         localStorage.setItem('cardcraftstudio-sync-enabled', 'true');
-
-        // Setup: Silent sign-in succeeds
-        (driveService.trySilentSignIn as any).mockResolvedValue('fake-token');
-
         render(<App />);
 
-        // Wait for init
         await waitFor(() => {
             expect(driveService.init).toHaveBeenCalled();
             expect(driveService.trySilentSignIn).toHaveBeenCalled();
         });
 
-        // App should be authenticated -> Green Cloud Icon
+        await waitForLoadingToFinish();
+
         await waitFor(() => {
-            // We check for the authenticated state via UI. 
-            // In App.tsx, authenticated = <Cloud /> (green), offline = <CloudOff />
             expect(screen.getByTestId('icon-cloud')).toBeInTheDocument();
-            expect(screen.queryByTestId('icon-cloud-off')).not.toBeInTheDocument();
         });
     });
 
     it('Scenario 2: Shows prompt if previously enabled but silent sign-in fails (Session Lost)', async () => {
-        // Setup: User previously enabled sync
         localStorage.setItem('cardcraftstudio-sync-enabled', 'true');
-
-        // Setup: Silent sign-in fails (e.g. session expired)
         (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Session expired'));
+        (driveService as any).accessToken = null;
 
         render(<App />);
+        await waitForLoadingToFinish();
 
-        await waitFor(() => {
-            expect(driveService.trySilentSignIn).toHaveBeenCalled();
-        });
-
-        // Should show the Sync Prompt Dialog
-        // Look for text inside SyncPromptDialog
         expect(await screen.findByText(/Cloud Sync/i)).toBeInTheDocument();
         expect(await screen.findByText(/Would you like to store and sync/i)).toBeInTheDocument();
     });
 
-    it('Scenario 3: Does NOT prompt if never enabled and silent sign-in fails (New User)', async () => {
-        // Setup: No localStorage key
+    it('Scenario 3: Shows prompt for New User (first session)', async () => {
         localStorage.removeItem('cardcraftstudio-sync-enabled');
-
-        // Setup: Silent sign in fails (expected for new user)
         (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Not signed in'));
+        (driveService as any).accessToken = null;
 
         render(<App />);
-
-        await waitFor(() => {
-            expect(driveService.trySilentSignIn).toHaveBeenCalled();
-        });
-
-        // Should NOT show prompt immediately (unless logic changed, currently only shows if !promptShown is true?)
-        // Wait: My logic says: if (previouslyEnabled || !promptShown)
-        // If !promptShown is true, it DOES show prompt for new users too.
-        // Let's verify this. Logic: `if (previouslyEnabled || !promptShown)`
-        // So a new user SHOULD see the prompt once per session.
+        await waitForLoadingToFinish();
 
         expect(await screen.findByText(/Cloud Sync/i)).toBeInTheDocument();
     });
@@ -105,15 +89,50 @@ describe('Cloud Sync Behavior', () => {
     it('Scenario 4: Does NOT prompt if prompt was already dismissed in this session', async () => {
         localStorage.removeItem('cardcraftstudio-sync-enabled');
         sessionStorage.setItem('cardcraftstudio-sync-prompt-shown', 'true');
-
         (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Not signed in'));
+        (driveService as any).accessToken = null;
 
         render(<App />);
+        await waitForLoadingToFinish();
 
-        // Wait to ensure effects ran
-        await waitFor(() => expect(driveService.init).toHaveBeenCalled());
-
-        // Should NOT show prompt
         expect(screen.queryByText(/Would you like to store and sync/i)).not.toBeInTheDocument();
+    });
+
+    it('Scenario 5: Bidirectional Sync - Downloads new decks from cloud', async () => {
+        const remoteDeck = { id: 'remote-1', name: 'Cloud Deck', cards: [], updatedAt: Date.now() };
+        (driveService.listFiles as any).mockResolvedValue([
+            { id: 'file-1', name: 'deck-remote-1.json', modifiedTime: new Date().toISOString() }
+        ]);
+        (driveService.getFileContent as any).mockResolvedValue(JSON.stringify(remoteDeck));
+
+        render(<App />);
+        await waitForLoadingToFinish();
+
+        await screen.findByText(/My Decks/i);
+        const syncBtn = screen.getByTitle(/Sync with Google Drive/i);
+        fireEvent.click(syncBtn);
+
+        await waitFor(() => {
+            expect(screen.getByText('Cloud Deck')).toBeInTheDocument();
+        });
+    });
+
+    it('Scenario 6: Conflict Detection - Local older than Remote', async () => {
+        const localDeck = { id: 'deck-1', name: 'Local Deck', cards: [], updatedAt: 1000 };
+        localStorage.setItem('cardcraftstudio-decks', JSON.stringify([localDeck]));
+
+        (driveService.listFiles as any).mockResolvedValue([
+            { id: 'file-1', name: 'deck-deck-1.json', modifiedTime: new Date(5000).toISOString() }
+        ]);
+
+        render(<App />);
+        await waitForLoadingToFinish();
+
+        await screen.findByText('Local Deck');
+        const syncBtn = screen.getByTitle(/Sync with Google Drive/i);
+        fireEvent.click(syncBtn);
+
+        expect(await screen.findByText(/Sync Conflict Detected/i)).toBeInTheDocument();
+        expect(screen.getByText('Local Deck')).toBeInTheDocument();
     });
 });

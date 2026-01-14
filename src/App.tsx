@@ -8,6 +8,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { DeckLibrary, type Deck } from './components/DeckLibrary';
 import { SyncErrorDialog } from './components/SyncErrorDialog';
 import { SyncPromptDialog } from './components/SyncPromptDialog';
+import { SyncConflictDialog } from './components/SyncConflictDialog';
 import { driveService } from './services/googleDrive';
 
 const APP_VERSION = '1.2.0-drive-sync';
@@ -59,6 +60,11 @@ function App() {
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
   const [isPromptOpen, setIsPromptOpen] = useState(false);
 
+  // Conflict resolution state
+  const [conflictDeck, setConflictDeck] = useState<Deck | null>(null);
+  const [conflictRemoteDate, setConflictRemoteDate] = useState<Date | null>(null);
+  const [pendingSyncDecks, setPendingSyncDecks] = useState<Deck[]>([]);
+
   // Init Drive Service & Session Check
   useEffect(() => {
     const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
@@ -89,7 +95,7 @@ function App() {
     }
   }, []);
 
-  const handleSync = async () => {
+  const handleSync = async (resumeDecks?: Deck[]) => {
     setSyncError(null);
     try {
       if (!driveService.isSignedIn) {
@@ -99,26 +105,111 @@ function App() {
 
       setIsSyncing(true);
 
-      // 1. Upload current decks
-      // In a real robust sync, we'd merge changes. Here we just overwrite for simplicity given the constraints.
-      // Or we can save each deck as a separate file.
-      for (const deck of decks) {
-        await driveService.saveFile(`deck-${deck.id}.json`, JSON.stringify(deck));
+      // 1. Get list of files from Drive
+      const remoteFiles = await driveService.listFiles();
+
+      // Determine work list (either full list or remainder if resuming after conflict)
+      const decksToProcess = resumeDecks || decks;
+
+      for (let i = 0; i < decksToProcess.length; i++) {
+        const localDeck = decksToProcess[i];
+        const remoteFile = remoteFiles.find((f: any) => f.name === `deck-${localDeck.id}.json`);
+
+        if (remoteFile) {
+          // Check timestamps
+          const remoteTime = new Date(remoteFile.modifiedTime).getTime();
+          const localTime = localDeck.updatedAt || 0;
+
+          // Conflict: Remote is newer than local (with 1 second threshold to avoid jitter)
+          if (remoteTime > localTime + 1000) {
+            // Pause sync and show conflict dialog
+            const remaining = decksToProcess.slice(i + 1);
+            setPendingSyncDecks(remaining);
+            setConflictDeck(localDeck);
+            setConflictRemoteDate(new Date(remoteTime));
+            setIsSyncing(false);
+            return; // Stop and wait for user decision
+          }
+        }
+
+        // No conflict - upload (create or overwrite)
+        await driveService.saveFile(`deck-${localDeck.id}.json`, JSON.stringify(localDeck));
       }
 
-      // 2. Download any decks we don't have? 
-      // For now, let's just say "push" sync. 
-      // To implement full sync, we'd list files, check timestamps, and merge.
+      // 2. Download NEW decks from cloud (files we don't have locally)
+      if (!resumeDecks) {
+        const newRemoteFiles = remoteFiles.filter((f: any) =>
+          f.name.startsWith('deck-') &&
+          f.name.endsWith('.json') &&
+          !decks.find(d => `deck-${d.id}.json` === f.name)
+        );
+
+        for (const file of newRemoteFiles) {
+          try {
+            const content = await driveService.getFileContent(file.id);
+            const importedDeck = JSON.parse(content);
+
+            // Basic validation
+            if (importedDeck && importedDeck.id && importedDeck.cards) {
+              setDecks(prev => {
+                if (prev.find(d => d.id === importedDeck.id)) return prev;
+                return [...prev, importedDeck];
+              });
+            }
+          } catch (e) {
+            console.error("Failed to parse remote deck", file.name, e);
+          }
+        }
+      }
 
       // Mark sync as enabled persistently
       localStorage.setItem(SYNC_ENABLED_KEY, 'true');
 
-      // alert('Sync complete!'); // Sync successful
     } catch (error: any) {
       console.error('Sync failed', error);
       const message = error?.result?.error?.message || error?.message || "An unexpected error occurred during sync.";
       setSyncError(message);
     } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleResolveConflict = async (keepLocal: boolean) => {
+    if (!conflictDeck) return;
+
+    // Close dialog
+    const deckToResolve = conflictDeck;
+    setConflictDeck(null);
+    setConflictRemoteDate(null);
+
+    setIsSyncing(true);
+
+    try {
+      if (keepLocal) {
+        // Upload local version (overwriting remote)
+        await driveService.saveFile(`deck-${deckToResolve.id}.json`, JSON.stringify(deckToResolve));
+      } else {
+        // Download remote version (overwriting local)
+        const remoteFiles = await driveService.listFiles();
+        const remoteFile = remoteFiles.find((f: any) => f.name === `deck-${deckToResolve.id}.json`);
+        if (remoteFile) {
+          const content = await driveService.getFileContent(remoteFile.id);
+          const remoteDeck = JSON.parse(content);
+          setDecks(prev => prev.map(d => d.id === deckToResolve.id ? remoteDeck : d));
+        }
+      }
+
+      // Resume sync for remaining decks
+      if (pendingSyncDecks.length > 0) {
+        const remaining = pendingSyncDecks;
+        setPendingSyncDecks([]);
+        await handleSync(remaining);
+      } else {
+        setIsSyncing(false);
+      }
+    } catch (err) {
+      console.error("Conflict resolution failed", err);
+      setSyncError("Failed to resolve conflict. Please try again.");
       setIsSyncing(false);
     }
   };
@@ -385,6 +476,19 @@ function App() {
                 isOpen={isPromptOpen}
                 onClose={() => setIsPromptOpen(false)}
                 onSync={handleSync}
+              />
+              <SyncConflictDialog
+                isOpen={!!conflictDeck}
+                onClose={() => {
+                  setConflictDeck(null);
+                  setConflictRemoteDate(null);
+                  setPendingSyncDecks([]);
+                  setIsSyncing(false);
+                }}
+                localDeck={conflictDeck}
+                remoteDate={conflictRemoteDate}
+                onKeepLocal={() => handleResolveConflict(true)}
+                onUseCloud={() => handleResolveConflict(false)}
               />
             </motion.div>
           )}
