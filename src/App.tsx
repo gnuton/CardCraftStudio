@@ -9,6 +9,7 @@ import { DeckLibrary, type Deck } from './components/DeckLibrary';
 import { SyncErrorDialog } from './components/SyncErrorDialog';
 import { SyncPromptDialog } from './components/SyncPromptDialog';
 import { SyncConflictDialog } from './components/SyncConflictDialog';
+import { ToastContainer, type ToastType } from './components/Toast';
 import { driveService } from './services/googleDrive';
 
 const APP_VERSION = '1.2.0-drive-sync';
@@ -64,6 +65,18 @@ function App() {
   const [conflictDeck, setConflictDeck] = useState<Deck | null>(null);
   const [conflictRemoteDate, setConflictRemoteDate] = useState<Date | null>(null);
   const [pendingSyncDecks, setPendingSyncDecks] = useState<Deck[]>([]);
+
+  // Toast State
+  const [toasts, setToasts] = useState<{ id: string; message: string; type?: ToastType }[]>([]);
+
+  const addToast = (message: string, type: ToastType = 'success') => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, message, type }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   // Init Drive Service & Session Check
   useEffect(() => {
@@ -134,6 +147,7 @@ function App() {
 
         // No conflict - upload (create or overwrite)
         await driveService.saveFile(`deck-${localDeck.id}.json`, JSON.stringify(localDeck));
+        addToast(`Uploaded "${localDeck.name}" to cloud`, 'success');
       }
 
       // 2. Download NEW decks from cloud (files we don't have locally)
@@ -143,6 +157,10 @@ function App() {
           f.name.endsWith('.json') &&
           !decks.find(d => `deck-${d.id}.json` === f.name)
         );
+
+        if (newRemoteFiles.length > 0) {
+          addToast(`Found ${newRemoteFiles.length} new decks in cloud`, 'info');
+        }
 
         for (const file of newRemoteFiles) {
           try {
@@ -155,6 +173,7 @@ function App() {
                 if (prev.find(d => d.id === importedDeck.id)) return prev;
                 return [...prev, importedDeck];
               });
+              addToast(`Downloaded "${importedDeck.name}" from cloud`, 'success');
             }
           } catch (e) {
             console.error("Failed to parse remote deck", file.name, e);
@@ -164,11 +183,12 @@ function App() {
 
       // Mark sync as enabled persistently
       localStorage.setItem(SYNC_ENABLED_KEY, 'true');
-
+      addToast('Sync completed successfully!');
     } catch (error: any) {
       console.error('Sync failed', error);
       const message = error?.result?.error?.message || error?.message || "An unexpected error occurred during sync.";
       setSyncError(message);
+      addToast('Sync failed: ' + message, 'error');
     } finally {
       setIsSyncing(false);
     }
@@ -188,6 +208,7 @@ function App() {
       if (keepLocal) {
         // Upload local version (overwriting remote)
         await driveService.saveFile(`deck-${deckToResolve.id}.json`, JSON.stringify(deckToResolve));
+        addToast(`Kept local version of "${deckToResolve.name}"`, 'success');
       } else {
         // Download remote version (overwriting local)
         const remoteFiles = await driveService.listFiles();
@@ -196,6 +217,7 @@ function App() {
           const content = await driveService.getFileContent(remoteFile.id);
           const remoteDeck = JSON.parse(content);
           setDecks(prev => prev.map(d => d.id === deckToResolve.id ? remoteDeck : d));
+          addToast(`Loaded cloud version of "${deckToResolve.name}"`, 'success');
         }
       }
 
@@ -541,6 +563,8 @@ function App() {
           &copy; 2026 Antonio 'GNUton' Aloisio. Released under GPL-3.0.
         </p>
       </footer>
+
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }
