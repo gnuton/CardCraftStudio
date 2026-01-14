@@ -52,6 +52,41 @@ npm run dev
 
 The application will be available at `http://localhost:5173/`
 
+### Google Drive Sync Setup
+
+To enable cloud synchronization, you must configure a Google OAuth Client ID:
+
+#### 1. Google Cloud Console
+1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2.  **Create a Project** (e.g., "CardCraftStudio").
+3.  Go to **APIs & Services** > **Library** and search for **"Google Drive API"**. Click **Enable**.
+4.  Go to **APIs & Services** > **OAuth consent screen**:
+    *   Select **External**.
+    *   Fill in the required App Information (App name, support email, developer email).
+    *   Add the scope: `.../auth/drive.file` (View and manage Google Drive files and folders that you have opened or created with this app).
+5.  Go to **APIs & Services** > **Credentials**:
+    *   Click **Create Credentials** > **OAuth client ID**.
+    *   Select **Web application** as the type.
+    *   Under **Authorized JavaScript origins**, add:
+        *   `https://gnuton.github.io`
+        *   `http://localhost:5173` (for local development)
+    *   Click **Create** and copy your **Client ID**.
+
+#### 2. GitHub Secrets (for Deployment)
+To inject the Client ID into your hosted GitHub Pages site:
+1.  In your GitHub repository, go to **Settings** > **Secrets and variables** > **Actions**.
+2.  Click **New repository secret**.
+3.  Set the Name to `GOOGLE_CLIENT_ID`.
+4.  Set the Value to your copied **Client ID**.
+5.  Click **Add secret**.
+6.  The next deployment will automatically include the ID.
+
+#### 3. Local Development
+For local use, create a `.env.local` file in the root directory:
+```env
+VITE_GOOGLE_CLIENT_ID=your-client-id-here
+```
+
 ## Usage
 
 ### Creating Your First Card
