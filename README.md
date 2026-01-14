@@ -18,7 +18,19 @@ A modern web application for designing and printing custom playing cards with ri
 - **Multi-Card Decks**: Create and manage collections of cards
 - **Quantity Control**: Set print quantities for each card individually
 - **Grid View**: Visual overview of your entire deck
-- **LocalStorage Persistence**: Your work is automatically saved
+- **Hybrid Storage**: Decks are saved using `localStorage`, while large assets (images) are efficiently managed in **IndexedDB** for high performance and scalability.
+
+### ☁️ Cloud Synchronization & Storage
+- **Google Drive Integration**: Sync your entire library across devices using your private Google Drive storage.
+- **Bidirectional Sync**: Automatically detects changes in the cloud and keeps your local library up to date.
+- **Atomic Image Storage**: Images are stored as separate binary assets (blobs) rather than embedded in JSON, optimizing sync speed and memory usage.
+- **Conflict Resolution**: Smart SHA-256 hash-based comparison avoids unnecessary prompts, while genuine conflicts are handled through a clean visual interface.
+- **Background Migration**: Seamlessly upgrades legacy decks with embedded Base64 images to the new optimized storage format.
+
+### 🔔 Modern Desktop Experience
+- **Toast Notifications**: Non-intrusive, real-time feedback for sync status, uploads, and system events.
+- **Responsive Animations**: Fluid transitions and micro-interactions powered by `framer-motion`.
+- **Dark Mode**: Fully supports modern dark mode with curated color palettes.
 
 ### 📄 Professional PDF Export
 - **Multi-Page Layout**: Automatically generates 3x3 grid layouts (9 cards per A4 page)
@@ -117,11 +129,17 @@ src/
 ├── components/
 │   ├── Card.tsx              # Card display component
 │   ├── CardStudio.tsx        # Individual card editor
-│   ├── Controls.tsx          # Card editing controls
+│   ├── DeckLibrary.tsx       # Main library management
 │   ├── DeckStudio.tsx        # Deck management view
-│   ├── DeckPrintLayout.tsx   # PDF print layout
-│   └── RichTextEditor.tsx    # TipTap rich text editor
+│   ├── SyncConflictDialog.tsx # Visual conflict resolution
+│   ├── Toast.tsx             # Notification system
+│   └── ResolvedImage.tsx     # Lazy-loading image handler
+├── services/
+│   ├── googleDrive.ts        # Google Drive API integration
+│   ├── db.ts                 # Dexie/IndexedDB configuration
+│   └── imageService.ts       # Atomic image lifecycle manager
 ├── utils/
+│   ├── hash.ts               # SHA-256 content hashing
 │   └── cn.ts                 # Tailwind class merger
 ├── App.tsx                   # Main application
 └── main.tsx                  # Entry point
@@ -133,6 +151,8 @@ src/
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
 - **TailwindCSS** - Styling
+- **Dexie.js** - IndexedDB wrapper for local image storage
+- **Framer Motion** - Smooth UI animations
 - **TipTap** - Rich text editing
 - **html-to-image** - SVG/Image generation
 - **jsPDF** - PDF creation
@@ -186,6 +206,7 @@ The project includes comprehensive unit tests for critical functionality:
 - ✅ Card rendering
 - ✅ Deck management
 - ✅ PDF generation with mocked dependencies
+- ✅ Google Drive Sync & Conflict Resolution (Bidirectional)
 - ✅ User interactions
 
 Run `npm test` to execute the test suite.

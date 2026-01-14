@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '../utils/cn';
 import type { DeckStyle } from '../App';
+import { ResolvedImage } from './ResolvedImage';
 
 interface CardProps {
     topLeftContent?: string;
@@ -55,7 +56,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 {/* Top Left */}
                 <div className="absolute top-2 left-2 flex flex-col items-center">
                     {topLeftImage ? (
-                        <img src={topLeftImage} alt="Top Left" className="w-12 h-12 object-cover rounded" />
+                        <ResolvedImage src={topLeftImage} alt="Top Left" className="w-12 h-12 object-cover rounded" />
                     ) : (
                         <span
                             className="text-2xl font-bold leading-none"
@@ -85,7 +86,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
 
                     <div className="flex-1 w-full flex items-center justify-center overflow-hidden min-h-0">
                         {centerImage ? (
-                            <img
+                            <ResolvedImage
                                 src={centerImage}
                                 alt="Card Center"
                                 className="max-w-full max-h-full object-contain"
@@ -112,7 +113,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 {/* Bottom Right */}
                 <div className="absolute bottom-2 right-2 flex flex-col items-center rotate-180">
                     {bottomRightImage ? (
-                        <img src={bottomRightImage} alt="Bottom Right" className="w-12 h-12 object-cover rounded" />
+                        <ResolvedImage src={bottomRightImage} alt="Bottom Right" className="w-12 h-12 object-cover rounded" />
                     ) : (
                         <span
                             className="text-2xl font-bold leading-none"

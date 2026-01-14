@@ -219,7 +219,7 @@ export class GoogleDriveService {
     }
 
     /**
-     * Download file content
+     * Download file content as string (for JSON)
      */
     async getFileContent(fileId: string): Promise<string> {
         const response = await gapi.client.drive.files.get({
@@ -227,6 +227,62 @@ export class GoogleDriveService {
             alt: 'media',
         });
         return response.body;
+    }
+
+    /**
+     * Download file as Blob (for images)
+     */
+    async getFileBlob(fileId: string): Promise<Blob> {
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: {
+                Authorization: `Bearer ${this.accessToken}`,
+            },
+        });
+        if (!response.ok) await this.handleApiError(response);
+        return await response.blob();
+    }
+
+    /**
+     * Save a Blob to Drive
+     */
+    async saveBlob(fileName: string, blob: Blob, folderId?: string): Promise<string> {
+        const parentFolderId = folderId || await this.getAppFolderId();
+
+        // Check if file exists to update or create
+        const listResponse = await gapi.client.drive.files.list({
+            q: `name='${fileName}' and '${parentFolderId}' in parents and trashed=false`,
+            fields: 'files(id)',
+        });
+
+        const metadata = {
+            name: fileName,
+            parents: [parentFolderId],
+        };
+
+        const existingFile = listResponse.result.files?.[0];
+
+        if (existingFile && existingFile.id) {
+            const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+                body: this.createMultipartBody(metadata, blob, true),
+            });
+            if (!response.ok) await this.handleApiError(response);
+            return existingFile.id;
+        } else {
+            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${this.accessToken}`,
+                },
+                body: this.createMultipartBody(metadata, blob),
+            });
+            if (!response.ok) await this.handleApiError(response);
+            const result = await response.json();
+            return result.id;
+        }
     }
 
     /**

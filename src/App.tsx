@@ -12,6 +12,7 @@ import { SyncConflictDialog } from './components/SyncConflictDialog';
 import { ToastContainer, type ToastType } from './components/Toast';
 import { driveService } from './services/googleDrive';
 import { calculateHash } from './utils/hash';
+import { imageService } from './services/imageService';
 
 const APP_VERSION = '1.2.0-drive-sync';
 const DECKS_STORAGE_KEY = 'cardcraftstudio-decks';
@@ -130,23 +131,29 @@ function App() {
         const remoteFile = remoteFiles.find((f: any) => f.name === `deck-${localDeck.id}.json`);
         const localContent = JSON.stringify(localDeck);
 
+        // SYNC IMAGES FIRST
+        const imageRefs = new Set<string>();
+        localDeck.cards.forEach(card => {
+          if (card.centerImage?.startsWith('ref:')) imageRefs.add(card.centerImage);
+          if (card.topLeftImage?.startsWith('ref:')) imageRefs.add(card.topLeftImage);
+          if (card.bottomRightImage?.startsWith('ref:')) imageRefs.add(card.bottomRightImage);
+        });
+        if (imageRefs.size > 0) {
+          await imageService.syncImagesToCloud(Array.from(imageRefs));
+        }
+
         if (remoteFile) {
           const remoteTime = new Date(remoteFile.modifiedTime).getTime();
           const localTime = localDeck.updatedAt || 0;
 
-          // If remote is newer OR local is newer, check hashes to see if we ACTUALLY need to do something
           if (Math.abs(remoteTime - localTime) > 1000) {
             const remoteContent = await driveService.getFileContent(remoteFile.id);
             const localHash = await calculateHash(localContent);
             const remoteHash = await calculateHash(remoteContent);
 
-            if (localHash === remoteHash) {
-              // Contents are identical, no need to sync this file
-              continue;
-            }
+            if (localHash === remoteHash) continue;
 
             if (remoteTime > localTime + 1000) {
-              // Remote is newer AND different - Conflict!
               const remaining = decksToProcess.slice(i + 1);
               setPendingSyncDecks(remaining);
               setConflictDeck(localDeck);
@@ -154,14 +161,11 @@ function App() {
               setIsSyncing(false);
               return;
             }
-            // Local is newer AND different - proceed to upload below
           } else {
-            // Timestamps are roughly equal, assume synced
             continue;
           }
         }
 
-        // Upload (for new files or newer local versions with different hash)
         await driveService.saveFile(`deck-${localDeck.id}.json`, localContent);
         addToast(`Uploaded "${localDeck.name}" to cloud`, 'success');
       }
@@ -185,6 +189,24 @@ function App() {
 
             // Basic validation
             if (importedDeck && importedDeck.id && importedDeck.cards) {
+              // Download missing images for this deck
+              const imageRefs = new Set<string>();
+              importedDeck.cards.forEach((card: any) => {
+                if (card.centerImage?.startsWith('ref:')) imageRefs.add(card.centerImage.replace('ref:', ''));
+                if (card.topLeftImage?.startsWith('ref:')) imageRefs.add(card.topLeftImage.replace('ref:', ''));
+                if (card.bottomRightImage?.startsWith('ref:')) imageRefs.add(card.bottomRightImage.replace('ref:', ''));
+              });
+
+              if (imageRefs.size > 0) {
+                // We need to find the specific files for these hashes
+                for (const hash of imageRefs) {
+                  const imgFile = remoteFiles.find(f => f.name.startsWith(`img-${hash}.`));
+                  if (imgFile) {
+                    await imageService.downloadImageIfMissing(hash, imgFile.id);
+                  }
+                }
+              }
+
               setDecks(prev => {
                 if (prev.find(d => d.id === importedDeck.id)) return prev;
                 return [...prev, importedDeck];
@@ -232,6 +254,24 @@ function App() {
         if (remoteFile) {
           const content = await driveService.getFileContent(remoteFile.id);
           const remoteDeck = JSON.parse(content);
+
+          // Download missing images for this deck
+          const imageRefs = new Set<string>();
+          remoteDeck.cards.forEach((card: any) => {
+            if (card.centerImage?.startsWith('ref:')) imageRefs.add(card.centerImage.replace('ref:', ''));
+            if (card.topLeftImage?.startsWith('ref:')) imageRefs.add(card.topLeftImage.replace('ref:', ''));
+            if (card.bottomRightImage?.startsWith('ref:')) imageRefs.add(card.bottomRightImage.replace('ref:', ''));
+          });
+
+          if (imageRefs.size > 0) {
+            for (const hash of imageRefs) {
+              const imgFile = remoteFiles.find(f => f.name.startsWith(`img-${hash}.`));
+              if (imgFile) {
+                await imageService.downloadImageIfMissing(hash, imgFile.id);
+              }
+            }
+          }
+
           setDecks(prev => prev.map(d => d.id === deckToResolve.id ? remoteDeck : d));
           addToast(`Loaded cloud version of "${deckToResolve.name}"`, 'success');
         }
@@ -296,6 +336,44 @@ function App() {
   useEffect(() => {
     localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(decks));
   }, [decks]);
+
+  // Image Migration Effect
+  useEffect(() => {
+    const migrateImages = async () => {
+      let changed = false;
+      const migratedDecks = await Promise.all(decks.map(async (deck) => {
+        let deckChanged = false;
+        const migratedCards = await Promise.all(deck.cards.map(async (card) => {
+          const center = await imageService.processImage(card.centerImage);
+          const top = await imageService.processImage(card.topLeftImage);
+          const bottom = await imageService.processImage(card.bottomRightImage);
+
+          if (center !== card.centerImage || top !== card.topLeftImage || bottom !== card.bottomRightImage) {
+            deckChanged = true;
+            return {
+              ...card,
+              centerImage: center,
+              topLeftImage: top,
+              bottomRightImage: bottom
+            };
+          }
+          return card;
+        }));
+
+        if (deckChanged) {
+          changed = true;
+          return { ...deck, cards: migratedCards, updatedAt: Date.now() };
+        }
+        return deck;
+      }));
+
+      if (changed) {
+        setDecks(migratedDecks);
+      }
+    };
+
+    migrateImages();
+  }, []); // Run once on mount
 
   const activeDeck = activeDeckId ? decks.find(d => d.id === activeDeckId) : null;
 
@@ -374,16 +452,22 @@ function App() {
     updateActiveDeck({ cards: newCards });
   };
 
-  const handleSaveCard = (updatedCard: CardConfig) => {
+  const handleSaveCard = async (updatedCard: CardConfig) => {
     if (!activeDeck) return;
+
+    // Process images before saving to storage
+    const cardWithRefs = { ...updatedCard };
+    cardWithRefs.centerImage = await imageService.processImage(updatedCard.centerImage);
+    cardWithRefs.topLeftImage = await imageService.processImage(updatedCard.topLeftImage);
+    cardWithRefs.bottomRightImage = await imageService.processImage(updatedCard.bottomRightImage);
 
     const newCards = [...activeDeck.cards];
     if (activeCardIndex !== null) {
       // Update existing
-      newCards[activeCardIndex] = updatedCard;
+      newCards[activeCardIndex] = cardWithRefs;
     } else {
       // Add new
-      newCards.push(updatedCard);
+      newCards.push(cardWithRefs);
     }
 
     updateActiveDeck({ cards: newCards });
