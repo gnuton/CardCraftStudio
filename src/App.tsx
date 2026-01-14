@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sun, Moon, ArrowLeft } from 'lucide-react';
+import { Sun, Moon, ArrowLeft, Cloud, CloudOff, CloudAlert } from 'lucide-react';
 import logo from './assets/logo.png';
 import { CardStudio, type CardConfig } from './components/CardStudio';
 import { DeckStudio } from './components/DeckStudio';
@@ -298,6 +298,37 @@ function App() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Sync Button */}
+            <button
+              onClick={() => {
+                if (syncError) {
+                  setIsErrorDialogOpen(true);
+                } else if (!isAuthenticated) {
+                  setIsPromptOpen(true);
+                } else {
+                  handleSync();
+                }
+              }}
+              className={`flex items-center text-sm font-medium transition-colors ${syncError ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-indigo-600'
+                }`}
+              title={
+                isSyncing ? 'Syncing...' :
+                  syncError ? 'Sync Failed (Click for details)' :
+                    isAuthenticated ? 'Sync with Google Drive' :
+                      'Sync is offline'
+              }
+            >
+              {isSyncing ? (
+                <Cloud className="w-5 h-5 animate-pulse text-indigo-500" />
+              ) : syncError ? (
+                <CloudAlert className="w-5 h-5 text-red-500" />
+              ) : isAuthenticated ? (
+                <Cloud className="w-5 h-5 text-green-500" />
+              ) : (
+                <CloudOff className="w-5 h-5" />
+              )}
+            </button>
+
             {view !== 'library' && (
               <button
                 onClick={handleBackToLibrary}
@@ -340,11 +371,6 @@ function App() {
                 onCreateDeck={handleCreateDeck}
                 onSelectDeck={handleSelectDeck}
                 onDeleteDeck={handleDeleteDeck}
-                onSync={handleSync}
-                isAuthenticated={isAuthenticated}
-                isSyncing={isSyncing}
-                syncError={syncError}
-                onShowError={() => setIsErrorDialogOpen(true)}
               />
               <SyncErrorDialog
                 isOpen={isErrorDialogOpen}
