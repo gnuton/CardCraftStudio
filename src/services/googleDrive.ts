@@ -89,6 +89,8 @@ export class GoogleDriveService {
             (this.tokenClient as any).callback = (resp: any) => {
                 if (resp.error) reject(resp);
                 this.accessToken = resp.access_token;
+                // IMPORTANT: Pass the token to gapi.client
+                gapi.client.setToken({ access_token: this.accessToken });
                 resolve(resp.access_token);
             };
 
