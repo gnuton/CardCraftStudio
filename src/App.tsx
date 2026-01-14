@@ -110,7 +110,7 @@ function App() {
     }
   }, []);
 
-  const handleSync = async (resumeDecks?: Deck[]) => {
+  const handleSync = async (resumeDecks?: Deck[], silent = false) => {
     setSyncError(null);
     try {
       if (!driveService.isSignedIn) {
@@ -221,7 +221,7 @@ function App() {
 
       // Mark sync as enabled persistently
       localStorage.setItem(SYNC_ENABLED_KEY, 'true');
-      addToast('Sync completed successfully!');
+      if (!silent) addToast('Sync completed successfully!');
     } catch (error: any) {
       console.error('Sync failed', error);
       const message = error?.result?.error?.message || error?.message || "An unexpected error occurred during sync.";
@@ -374,6 +374,18 @@ function App() {
 
     migrateImages();
   }, []); // Run once on mount
+
+  // Auto-Sync Effect
+  useEffect(() => {
+    const isEnabled = localStorage.getItem(SYNC_ENABLED_KEY) === 'true';
+    if (!isEnabled || !isAuthenticated || isSyncing) return;
+
+    const timer = setTimeout(() => {
+      handleSync(undefined, true);
+    }, 5000); // 5 second debounce
+
+    return () => clearTimeout(timer);
+  }, [decks, isAuthenticated]); // Trigger on deck changes or auth status
 
   const activeDeck = activeDeckId ? decks.find(d => d.id === activeDeckId) : null;
 
