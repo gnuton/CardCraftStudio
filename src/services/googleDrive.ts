@@ -213,7 +213,7 @@ export class GoogleDriveService {
         const folderId = await this.getAppFolderId();
         const response = await gapi.client.drive.files.list({
             q: `'${folderId}' in parents and trashed=false`,
-            fields: 'files(id, name, modifiedTime)',
+            fields: 'files(id, name, modifiedTime, md5Checksum)',
         });
         return response.result.files || [];
     }

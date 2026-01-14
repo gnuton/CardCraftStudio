@@ -11,6 +11,7 @@ import { SyncPromptDialog } from './components/SyncPromptDialog';
 import { SyncConflictDialog } from './components/SyncConflictDialog';
 import { ToastContainer, type ToastType } from './components/Toast';
 import { driveService } from './services/googleDrive';
+import { calculateHash } from './utils/hash';
 
 const APP_VERSION = '1.2.0-drive-sync';
 const DECKS_STORAGE_KEY = 'cardcraftstudio-decks';
@@ -127,26 +128,41 @@ function App() {
       for (let i = 0; i < decksToProcess.length; i++) {
         const localDeck = decksToProcess[i];
         const remoteFile = remoteFiles.find((f: any) => f.name === `deck-${localDeck.id}.json`);
+        const localContent = JSON.stringify(localDeck);
 
         if (remoteFile) {
-          // Check timestamps
           const remoteTime = new Date(remoteFile.modifiedTime).getTime();
           const localTime = localDeck.updatedAt || 0;
 
-          // Conflict: Remote is newer than local (with 1 second threshold to avoid jitter)
-          if (remoteTime > localTime + 1000) {
-            // Pause sync and show conflict dialog
-            const remaining = decksToProcess.slice(i + 1);
-            setPendingSyncDecks(remaining);
-            setConflictDeck(localDeck);
-            setConflictRemoteDate(new Date(remoteTime));
-            setIsSyncing(false);
-            return; // Stop and wait for user decision
+          // If remote is newer OR local is newer, check hashes to see if we ACTUALLY need to do something
+          if (Math.abs(remoteTime - localTime) > 1000) {
+            const remoteContent = await driveService.getFileContent(remoteFile.id);
+            const localHash = await calculateHash(localContent);
+            const remoteHash = await calculateHash(remoteContent);
+
+            if (localHash === remoteHash) {
+              // Contents are identical, no need to sync this file
+              continue;
+            }
+
+            if (remoteTime > localTime + 1000) {
+              // Remote is newer AND different - Conflict!
+              const remaining = decksToProcess.slice(i + 1);
+              setPendingSyncDecks(remaining);
+              setConflictDeck(localDeck);
+              setConflictRemoteDate(new Date(remoteTime));
+              setIsSyncing(false);
+              return;
+            }
+            // Local is newer AND different - proceed to upload below
+          } else {
+            // Timestamps are roughly equal, assume synced
+            continue;
           }
         }
 
-        // No conflict - upload (create or overwrite)
-        await driveService.saveFile(`deck-${localDeck.id}.json`, JSON.stringify(localDeck));
+        // Upload (for new files or newer local versions with different hash)
+        await driveService.saveFile(`deck-${localDeck.id}.json`, localContent);
         addToast(`Uploaded "${localDeck.name}" to cloud`, 'success');
       }
 

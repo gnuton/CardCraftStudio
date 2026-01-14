@@ -124,6 +124,8 @@ describe('Cloud Sync Behavior', () => {
         (driveService.listFiles as any).mockResolvedValue([
             { id: 'file-1', name: 'deck-deck-1.json', modifiedTime: new Date(5000).toISOString() }
         ]);
+        // Return different content to trigger conflict
+        (driveService.getFileContent as any).mockResolvedValue(JSON.stringify({ ...localDeck, name: 'Remote Name' }));
 
         render(<App />);
         await waitForLoadingToFinish();
@@ -134,5 +136,31 @@ describe('Cloud Sync Behavior', () => {
 
         expect(await screen.findByText(/Sync Conflict Detected/i)).toBeInTheDocument();
         expect(screen.getByText('Local Deck')).toBeInTheDocument();
+    });
+
+    it('Scenario 7: No Conflict Prompt if content is identical even if remote is newer', async () => {
+        const localDeck = { id: 'deck-1', name: 'Local Deck', cards: [], updatedAt: 1000, style: { cornerColor: '#000000', titleColor: '#000000', descriptionColor: '#000000', cornerFont: 'serif', titleFont: 'sans-serif', descriptionFont: 'sans-serif', backgroundImage: null } };
+        localStorage.setItem('cardcraftstudio-decks', JSON.stringify([localDeck]));
+
+        (driveService.listFiles as any).mockResolvedValue([
+            { id: 'file-1', name: 'deck-deck-1.json', modifiedTime: new Date(5000).toISOString() }
+        ]);
+        // Return identical content
+        (driveService.getFileContent as any).mockResolvedValue(JSON.stringify(localDeck));
+
+        render(<App />);
+        await waitForLoadingToFinish();
+
+        await screen.findByText('Local Deck');
+        const syncBtn = screen.getByTitle(/Sync with Google Drive/i);
+        fireEvent.click(syncBtn);
+
+        // Conflict dialog should NOT appear
+        await waitFor(() => {
+            expect(screen.queryByText(/Sync Conflict Detected/i)).not.toBeInTheDocument();
+        });
+
+        // It should show a "Sync completed" toast or similar
+        expect(await screen.findByText(/Sync completed successfully/i)).toBeInTheDocument();
     });
 });
