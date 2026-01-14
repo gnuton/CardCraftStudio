@@ -14,6 +14,7 @@ const APP_VERSION = '1.2.0-drive-sync';
 const DECKS_STORAGE_KEY = 'velvet-sojourner-decks';
 const THEME_STORAGE_KEY = 'velvet-sojourner-theme';
 const SYNC_PROMPT_KEY = 'velvet-sojourner-sync-prompt-shown';
+const SYNC_ENABLED_KEY = 'velvet-sojourner-sync-enabled';
 
 export interface DeckStyle {
   cornerColor: string;
@@ -69,8 +70,16 @@ function App() {
             setIsAuthenticated(true);
           } catch (e) {
             setIsAuthenticated(false);
+
+            // Check if user previously enabled sync
+            const previouslyEnabled = localStorage.getItem(SYNC_ENABLED_KEY) === 'true';
+
+            // Show prompt if:
+            // 1. User previously enabled sync (needs re-auth)
+            // 2. OR prompt hasn't been shown this session
             const promptShown = sessionStorage.getItem(SYNC_PROMPT_KEY);
-            if (!promptShown) {
+
+            if (previouslyEnabled || !promptShown) {
               setIsPromptOpen(true);
               sessionStorage.setItem(SYNC_PROMPT_KEY, 'true');
             }
@@ -100,6 +109,9 @@ function App() {
       // 2. Download any decks we don't have? 
       // For now, let's just say "push" sync. 
       // To implement full sync, we'd list files, check timestamps, and merge.
+
+      // Mark sync as enabled persistently
+      localStorage.setItem(SYNC_ENABLED_KEY, 'true');
 
       // alert('Sync complete!'); // Sync successful
     } catch (error: any) {
