@@ -1,3 +1,7 @@
+/// <reference types="gapi" />
+/// <reference types="gapi.client.drive" />
+/// <reference types="google.accounts" />
+
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
@@ -60,7 +64,7 @@ export class GoogleDriveService {
                     this.tokenClient = google.accounts.oauth2.initTokenClient({
                         client_id: CLIENT_ID,
                         scope: SCOPES,
-                        callback: (tokenResponse) => {
+                        callback: (tokenResponse: any) => {
                             this.accessToken = tokenResponse.access_token;
                         },
                     });
@@ -82,7 +86,7 @@ export class GoogleDriveService {
             if (!this.tokenClient) return reject('Token client not initialized');
 
             // Override callback to capture resolution
-            this.tokenClient.callback = (resp) => {
+            (this.tokenClient as any).callback = (resp: any) => {
                 if (resp.error) reject(resp);
                 this.accessToken = resp.access_token;
                 resolve(resp.access_token);
