@@ -41,7 +41,7 @@ A modern web application for designing and printing custom playing cards with ri
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd velvet-sojourner
+cd cardcraftstudio
 
 # Install dependencies
 npm install

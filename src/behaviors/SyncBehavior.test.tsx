@@ -39,7 +39,7 @@ describe('Cloud Sync Behavior', () => {
 
     it('Scenario 1: Auto-reconnects if previously enabled and silent sign-in works', async () => {
         // Setup: User previously enabled sync
-        localStorage.setItem('velvet-sojourner-sync-enabled', 'true');
+        localStorage.setItem('cardcraftstudio-sync-enabled', 'true');
 
         // Setup: Silent sign-in succeeds
         (driveService.trySilentSignIn as any).mockResolvedValue('fake-token');
@@ -63,7 +63,7 @@ describe('Cloud Sync Behavior', () => {
 
     it('Scenario 2: Shows prompt if previously enabled but silent sign-in fails (Session Lost)', async () => {
         // Setup: User previously enabled sync
-        localStorage.setItem('velvet-sojourner-sync-enabled', 'true');
+        localStorage.setItem('cardcraftstudio-sync-enabled', 'true');
 
         // Setup: Silent sign-in fails (e.g. session expired)
         (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Session expired'));
@@ -82,7 +82,7 @@ describe('Cloud Sync Behavior', () => {
 
     it('Scenario 3: Does NOT prompt if never enabled and silent sign-in fails (New User)', async () => {
         // Setup: No localStorage key
-        localStorage.removeItem('velvet-sojourner-sync-enabled');
+        localStorage.removeItem('cardcraftstudio-sync-enabled');
 
         // Setup: Silent sign in fails (expected for new user)
         (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Not signed in'));
@@ -103,8 +103,8 @@ describe('Cloud Sync Behavior', () => {
     });
 
     it('Scenario 4: Does NOT prompt if prompt was already dismissed in this session', async () => {
-        localStorage.removeItem('velvet-sojourner-sync-enabled');
-        sessionStorage.setItem('velvet-sojourner-sync-prompt-shown', 'true');
+        localStorage.removeItem('cardcraftstudio-sync-enabled');
+        sessionStorage.setItem('cardcraftstudio-sync-prompt-shown', 'true');
 
         (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Not signed in'));
 

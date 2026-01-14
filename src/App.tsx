@@ -11,10 +11,10 @@ import { SyncPromptDialog } from './components/SyncPromptDialog';
 import { driveService } from './services/googleDrive';
 
 const APP_VERSION = '1.2.0-drive-sync';
-const DECKS_STORAGE_KEY = 'velvet-sojourner-decks';
-const THEME_STORAGE_KEY = 'velvet-sojourner-theme';
-const SYNC_PROMPT_KEY = 'velvet-sojourner-sync-prompt-shown';
-const SYNC_ENABLED_KEY = 'velvet-sojourner-sync-enabled';
+const DECKS_STORAGE_KEY = 'cardcraftstudio-decks';
+const THEME_STORAGE_KEY = 'cardcraftstudio-theme';
+const SYNC_PROMPT_KEY = 'cardcraftstudio-sync-prompt-shown';
+const SYNC_ENABLED_KEY = 'cardcraftstudio-sync-enabled';
 
 export interface DeckStyle {
   cornerColor: string;
@@ -143,13 +143,13 @@ function App() {
     }
 
     // Migration for legacy single-deck data
-    const legacyCards = localStorage.getItem('velvet-sojourner-deck');
+    const legacyCards = localStorage.getItem('cardcraftstudio-deck');
     if (legacyCards) {
       try {
-        const style = localStorage.getItem('velvet-sojourner-style');
+        const style = localStorage.getItem('cardcraftstudio-style');
         return [{
           id: crypto.randomUUID(),
-          name: localStorage.getItem('velvet-sojourner-deck-name') || "My First Deck",
+          name: localStorage.getItem('cardcraftstudio-deck-name') || "My First Deck",
           cards: JSON.parse(legacyCards),
           style: style ? JSON.parse(style) : defaultDeckStyle,
           updatedAt: Date.now()
