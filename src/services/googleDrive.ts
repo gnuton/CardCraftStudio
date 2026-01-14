@@ -90,7 +90,7 @@ export class GoogleDriveService {
                 if (resp.error) reject(resp);
                 this.accessToken = resp.access_token;
                 // IMPORTANT: Pass the token to gapi.client
-                gapi.client.setToken({ access_token: this.accessToken });
+                gapi.client.setToken({ access_token: resp.access_token });
                 resolve(resp.access_token);
             };
 

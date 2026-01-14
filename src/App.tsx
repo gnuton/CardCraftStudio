@@ -250,7 +250,7 @@ function App() {
     : 'new';
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
       <AnimatePresence>
         {isLoading && <LoadingScreen version={APP_VERSION} />}
       </AnimatePresence>
@@ -297,7 +297,7 @@ function App() {
         </div>
       </nav>
 
-      <main className="relative overflow-hidden min-h-[calc(100vh-4rem)]">
+      <main className="flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait">
           {view === 'library' && (
             <motion.div
