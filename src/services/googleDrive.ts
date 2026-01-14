@@ -99,6 +99,29 @@ export class GoogleDriveService {
         });
     }
 
+    /**
+     * Attempts to get a token without showing a popup.
+     * Fails if user is not signed in or hasn't granted permissions.
+     */
+    async trySilentSignIn(): Promise<string> {
+        return new Promise((resolve, reject) => {
+            if (!this.tokenClient) return reject('Token client not initialized');
+
+            (this.tokenClient as any).callback = (resp: any) => {
+                if (resp.error) {
+                    reject(resp);
+                } else {
+                    this.accessToken = resp.access_token;
+                    gapi.client.setToken({ access_token: resp.access_token });
+                    resolve(resp.access_token);
+                }
+            };
+
+            // Request token silently
+            this.tokenClient.requestAccessToken({ prompt: 'none' });
+        });
+    }
+
     get isSignedIn(): boolean {
         return !!this.accessToken;
     }

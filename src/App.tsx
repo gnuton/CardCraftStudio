@@ -7,11 +7,13 @@ import { DeckStudio } from './components/DeckStudio';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DeckLibrary, type Deck } from './components/DeckLibrary';
 import { SyncErrorDialog } from './components/SyncErrorDialog';
+import { SyncPromptDialog } from './components/SyncPromptDialog';
 import { driveService } from './services/googleDrive';
 
 const APP_VERSION = '1.2.0-drive-sync';
 const DECKS_STORAGE_KEY = 'velvet-sojourner-decks';
 const THEME_STORAGE_KEY = 'velvet-sojourner-theme';
+const SYNC_PROMPT_KEY = 'velvet-sojourner-sync-prompt-shown';
 
 export interface DeckStyle {
   cornerColor: string;
@@ -54,13 +56,27 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
 
-  // Init Drive Service
+  // Init Drive Service & Session Check
   useEffect(() => {
-    // Use Vite environment variable set during build/deploy
     const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
     if (CLIENT_ID) {
-      driveService.init({ clientId: CLIENT_ID }).catch(console.error);
+      driveService.init({ clientId: CLIENT_ID })
+        .then(async () => {
+          try {
+            await driveService.trySilentSignIn();
+            setIsAuthenticated(true);
+          } catch (e) {
+            setIsAuthenticated(false);
+            const promptShown = sessionStorage.getItem(SYNC_PROMPT_KEY);
+            if (!promptShown) {
+              setIsPromptOpen(true);
+              sessionStorage.setItem(SYNC_PROMPT_KEY, 'true');
+            }
+          }
+        })
+        .catch(console.error);
     }
   }, []);
 
@@ -326,6 +342,11 @@ function App() {
                   setIsErrorDialogOpen(false);
                   handleSync();
                 }}
+              />
+              <SyncPromptDialog
+                isOpen={isPromptOpen}
+                onClose={() => setIsPromptOpen(false)}
+                onSync={handleSync}
               />
             </motion.div>
           )}
