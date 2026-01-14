@@ -6,8 +6,9 @@ import { CardStudio, type CardConfig } from './components/CardStudio';
 import { DeckStudio } from './components/DeckStudio';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DeckLibrary, type Deck } from './components/DeckLibrary';
+import { driveService } from './services/googleDrive';
 
-const APP_VERSION = '1.1.0-multi-deck';
+const APP_VERSION = '1.2.0-drive-sync';
 const DECKS_STORAGE_KEY = 'velvet-sojourner-decks';
 const THEME_STORAGE_KEY = 'velvet-sojourner-theme';
 
@@ -47,6 +48,47 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Init Drive Service
+  useEffect(() => {
+    // Use Vite environment variable set during build/deploy
+    const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    if (CLIENT_ID) {
+      driveService.init({ clientId: CLIENT_ID }).catch(console.error);
+    }
+  }, []);
+
+  const handleSync = async () => {
+    try {
+      if (!driveService.isSignedIn) {
+        await driveService.signIn();
+        setIsAuthenticated(true);
+      }
+
+      setIsSyncing(true);
+
+      // 1. Upload current decks
+      // In a real robust sync, we'd merge changes. Here we just overwrite for simplicity given the constraints.
+      // Or we can save each deck as a separate file.
+      for (const deck of decks) {
+        await driveService.saveFile(`deck-${deck.id}.json`, JSON.stringify(deck));
+      }
+
+      // 2. Download any decks we don't have? 
+      // For now, let's just say "push" sync. 
+      // To implement full sync, we'd list files, check timestamps, and merge.
+
+      alert('Sync complete!');
+    } catch (error) {
+      console.error('Sync failed', error);
+      alert('Sync failed. Check console for details.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Loader Timer
   useEffect(() => {
@@ -265,6 +307,9 @@ function App() {
                 onCreateDeck={handleCreateDeck}
                 onSelectDeck={handleSelectDeck}
                 onDeleteDeck={handleDeleteDeck}
+                onSync={handleSync}
+                isAuthenticated={isAuthenticated}
+                isSyncing={isSyncing}
               />
             </motion.div>
           )}

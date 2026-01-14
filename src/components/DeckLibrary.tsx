@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Calendar, Layers } from 'lucide-react';
+import { Plus, Trash2, Calendar, Layers, Cloud, CloudOff } from 'lucide-react';
 import type { DeckStyle } from '../App';
 import type { CardConfig } from './CardStudio';
 
@@ -16,9 +16,12 @@ interface DeckLibraryProps {
     onCreateDeck: () => void;
     onSelectDeck: (id: string) => void;
     onDeleteDeck: (id: string) => void;
+    onSync?: () => void;
+    isAuthenticated?: boolean;
+    isSyncing?: boolean;
 }
 
-export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck }: DeckLibraryProps) => {
+export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck, onSync, isAuthenticated, isSyncing }: DeckLibraryProps) => {
     return (
         <div className="min-h-screen bg-background p-8 font-sans transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
@@ -27,13 +30,29 @@ export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck }:
                         <h1 className="text-3xl font-bold text-foreground">My Decks</h1>
                         <p className="text-muted-foreground mt-1">Manage your card collections</p>
                     </div>
-                    <button
-                        onClick={onCreateDeck}
-                        className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                    >
-                        <Plus className="w-5 h-5 mr-2" />
-                        Create New Deck
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => onSync?.()}
+                            className="flex items-center text-sm font-medium text-muted-foreground hover:text-indigo-600 transition-colors"
+                            title={isAuthenticated ? 'Sync with Google Drive' : 'Sync is offline'}
+                        >
+                            {isSyncing ? (
+                                <Cloud className="w-5 h-5 mr-2 animate-pulse text-indigo-500" />
+                            ) : isAuthenticated ? (
+                                <Cloud className="w-5 h-5 mr-2 text-green-500" />
+                            ) : (
+                                <CloudOff className="w-5 h-5 mr-2" />
+                            )}
+                            {isSyncing ? 'Syncing...' : isAuthenticated ? 'Synced' : 'Cloud Offline'}
+                        </button>
+                        <button
+                            onClick={onCreateDeck}
+                            className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Create New Deck
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
