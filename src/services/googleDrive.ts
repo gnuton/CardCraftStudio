@@ -152,22 +152,24 @@ export class GoogleDriveService {
 
         if (existingFile) {
             // Update
-            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`, {
+            const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`, {
                 method: 'PATCH',
                 headers: {
                     Authorization: `Bearer ${this.accessToken}`,
                 },
                 body: this.createMultipartBody(metadata, file, true),
             });
+            if (!response.ok) await this.handleApiError(response);
         } else {
             // Create
-            await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${this.accessToken}`,
                 },
                 body: this.createMultipartBody(metadata, file),
             });
+            if (!response.ok) await this.handleApiError(response);
         }
     }
 
@@ -202,6 +204,34 @@ export class GoogleDriveService {
             alt: 'media',
         });
         return response.body;
+    }
+
+    /**
+     * Parse API error response and throw formatted error
+     */
+    private async handleApiError(response: Response) {
+        let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+        try {
+            const errorBody = await response.json();
+            if (errorBody?.error?.message) {
+                errorMessage = errorBody.error.message;
+            } else if (errorBody?.error_description) {
+                errorMessage = errorBody.error_description;
+            }
+        } catch (e) {
+            // Raw text fallback
+            const text = await response.text();
+            if (text) errorMessage = text;
+        }
+
+        // Add context for common codes
+        if (response.status === 403) {
+            errorMessage += " (Check API scopes and if Drive API is enabled in Google Cloud Console)";
+        } else if (response.status === 401) {
+            errorMessage += " (Authentication expired, please reload)";
+        }
+
+        throw new Error(errorMessage);
     }
 }
 

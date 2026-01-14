@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Calendar, Layers, Cloud, CloudOff } from 'lucide-react';
+import { Plus, Trash2, Calendar, Layers, Cloud, CloudOff, CloudAlert } from 'lucide-react';
 import type { DeckStyle } from '../App';
 import type { CardConfig } from './CardStudio';
 
@@ -19,9 +19,11 @@ interface DeckLibraryProps {
     onSync?: () => void;
     isAuthenticated?: boolean;
     isSyncing?: boolean;
+    syncError?: string | null;
+    onShowError?: () => void;
 }
 
-export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck, onSync, isAuthenticated, isSyncing }: DeckLibraryProps) => {
+export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck, onSync, isAuthenticated, isSyncing, syncError, onShowError }: DeckLibraryProps) => {
     return (
         <div className="min-h-screen bg-background p-8 font-sans transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
@@ -32,18 +34,32 @@ export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck, o
                     </div>
                     <div className="flex gap-4">
                         <button
-                            onClick={() => onSync?.()}
-                            className="flex items-center text-sm font-medium text-muted-foreground hover:text-indigo-600 transition-colors"
-                            title={isAuthenticated ? 'Sync with Google Drive' : 'Sync is offline'}
+                            onClick={() => {
+                                if (syncError) {
+                                    onShowError?.();
+                                } else {
+                                    onSync?.();
+                                }
+                            }}
+                            className={`flex items-center text-sm font-medium transition-colors ${syncError ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-indigo-600'
+                                }`}
+                            title={
+                                isSyncing ? 'Syncing...' :
+                                    syncError ? 'Sync Failed (Click for details)' :
+                                        isAuthenticated ? 'Sync with Google Drive' :
+                                            'Sync is offline'
+                            }
                         >
                             {isSyncing ? (
                                 <Cloud className="w-5 h-5 mr-2 animate-pulse text-indigo-500" />
+                            ) : syncError ? (
+                                <CloudAlert className="w-5 h-5 mr-2 text-red-500" />
                             ) : isAuthenticated ? (
                                 <Cloud className="w-5 h-5 mr-2 text-green-500" />
                             ) : (
                                 <CloudOff className="w-5 h-5 mr-2" />
                             )}
-                            {isSyncing ? 'Syncing...' : isAuthenticated ? 'Synced' : 'Cloud Offline'}
+                            {isSyncing ? 'Syncing...' : syncError ? 'Sync Failed' : isAuthenticated ? 'Synced' : 'Cloud Offline'}
                         </button>
                         <button
                             onClick={onCreateDeck}

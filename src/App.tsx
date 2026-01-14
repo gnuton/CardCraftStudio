@@ -6,6 +6,7 @@ import { CardStudio, type CardConfig } from './components/CardStudio';
 import { DeckStudio } from './components/DeckStudio';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DeckLibrary, type Deck } from './components/DeckLibrary';
+import { SyncErrorDialog } from './components/SyncErrorDialog';
 import { driveService } from './services/googleDrive';
 
 const APP_VERSION = '1.2.0-drive-sync';
@@ -51,6 +52,8 @@ function App() {
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
 
   // Init Drive Service
   useEffect(() => {
@@ -62,6 +65,7 @@ function App() {
   }, []);
 
   const handleSync = async () => {
+    setSyncError(null);
     try {
       if (!driveService.isSignedIn) {
         await driveService.signIn();
@@ -81,10 +85,11 @@ function App() {
       // For now, let's just say "push" sync. 
       // To implement full sync, we'd list files, check timestamps, and merge.
 
-      alert('Sync complete!');
-    } catch (error) {
+      // alert('Sync complete!'); // Sync successful
+    } catch (error: any) {
       console.error('Sync failed', error);
-      alert('Sync failed. Check console for details.');
+      const message = error?.result?.error?.message || error?.message || "An unexpected error occurred during sync.";
+      setSyncError(message);
     } finally {
       setIsSyncing(false);
     }
@@ -310,6 +315,17 @@ function App() {
                 onSync={handleSync}
                 isAuthenticated={isAuthenticated}
                 isSyncing={isSyncing}
+                syncError={syncError}
+                onShowError={() => setIsErrorDialogOpen(true)}
+              />
+              <SyncErrorDialog
+                isOpen={isErrorDialogOpen}
+                onClose={() => setIsErrorDialogOpen(false)}
+                error={syncError}
+                onRetry={() => {
+                  setIsErrorDialogOpen(false);
+                  handleSync();
+                }}
               />
             </motion.div>
           )}
