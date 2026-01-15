@@ -5,6 +5,7 @@ export interface MarkerLayout {
     height: number;
     offsetX: number;
     offsetY: number;
+    rotation: number;
 }
 
 export interface ExtractedLayout {
@@ -29,25 +30,32 @@ class TemplateService {
                 const el = doc.getElementById(id);
                 if (!el) return undefined;
 
-                let marker = { x: 0, y: 0, width: 0, height: 0 };
+                let marker = { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
+
+                // Parse rotation from transform attribute
+                const transform = el.getAttribute('transform');
+                if (transform) {
+                    const rotateMatch = transform.match(/rotate\(([^)]+)\)/);
+                    if (rotateMatch) {
+                        // rotate(angle) or rotate(angle, cx, cy)
+                        const parts = rotateMatch[1].trim().split(/[ ,]+/);
+                        marker.rotation = parseFloat(parts[0]) || 0;
+                    }
+                }
 
                 if (el.tagName === 'rect') {
-                    marker = {
-                        x: parseFloat(el.getAttribute('x') || '0'),
-                        y: parseFloat(el.getAttribute('y') || '0'),
-                        width: parseFloat(el.getAttribute('width') || '0'),
-                        height: parseFloat(el.getAttribute('height') || '0')
-                    };
+                    marker.x = parseFloat(el.getAttribute('x') || '0');
+                    marker.y = parseFloat(el.getAttribute('y') || '0');
+                    marker.width = parseFloat(el.getAttribute('width') || '0');
+                    marker.height = parseFloat(el.getAttribute('height') || '0');
                 } else if (el.tagName === 'circle') {
                     const cx = parseFloat(el.getAttribute('cx') || '0');
                     const cy = parseFloat(el.getAttribute('cy') || '0');
                     const r = parseFloat(el.getAttribute('r') || '0');
-                    marker = {
-                        x: cx - r,
-                        y: cy - r,
-                        width: r * 2,
-                        height: r * 2
-                    };
+                    marker.x = cx - r;
+                    marker.y = cy - r;
+                    marker.width = r * 2;
+                    marker.height = r * 2;
                 } else {
                     return undefined;
                 }

@@ -214,11 +214,13 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                     finalStyle.titleX = Math.round(layout.title.offsetX);
                     finalStyle.titleY = Math.round(layout.title.offsetY);
                     finalStyle.titleWidth = Math.round(layout.title.width);
+                    finalStyle.titleRotate = layout.title.rotation;
                 }
                 if (layout.description) {
                     finalStyle.descriptionX = Math.round(layout.description.offsetX);
                     finalStyle.descriptionY = Math.round(layout.description.offsetY);
                     finalStyle.descriptionWidth = Math.round(layout.description.width);
+                    finalStyle.descriptionRotate = layout.description.rotation;
                 }
                 if (layout.centerImage) {
                     finalStyle.artX = Math.round(layout.centerImage.offsetX);
