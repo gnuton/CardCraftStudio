@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { templateService } from '../services/templateService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
@@ -9,6 +9,13 @@ import { cn } from '../utils/cn';
 import { TemplateEditor } from './TemplateEditor';
 import { driveService } from '../services/googleDrive';
 import { Download, Cloud, Loader2 } from 'lucide-react';
+
+interface Template {
+    id: string;
+    name: string;
+    style: DeckStyle;
+    isCustom?: boolean;
+}
 
 interface GlobalStyleEditorProps {
     deckStyle: DeckStyle;
@@ -28,7 +35,7 @@ const FONTS = [
     { name: 'Roboto Slab', value: 'Roboto Slab, serif' }
 ];
 
-const TEMPLATES = [
+const TEMPLATES: Template[] = [
     {
         id: 'default',
         name: 'Default Clean',
@@ -238,8 +245,43 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [customTemplates, setCustomTemplates] = useState<Template[]>([]);
 
     const hasChanges = JSON.stringify(deckStyle) !== JSON.stringify(currentStyle);
+
+    const fetchCustomTemplates = async () => {
+        if (!driveService.isSignedIn) return;
+
+        try {
+            const files = await driveService.listFiles();
+            // Filter for SVGs that are not deck JSONs
+            const svgFiles = files.filter(f => f.name.endsWith('.svg'));
+
+            const templates = await Promise.all(svgFiles.map(async (file) => {
+                const blob = await driveService.getFileBlob(file.id);
+                const url = URL.createObjectURL(blob);
+
+                return {
+                    id: file.id,
+                    name: file.name.replace('.svg', '').replace(/_/g, ' '),
+                    style: {
+                        ...TEMPLATES[0].style, // Use default style as base
+                        backgroundImage: url,
+                    },
+                    isCustom: true
+                };
+            }));
+
+            setCustomTemplates(templates);
+        } catch (error) {
+            console.error("Failed to fetch custom templates:", error);
+        }
+    };
+
+    // Fetch custom templates from Drive
+    useEffect(() => {
+        fetchCustomTemplates();
+    }, []);
 
     const previewCard: CardConfig = sampleCard || {
         id: 'preview',
@@ -302,18 +344,24 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
             // 2. Sync to GDrive if signed in
             if (driveService.isSignedIn) {
-                await driveService.saveFile(fileName, svgContent, 'image/svg+xml');
+                const fileId = await driveService.saveBlob(fileName, new Blob([svgContent], { type: 'image/svg+xml' }));
+
+                // Fetch the new file for immediate use
+                const blob = await driveService.getFileBlob(fileId);
+                const url = URL.createObjectURL(blob);
+
+                // Update current style to use the NEWLY CREATED GDrive SVG!
+                const updatedStyle = { ...currentStyle, backgroundImage: url };
+                setCurrentStyle(updatedStyle);
+                onUpdateStyle(updatedStyle);
+
+                // Refresh list
+                await fetchCustomTemplates();
             } else {
-                // If not signed in, maybe prompt or just allow local save
-                // For now, let's at least try to initialize drive or inform user
                 console.warn("Drive not signed in. Template saved locally in state but not synced to GDrive.");
+                onUpdateStyle(currentStyle);
             }
 
-            // 3. Update the style to use this new template (effectively making it local)
-            // In a real app we might want to point to the GDrive URL or a local Blob
-            // For now, we'll just keep the current state and notify
-
-            onUpdateStyle(currentStyle);
             setShowSaveTemplateModal(false);
             onBack();
         } catch (error) {
@@ -325,17 +373,20 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     };
 
     const applyTemplate = async (templateStyle: DeckStyle) => {
-        let finalStyle = { ...templateStyle };
+        const finalStyle = { ...templateStyle };
 
         // If the template has an SVG background, try to extract layout markers
-        if (templateStyle.backgroundImage?.endsWith('.svg')) {
-            const baseUrl = import.meta.env.BASE_URL;
-            const cleanPath = templateStyle.backgroundImage.startsWith('/')
-                ? templateStyle.backgroundImage.slice(1)
-                : templateStyle.backgroundImage;
-            const fullUrl = `${baseUrl}${cleanPath}`;
+        if (templateStyle.backgroundImage?.toLowerCase().includes('.svg')) {
+            let svgUrl = templateStyle.backgroundImage;
 
-            const layout = await templateService.parseSvgLayout(fullUrl);
+            // If it's a relative path, prefix with base URL
+            if (!svgUrl.startsWith('http') && !svgUrl.startsWith('blob:') && !svgUrl.startsWith('data:')) {
+                const baseUrl = import.meta.env.BASE_URL;
+                const cleanPath = svgUrl.startsWith('/') ? svgUrl.slice(1) : svgUrl;
+                svgUrl = `${baseUrl}${cleanPath}`;
+            }
+
+            const layout = await templateService.parseSvgLayout(svgUrl);
             if (layout) {
                 if (layout.title) {
                     finalStyle.titleX = Math.round(layout.title.offsetX);
@@ -426,7 +477,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                            {TEMPLATES.map(template => (
+                            {[...TEMPLATES, ...customTemplates].map(template => (
                                 <button
                                     key={template.id}
                                     onClick={() => applyTemplate(template.style)}
@@ -442,7 +493,12 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                             <img src={template.style.backgroundImage} className="w-full h-full object-cover" />
                                         </div>
                                     )}
-                                    <span className="text-xs font-bold block relative z-10">{template.name}</span>
+                                    <div className="flex items-center gap-1.5 relative z-10">
+                                        <span className="text-xs font-bold block truncate">{template.name}</span>
+                                        {template.isCustom && (
+                                            <Cloud className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+                                        )}
+                                    </div>
                                     <div className="flex gap-1 relative z-10">
                                         <div className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: template.style.cornerColor }}></div>
                                         <div className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: template.style.titleColor }}></div>
@@ -938,6 +994,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                 <TemplateEditor
                     deckStyle={currentStyle}
                     onUpdateStyle={handleStyleChange}
+                    onSaveTemplate={() => setShowSaveTemplateModal(true)}
                     onClose={() => setShowVisualEditor(false)}
                 />
             )}

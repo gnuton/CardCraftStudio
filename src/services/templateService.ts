@@ -1,3 +1,5 @@
+import type { DeckStyle } from '../App';
+
 export interface MarkerLayout {
     x: number;
     y: number;
@@ -24,7 +26,15 @@ class TemplateService {
             const response = await fetch(svgUrl);
             if (!response.ok) return null;
             const svgText = await response.text();
+            return this.parseSvgContent(svgText);
+        } catch (error) {
+            console.error('Error parsing SVG layout from URL:', error);
+            return null;
+        }
+    }
 
+    parseSvgContent(svgText: string): ExtractedLayout | null {
+        try {
             const parser = new DOMParser();
             const doc = parser.parseFromString(svgText, 'image/svg+xml');
 
@@ -32,7 +42,7 @@ class TemplateService {
                 const el = doc.getElementById(id);
                 if (!el) return undefined;
 
-                let marker = { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
+                const marker = { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
 
                 // Parse rotation from transform attribute
                 const transform = el.getAttribute('transform');
@@ -86,12 +96,12 @@ class TemplateService {
                 showReversedCorner: !!layoutBottomRight
             };
         } catch (error) {
-            console.error('Error parsing SVG layout:', error);
+            console.error('Error parsing SVG content:', error);
             return null;
         }
     }
 
-    async generateSvgWithLayout(svgUrl: string | null, style: any): Promise<string> {
+    async generateSvgWithLayout(svgUrl: string | null, style: DeckStyle): Promise<string> {
         let svgDoc: Document;
 
         if (svgUrl && svgUrl.toLowerCase().endsWith('.svg')) {
@@ -107,7 +117,7 @@ class TemplateService {
                 svgDoc = parser.parseFromString(emptySvg, 'image/svg+xml');
             }
         } else {
-            const emptySvg = `<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="420" fill="${style.backgroundColor || 'white'}"/></svg>`;
+            const emptySvg = `<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="420" fill="white"/></svg>`;
             const parser = new DOMParser();
             svgDoc = parser.parseFromString(emptySvg, 'image/svg+xml');
         }

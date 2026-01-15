@@ -1,17 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { DeckStyle } from '../App';
 import { Card } from './Card';
-import { Move, CornerUpLeft, Type, Image as ImageIcon, Crosshair, X } from 'lucide-react';
+import { Move, CornerUpLeft, Type, Image as ImageIcon, Crosshair, X, Save } from 'lucide-react';
 
 interface TemplateEditorProps {
     deckStyle: DeckStyle;
     onUpdateStyle: (updates: Partial<DeckStyle>) => void;
     onClose: () => void;
+    onSaveTemplate?: () => void;
 }
 
 type DraggableElement = 'title' | 'description' | 'art' | 'corner' | 'reversedCorner' | null;
 
-export const TemplateEditor = ({ deckStyle, onUpdateStyle, onClose }: TemplateEditorProps) => {
+export const TemplateEditor = ({ deckStyle, onUpdateStyle, onClose, onSaveTemplate }: TemplateEditorProps) => {
     const [activeElement, setActiveElement] = useState<DraggableElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialX: 0, initialY: 0 });
@@ -227,15 +228,15 @@ export const TemplateEditor = ({ deckStyle, onUpdateStyle, onClose }: TemplateEd
             </div>
 
             {/* Controls panel */}
-            <div className="mt-12 bg-white/10 border border-white/20 rounded-2xl p-6 flex gap-8 backdrop-blur-sm">
+            <div className="mt-12 bg-white/10 border border-white/20 rounded-2xl p-6 flex items-center gap-8 backdrop-blur-sm">
                 <div className="space-y-1">
                     <span className="text-[10px] text-white/40 font-bold uppercase block">Element Selected</span>
                     <span className="text-white font-medium capitalize">{activeElement || 'None'}</span>
                 </div>
                 <div className="h-10 w-px bg-white/10" />
-                <div className="space-y-1 text-right">
+                <div className="space-y-1 flex-1">
                     <span className="text-[10px] text-white/40 font-bold uppercase block">Current Offsets</span>
-                    <span className="text-white font-mono text-sm">
+                    <span className="text-white font-mono text-sm block">
                         {activeElement ? (
                             activeElement === 'title' ? `X: ${deckStyle.titleX}, Y: ${deckStyle.titleY}` :
                                 activeElement === 'description' ? `X: ${deckStyle.descriptionX}, Y: ${deckStyle.descriptionY}` :
@@ -246,6 +247,16 @@ export const TemplateEditor = ({ deckStyle, onUpdateStyle, onClose }: TemplateEd
                         ) : '--'}
                     </span>
                 </div>
+
+                {onSaveTemplate && (
+                    <button
+                        onClick={onSaveTemplate}
+                        className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2"
+                    >
+                        <Save className="w-4 h-4" />
+                        Save as Template
+                    </button>
+                )}
             </div>
         </div>
     );

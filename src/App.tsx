@@ -60,6 +60,8 @@ export interface DeckStyle {
   reversedCornerRotate: number;
   reversedCornerWidth: number;
   reversedCornerHeight: number;
+  id?: string;
+  isLocked?: boolean;
 }
 
 const defaultDeckStyle: DeckStyle = {
