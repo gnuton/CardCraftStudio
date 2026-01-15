@@ -63,22 +63,32 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     ...style
                 }}
             >
-                {/* Top Left */}
-                <div className="absolute top-2 left-2 flex flex-col items-center">
-                    {topLeftImage ? (
-                        <ResolvedImage src={topLeftImage} alt="Top Left" className="w-12 h-12 object-cover rounded" />
-                    ) : (
-                        <span
-                            className="text-2xl font-bold leading-none"
-                            style={{
-                                color: deckStyle?.cornerColor || '#000000',
-                                fontFamily: deckStyle?.cornerFont || 'serif'
-                            }}
-                        >
-                            {topLeftContent || deckStyle?.cornerContent || 'A'}
-                        </span>
-                    )}
-                </div>
+                {/* Top Left Corner */}
+                {deckStyle?.showCorner !== false && (
+                    <div
+                        className="absolute left-1/2 top-1/2 flex items-center justify-center z-30"
+                        style={{
+                            width: deckStyle?.cornerWidth ? `${deckStyle.cornerWidth}px` : '40px',
+                            height: deckStyle?.cornerHeight ? `${deckStyle.cornerHeight}px` : '40px',
+                            transform: `translate(calc(-50% + ${deckStyle?.cornerX || -125}px), calc(-50% + ${deckStyle?.cornerY || -185}px)) rotate(${deckStyle?.cornerRotate || 0}deg)`,
+                            transition: 'all 0.2s ease-out'
+                        }}
+                    >
+                        {topLeftImage ? (
+                            <ResolvedImage src={topLeftImage} alt="Top Left" className="w-full h-full object-cover rounded" />
+                        ) : (
+                            <span
+                                className="text-2xl font-bold leading-none"
+                                style={{
+                                    color: deckStyle?.cornerColor || '#000000',
+                                    fontFamily: deckStyle?.cornerFont || 'serif'
+                                }}
+                            >
+                                {topLeftContent || deckStyle?.cornerContent || 'A'}
+                            </span>
+                        )}
+                    </div>
+                )}
 
                 {/* Title */}
                 {title && (
@@ -135,22 +145,32 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     />
                 )}
 
-                {/* Bottom Right */}
-                <div className="absolute bottom-2 right-2 flex flex-col items-center rotate-180">
-                    {bottomRightImage ? (
-                        <ResolvedImage src={bottomRightImage} alt="Bottom Right" className="w-12 h-12 object-cover rounded" />
-                    ) : (
-                        <span
-                            className="text-2xl font-bold leading-none"
-                            style={{
-                                color: deckStyle?.cornerColor || '#000000',
-                                fontFamily: deckStyle?.cornerFont || 'serif'
-                            }}
-                        >
-                            {bottomRightContent || deckStyle?.cornerContent || 'A'}
-                        </span>
-                    )}
-                </div>
+                {/* Bottom Right Corner */}
+                {deckStyle?.showReversedCorner !== false && (
+                    <div
+                        className="absolute left-1/2 top-1/2 flex items-center justify-center z-30"
+                        style={{
+                            width: deckStyle?.reversedCornerWidth ? `${deckStyle.reversedCornerWidth}px` : '40px',
+                            height: deckStyle?.reversedCornerHeight ? `${deckStyle.reversedCornerHeight}px` : '40px',
+                            transform: `translate(calc(-50% + ${deckStyle?.reversedCornerX || 125}px), calc(-50% + ${deckStyle?.reversedCornerY || 185}px)) rotate(${deckStyle?.reversedCornerRotate || 180}deg)`,
+                            transition: 'all 0.2s ease-out'
+                        }}
+                    >
+                        {bottomRightImage ? (
+                            <ResolvedImage src={bottomRightImage} alt="Bottom Right" className="w-full h-full object-cover rounded" />
+                        ) : (
+                            <span
+                                className="text-2xl font-bold leading-none"
+                                style={{
+                                    color: deckStyle?.cornerColor || '#000000',
+                                    fontFamily: deckStyle?.cornerFont || 'serif'
+                                }}
+                            >
+                                {bottomRightContent || deckStyle?.cornerContent || 'A'}
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
         );
     }

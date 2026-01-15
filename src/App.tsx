@@ -46,6 +46,20 @@ export interface DeckStyle {
   artY: number;
   artWidth: number;
   artHeight: number;
+  // Corner properties
+  showCorner: boolean;
+  cornerX: number;
+  cornerY: number;
+  cornerRotate: number;
+  cornerWidth: number;
+  cornerHeight: number;
+  // Reversed Corner properties
+  showReversedCorner: boolean;
+  reversedCornerX: number;
+  reversedCornerY: number;
+  reversedCornerRotate: number;
+  reversedCornerWidth: number;
+  reversedCornerHeight: number;
 }
 
 const defaultDeckStyle: DeckStyle = {
@@ -70,7 +84,19 @@ const defaultDeckStyle: DeckStyle = {
   artX: 0,
   artY: 0,
   artWidth: 264,
-  artHeight: 164
+  artHeight: 164,
+  showCorner: true,
+  cornerX: -125,
+  cornerY: -185,
+  cornerRotate: 0,
+  cornerWidth: 40,
+  cornerHeight: 40,
+  showReversedCorner: true,
+  reversedCornerX: 125,
+  reversedCornerY: 185,
+  reversedCornerRotate: 180,
+  reversedCornerWidth: 40,
+  reversedCornerHeight: 40
 };
 
 function App() {

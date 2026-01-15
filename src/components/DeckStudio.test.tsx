@@ -78,7 +78,19 @@ const mockDeckStyle = {
     artX: 0,
     artY: 0,
     artWidth: 264,
-    artHeight: 164
+    artHeight: 164,
+    showCorner: true,
+    cornerX: -125,
+    cornerY: -185,
+    cornerRotate: 0,
+    cornerWidth: 40,
+    cornerHeight: 40,
+    showReversedCorner: true,
+    reversedCornerX: 125,
+    reversedCornerY: 185,
+    reversedCornerRotate: 180,
+    reversedCornerWidth: 40,
+    reversedCornerHeight: 40
 };
 
 describe('DeckStudio PDF Export', () => {

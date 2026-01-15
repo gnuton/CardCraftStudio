@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
 import type { DeckStyle } from '../App';
-import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Move, RotateCw, Maximize } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Move, RotateCw, Maximize, MousePointer2 } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { TemplateEditor } from './TemplateEditor';
 
 interface GlobalStyleEditorProps {
     deckStyle: DeckStyle;
@@ -51,7 +52,19 @@ const TEMPLATES = [
             artX: 0,
             artY: 0,
             artWidth: 264,
-            artHeight: 164
+            artHeight: 164,
+            showCorner: true,
+            cornerX: -125,
+            cornerY: -185,
+            cornerRotate: 0,
+            cornerWidth: 40,
+            cornerHeight: 40,
+            showReversedCorner: true,
+            reversedCornerX: 125,
+            reversedCornerY: 185,
+            reversedCornerRotate: 180,
+            reversedCornerWidth: 40,
+            reversedCornerHeight: 40
         }
     },
     {
@@ -79,7 +92,19 @@ const TEMPLATES = [
             artX: 0,
             artY: 0,
             artWidth: 264,
-            artHeight: 164
+            artHeight: 164,
+            showCorner: true,
+            cornerX: -125,
+            cornerY: -185,
+            cornerRotate: 0,
+            cornerWidth: 40,
+            cornerHeight: 40,
+            showReversedCorner: true,
+            reversedCornerX: 125,
+            reversedCornerY: 185,
+            reversedCornerRotate: 180,
+            reversedCornerWidth: 40,
+            reversedCornerHeight: 40
         }
     },
     {
@@ -107,7 +132,19 @@ const TEMPLATES = [
             artX: 0,
             artY: 0,
             artWidth: 264,
-            artHeight: 164
+            artHeight: 164,
+            showCorner: true,
+            cornerX: -130,
+            cornerY: -190,
+            cornerRotate: 0,
+            cornerWidth: 30,
+            cornerHeight: 30,
+            showReversedCorner: true,
+            reversedCornerX: 130,
+            reversedCornerY: 190,
+            reversedCornerRotate: 180,
+            reversedCornerWidth: 30,
+            reversedCornerHeight: 30
         }
     },
     {
@@ -135,7 +172,19 @@ const TEMPLATES = [
             artX: 0,
             artY: 0,
             artWidth: 264,
-            artHeight: 164
+            artHeight: 164,
+            showCorner: true,
+            cornerX: -125,
+            cornerY: -185,
+            cornerRotate: 0,
+            cornerWidth: 40,
+            cornerHeight: 40,
+            showReversedCorner: true,
+            reversedCornerX: 125,
+            reversedCornerY: 185,
+            reversedCornerRotate: 180,
+            reversedCornerWidth: 40,
+            reversedCornerHeight: 40
         }
     },
     {
@@ -163,7 +212,19 @@ const TEMPLATES = [
             artX: 0,
             artY: 0,
             artWidth: 264,
-            artHeight: 164
+            artHeight: 164,
+            showCorner: true,
+            cornerX: 118,
+            cornerY: -184,
+            cornerRotate: 0,
+            cornerWidth: 35,
+            cornerHeight: 28,
+            showReversedCorner: true,
+            reversedCornerX: -100,
+            reversedCornerY: 195,
+            reversedCornerRotate: 0,
+            reversedCornerWidth: 60,
+            reversedCornerHeight: 10
         }
     }
 ];
@@ -171,6 +232,7 @@ const TEMPLATES = [
 export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack }: GlobalStyleEditorProps) => {
     const [currentStyle, setCurrentStyle] = useState<DeckStyle>(deckStyle);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [showVisualEditor, setShowVisualEditor] = useState(false);
 
     const hasChanges = JSON.stringify(deckStyle) !== JSON.stringify(currentStyle);
 
@@ -229,9 +291,21 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                     finalStyle.artHeight = Math.round(layout.centerImage.height);
                 }
                 if (layout.topLeft) {
-                    // Corner content is harder to move via translate as it's corner-anchored
-                    // but we can at least ensure the style matches.
+                    finalStyle.cornerX = Math.round(layout.topLeft.offsetX);
+                    finalStyle.cornerY = Math.round(layout.topLeft.offsetY);
+                    finalStyle.cornerWidth = Math.round(layout.topLeft.width);
+                    finalStyle.cornerHeight = Math.round(layout.topLeft.height);
+                    finalStyle.cornerRotate = layout.topLeft.rotation;
                 }
+                if (layout.bottomRight) {
+                    finalStyle.reversedCornerX = Math.round(layout.bottomRight.offsetX);
+                    finalStyle.reversedCornerY = Math.round(layout.bottomRight.offsetY);
+                    finalStyle.reversedCornerWidth = Math.round(layout.bottomRight.width);
+                    finalStyle.reversedCornerHeight = Math.round(layout.bottomRight.height);
+                    finalStyle.reversedCornerRotate = layout.bottomRight.rotation;
+                }
+                finalStyle.showCorner = layout.showCorner;
+                finalStyle.showReversedCorner = layout.showReversedCorner;
             }
         }
 
@@ -275,7 +349,16 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 <Layout className="w-4 h-4" />
                                 Templates
                             </h3>
-                            <span className="text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold">New</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setShowVisualEditor(true)}
+                                    className="text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-3 py-1 rounded-full font-bold flex items-center gap-1 hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors"
+                                >
+                                    <MousePointer2 className="w-3 h-3" />
+                                    Visual Editor
+                                </button>
+                                <span className="text-[10px] bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold">New</span>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             {TEMPLATES.map(template => (
@@ -338,6 +421,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 </select>
                             </div>
                         </div>
+
                         <div className="space-y-2">
                             <label className="text-xs font-semibold text-foreground/70">Color</label>
                             <div className="flex gap-2">
@@ -353,6 +437,98 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     onChange={(e) => handleStyleChange({ cornerColor: e.target.value })}
                                     className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase"
                                 />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <label className="text-xs font-semibold text-foreground/70 flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={currentStyle.showCorner}
+                                    onChange={(e) => handleStyleChange({ showCorner: e.target.checked })}
+                                    className="rounded border-border text-indigo-600 focus:ring-indigo-500"
+                                />
+                                Show Corner
+                            </label>
+                            <label className="text-xs font-semibold text-foreground/70 flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={currentStyle.showReversedCorner}
+                                    onChange={(e) => handleStyleChange({ showReversedCorner: e.target.checked })}
+                                    className="rounded border-border text-indigo-600 focus:ring-indigo-500"
+                                />
+                                Show Reversed
+                            </label>
+                        </div>
+
+                        {/* Corner Layout */}
+                        <div className="bg-muted/30 rounded-xl p-3 space-y-4">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight flex items-center gap-1">
+                                    <Move className="w-3 h-3" /> Corner Position
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-foreground/60">Offset X/Y</label>
+                                        <div className="flex gap-1">
+                                            <input
+                                                type="number"
+                                                value={currentStyle.cornerX}
+                                                onChange={(e) => handleStyleChange({ cornerX: parseInt(e.target.value) || 0 })}
+                                                className="w-full bg-background border border-border rounded px-2 py-1 text-xs"
+                                            />
+                                            <input
+                                                type="number"
+                                                value={currentStyle.cornerY}
+                                                onChange={(e) => handleStyleChange({ cornerY: parseInt(e.target.value) || 0 })}
+                                                className="w-full bg-background border border-border rounded px-2 py-1 text-xs"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-foreground/60">Rotation</label>
+                                        <input
+                                            type="number"
+                                            value={currentStyle.cornerRotate}
+                                            onChange={(e) => handleStyleChange({ cornerRotate: parseInt(e.target.value) || 0 })}
+                                            className="w-full bg-background border border-border rounded px-2 py-1 text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight flex items-center gap-1">
+                                    <Move className="w-3 h-3" /> Reversed Corner
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-foreground/60">Offset X/Y</label>
+                                        <div className="flex gap-1">
+                                            <input
+                                                type="number"
+                                                value={currentStyle.reversedCornerX}
+                                                onChange={(e) => handleStyleChange({ reversedCornerX: parseInt(e.target.value) || 0 })}
+                                                className="w-full bg-background border border-border rounded px-2 py-1 text-xs"
+                                            />
+                                            <input
+                                                type="number"
+                                                value={currentStyle.reversedCornerY}
+                                                onChange={(e) => handleStyleChange({ reversedCornerY: parseInt(e.target.value) || 0 })}
+                                                className="w-full bg-background border border-border rounded px-2 py-1 text-xs"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-foreground/60">Rotation</label>
+                                        <input
+                                            type="number"
+                                            value={currentStyle.reversedCornerRotate}
+                                            onChange={(e) => handleStyleChange({ reversedCornerRotate: parseInt(e.target.value) || 0 })}
+                                            className="w-full bg-background border border-border rounded px-2 py-1 text-xs"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -692,6 +868,14 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                     </div>
                 )}
             </AnimatePresence>
+
+            {showVisualEditor && (
+                <TemplateEditor
+                    deckStyle={currentStyle}
+                    onUpdateStyle={handleStyleChange}
+                    onClose={() => setShowVisualEditor(false)}
+                />
+            )}
         </div>
     );
 };

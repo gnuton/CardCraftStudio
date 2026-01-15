@@ -14,6 +14,8 @@ export interface ExtractedLayout {
     topLeft?: MarkerLayout;
     bottomRight?: MarkerLayout;
     centerImage?: MarkerLayout;
+    showCorner: boolean;
+    showReversedCorner: boolean;
 }
 
 class TemplateService {
@@ -72,12 +74,17 @@ class TemplateService {
                 };
             };
 
+            const layoutTopLeft = extract('layout-top-left');
+            const layoutBottomRight = extract('layout-bottom-right');
+
             return {
                 title: extract('layout-title'),
                 description: extract('layout-description'),
-                topLeft: extract('layout-top-left'),
-                bottomRight: extract('layout-bottom-right'),
-                centerImage: extract('layout-center-image')
+                topLeft: layoutTopLeft,
+                bottomRight: layoutBottomRight,
+                centerImage: extract('layout-center-image'),
+                showCorner: !!layoutTopLeft,
+                showReversedCorner: !!layoutBottomRight
             };
         } catch (error) {
             console.error('Error parsing SVG layout:', error);
