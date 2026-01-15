@@ -7,6 +7,8 @@ import type { DeckStyle } from '../App';
 import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Move, RotateCw, Maximize, MousePointer2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { TemplateEditor } from './TemplateEditor';
+import { driveService } from '../services/googleDrive';
+import { Download, Cloud, Loader2 } from 'lucide-react';
 
 interface GlobalStyleEditorProps {
     deckStyle: DeckStyle;
@@ -233,6 +235,9 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const [currentStyle, setCurrentStyle] = useState<DeckStyle>(deckStyle);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showVisualEditor, setShowVisualEditor] = useState(false);
+    const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+    const [newTemplateName, setNewTemplateName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
     const hasChanges = JSON.stringify(deckStyle) !== JSON.stringify(currentStyle);
 
@@ -254,9 +259,69 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         setCurrentStyle(newStyle);
     };
 
+    const handleDownloadSVG = async () => {
+        if (!newTemplateName.trim()) return;
+        const svgContent = await templateService.generateSvgWithLayout(
+            currentStyle.backgroundImage,
+            currentStyle
+        );
+        const fileName = `${newTemplateName.trim().replace(/\s+/g, '_').toLowerCase()}.svg`;
+
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     const handleSave = () => {
-        onUpdateStyle(currentStyle);
-        onBack();
+        if (hasChanges) {
+            setShowSaveTemplateModal(true);
+        } else {
+            onUpdateStyle(currentStyle);
+            onBack();
+        }
+    };
+
+    const handleSaveNewTemplate = async () => {
+        if (!newTemplateName.trim()) return;
+
+        setIsSaving(true);
+        try {
+            // 1. Generate the SVG content with markers
+            const svgContent = await templateService.generateSvgWithLayout(
+                currentStyle.backgroundImage,
+                currentStyle
+            );
+
+            const fileName = `${newTemplateName.trim().replace(/\s+/g, '_').toLowerCase()}.svg`;
+
+            // 2. Sync to GDrive if signed in
+            if (driveService.isSignedIn) {
+                await driveService.saveFile(fileName, svgContent, 'image/svg+xml');
+            } else {
+                // If not signed in, maybe prompt or just allow local save
+                // For now, let's at least try to initialize drive or inform user
+                console.warn("Drive not signed in. Template saved locally in state but not synced to GDrive.");
+            }
+
+            // 3. Update the style to use this new template (effectively making it local)
+            // In a real app we might want to point to the GDrive URL or a local Blob
+            // For now, we'll just keep the current state and notify
+
+            onUpdateStyle(currentStyle);
+            setShowSaveTemplateModal(false);
+            onBack();
+        } catch (error) {
+            console.error("Failed to save template:", error);
+            alert("Failed to save template. See console for details.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const applyTemplate = async (templateStyle: DeckStyle) => {
@@ -876,6 +941,110 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                     onClose={() => setShowVisualEditor(false)}
                 />
             )}
+
+            {/* Save Template Modal */}
+            <AnimatePresence>
+                {showSaveTemplateModal && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => !isSaving && setShowSaveTemplateModal(false)}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-card border border-border rounded-2xl p-6 w-full max-w-md relative z-10 shadow-2xl"
+                        >
+                            <h2 className="text-xl font-bold mb-2">Save Custom Template</h2>
+                            <p className="text-muted-foreground text-sm mb-6">
+                                Enter a name for your new template. This will generate an SVG file with your layout markers and sync it to your Google Drive.
+                            </p>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Template Name</label>
+                                    <input
+                                        type="text"
+                                        value={newTemplateName}
+                                        onChange={(e) => setNewTemplateName(e.target.value)}
+                                        placeholder="e.g. My Awesome Layout"
+                                        className="w-full bg-muted border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-3 pt-4">
+                                    {driveService.isSignedIn ? (
+                                        <button
+                                            onClick={handleSaveNewTemplate}
+                                            disabled={!newTemplateName.trim() || isSaving}
+                                            className="w-full bg-indigo-600 text-white rounded-xl py-3 font-bold hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                                        >
+                                            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Cloud className="w-5 h-5" />}
+                                            Save & Sync to GDrive
+                                        </button>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase text-center">
+                                                Google Drive not connected
+                                            </p>
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        await driveService.signIn();
+                                                        // Force re-render to show sync button
+                                                        setNewTemplateName(prev => prev + ' ');
+                                                        setNewTemplateName(prev => prev.trim());
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                    }
+                                                }}
+                                                className="w-full bg-white border border-border text-foreground rounded-xl py-3 font-bold hover:bg-muted transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Cloud className="w-5 h-5 text-indigo-500" />
+                                                Connect Google Drive to Sync
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={handleDownloadSVG}
+                                            disabled={!newTemplateName.trim() || isSaving}
+                                            className="bg-muted text-foreground rounded-xl py-3 font-bold hover:bg-muted/80 transition-all text-sm flex items-center justify-center gap-2"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Download SVG
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                onUpdateStyle(currentStyle);
+                                                onBack();
+                                            }}
+                                            disabled={isSaving}
+                                            className="bg-muted text-muted-foreground hover:text-foreground rounded-xl py-3 font-bold transition-all text-sm"
+                                        >
+                                            Apply Locally
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setShowSaveTemplateModal(false)}
+                                        disabled={isSaving}
+                                        className="w-full py-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

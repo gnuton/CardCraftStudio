@@ -39,7 +39,6 @@ class TemplateService {
                 if (transform) {
                     const rotateMatch = transform.match(/rotate\(([^)]+)\)/);
                     if (rotateMatch) {
-                        // rotate(angle) or rotate(angle, cx, cy)
                         const parts = rotateMatch[1].trim().split(/[ ,]+/);
                         marker.rotation = parseFloat(parts[0]) || 0;
                     }
@@ -90,6 +89,81 @@ class TemplateService {
             console.error('Error parsing SVG layout:', error);
             return null;
         }
+    }
+
+    async generateSvgWithLayout(svgUrl: string | null, style: any): Promise<string> {
+        let svgDoc: Document;
+
+        if (svgUrl && svgUrl.toLowerCase().endsWith('.svg')) {
+            try {
+                const response = await fetch(svgUrl);
+                const svgText = await response.text();
+                const parser = new DOMParser();
+                svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+            } catch (e) {
+                console.error("Failed to fetch base SVG, creating empty one", e);
+                const emptySvg = `<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="420" fill="white"/></svg>`;
+                const parser = new DOMParser();
+                svgDoc = parser.parseFromString(emptySvg, 'image/svg+xml');
+            }
+        } else {
+            const emptySvg = `<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="420" fill="${style.backgroundColor || 'white'}"/></svg>`;
+            const parser = new DOMParser();
+            svgDoc = parser.parseFromString(emptySvg, 'image/svg+xml');
+        }
+
+        const cardWidth = 300;
+        const cardHeight = 420;
+        const centerX = cardWidth / 2;
+        const centerY = cardHeight / 2;
+
+        const updateMarker = (id: string, offsetX: number, offsetY: number, width: number, height: number, rotation: number) => {
+            let el: SVGElement | null = svgDoc.getElementById(id) as SVGElement | null;
+            if (!el) {
+                const newEl = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                newEl.setAttribute('id', id);
+                newEl.setAttribute('fill', 'transparent');
+                svgDoc.documentElement.appendChild(newEl);
+                el = newEl;
+            }
+
+            const x = offsetX + centerX - width / 2;
+            const y = offsetY + centerY - height / 2;
+
+            if (el) {
+                el.setAttribute('x', x.toString());
+                el.setAttribute('y', y.toString());
+                el.setAttribute('width', width.toString());
+                el.setAttribute('height', height.toString());
+
+                if (rotation !== 0) {
+                    el.setAttribute('transform', `rotate(${rotation}, ${x + width / 2}, ${y + height / 2})`);
+                } else {
+                    el.removeAttribute('transform');
+                }
+            }
+        };
+
+        updateMarker('layout-title', style.titleX, style.titleY, style.titleWidth, 40, style.titleRotate);
+        updateMarker('layout-description', style.descriptionX, style.descriptionY, style.descriptionWidth, 100, style.descriptionRotate);
+        updateMarker('layout-center-image', style.artX, style.artY, style.artWidth, style.artHeight, 0);
+
+        if (style.showCorner) {
+            updateMarker('layout-top-left', style.cornerX, style.cornerY, style.cornerWidth, style.cornerHeight, style.cornerRotate);
+        } else {
+            const el = svgDoc.getElementById('layout-top-left');
+            if (el) el.remove();
+        }
+
+        if (style.showReversedCorner) {
+            updateMarker('layout-bottom-right', style.reversedCornerX, style.reversedCornerY, style.reversedCornerWidth, style.reversedCornerHeight, style.reversedCornerRotate);
+        } else {
+            const el = svgDoc.getElementById('layout-bottom-right');
+            if (el) el.remove();
+        }
+
+        const serializer = new XMLSerializer();
+        return serializer.serializeToString(svgDoc);
     }
 }
 
