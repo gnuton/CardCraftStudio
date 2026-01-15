@@ -74,7 +74,11 @@ const mockDeckStyle = {
     descriptionY: 0,
     descriptionRotate: 0,
     descriptionScale: 1,
-    descriptionWidth: 250
+    descriptionWidth: 250,
+    artX: 0,
+    artY: 0,
+    artWidth: 264,
+    artHeight: 164
 };
 
 describe('DeckStudio PDF Export', () => {

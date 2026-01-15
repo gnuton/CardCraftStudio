@@ -41,6 +41,11 @@ export interface DeckStyle {
   descriptionRotate: number;
   descriptionScale: number;
   descriptionWidth: number;
+  // Art/Center Image properties
+  artX: number;
+  artY: number;
+  artWidth: number;
+  artHeight: number;
 }
 
 const defaultDeckStyle: DeckStyle = {
@@ -61,7 +66,11 @@ const defaultDeckStyle: DeckStyle = {
   descriptionY: 0,
   descriptionRotate: 0,
   descriptionScale: 1,
-  descriptionWidth: 250
+  descriptionWidth: 250,
+  artX: 0,
+  artY: 0,
+  artWidth: 264,
+  artHeight: 164
 };
 
 function App() {

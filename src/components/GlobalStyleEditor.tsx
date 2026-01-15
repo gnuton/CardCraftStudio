@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { templateService } from '../services/templateService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
@@ -46,7 +47,11 @@ const TEMPLATES = [
             descriptionY: 0,
             descriptionRotate: 0,
             descriptionScale: 1,
-            descriptionWidth: 240
+            descriptionWidth: 240,
+            artX: 0,
+            artY: 0,
+            artWidth: 264,
+            artHeight: 164
         }
     },
     {
@@ -70,7 +75,11 @@ const TEMPLATES = [
             descriptionY: 0,
             descriptionRotate: 0,
             descriptionScale: 1,
-            descriptionWidth: 260
+            descriptionWidth: 260,
+            artX: 0,
+            artY: 0,
+            artWidth: 264,
+            artHeight: 164
         }
     },
     {
@@ -94,7 +103,11 @@ const TEMPLATES = [
             descriptionY: 10,
             descriptionRotate: 0,
             descriptionScale: 0.95,
-            descriptionWidth: 240
+            descriptionWidth: 240,
+            artX: 0,
+            artY: 0,
+            artWidth: 264,
+            artHeight: 164
         }
     },
     {
@@ -118,7 +131,11 @@ const TEMPLATES = [
             descriptionY: 0,
             descriptionRotate: 0,
             descriptionScale: 1,
-            descriptionWidth: 250
+            descriptionWidth: 250,
+            artX: 0,
+            artY: 0,
+            artWidth: 264,
+            artHeight: 164
         }
     },
     {
@@ -142,7 +159,11 @@ const TEMPLATES = [
             descriptionY: 45,
             descriptionRotate: 0,
             descriptionScale: 1,
-            descriptionWidth: 250
+            descriptionWidth: 250,
+            artX: 0,
+            artY: 0,
+            artWidth: 264,
+            artHeight: 164
         }
     }
 ];
@@ -176,8 +197,43 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         onBack();
     };
 
-    const applyTemplate = (templateStyle: DeckStyle) => {
-        setCurrentStyle(templateStyle);
+    const applyTemplate = async (templateStyle: DeckStyle) => {
+        let finalStyle = { ...templateStyle };
+
+        // If the template has an SVG background, try to extract layout markers
+        if (templateStyle.backgroundImage?.endsWith('.svg')) {
+            const baseUrl = import.meta.env.BASE_URL;
+            const cleanPath = templateStyle.backgroundImage.startsWith('/')
+                ? templateStyle.backgroundImage.slice(1)
+                : templateStyle.backgroundImage;
+            const fullUrl = `${baseUrl}${cleanPath}`;
+
+            const layout = await templateService.parseSvgLayout(fullUrl);
+            if (layout) {
+                if (layout.title) {
+                    finalStyle.titleX = Math.round(layout.title.offsetX);
+                    finalStyle.titleY = Math.round(layout.title.offsetY);
+                    finalStyle.titleWidth = Math.round(layout.title.width);
+                }
+                if (layout.description) {
+                    finalStyle.descriptionX = Math.round(layout.description.offsetX);
+                    finalStyle.descriptionY = Math.round(layout.description.offsetY);
+                    finalStyle.descriptionWidth = Math.round(layout.description.width);
+                }
+                if (layout.centerImage) {
+                    finalStyle.artX = Math.round(layout.centerImage.offsetX);
+                    finalStyle.artY = Math.round(layout.centerImage.offsetY);
+                    finalStyle.artWidth = Math.round(layout.centerImage.width);
+                    finalStyle.artHeight = Math.round(layout.centerImage.height);
+                }
+                if (layout.topLeft) {
+                    // Corner content is harder to move via translate as it's corner-anchored
+                    // but we can at least ensure the style matches.
+                }
+            }
+        }
+
+        setCurrentStyle(finalStyle);
     };
 
     const handleBackClick = () => {

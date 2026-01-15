@@ -1,6 +1,14 @@
 <svg width="300" height="420" viewBox="0 0 300 420" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="300" height="420" fill="#F8FAFC"/>
   <rect x="10" y="10" width="280" height="400" rx="10" stroke="#E2E8F0" stroke-width="2"/>
-  <path d="M0 0L60 0L0 60Z" fill="#6366F1"/>
-  <path d="M300 420L240 420L300 360Z" fill="#6366F1"/>
+  
+  <!-- Layout Markers -->
+  <rect id="layout-title" x="30" y="30" width="240" height="40" fill="transparent" />
+  <rect id="layout-center-image" x="40" y="90" width="220" height="150" fill="transparent" />
+  <rect id="layout-description" x="30" y="260" width="240" height="100" fill="transparent" />
+  <circle id="layout-top-left" cx="25" cy="25" r="15" fill="transparent" />
+  <circle id="layout-bottom-right" cx="275" cy="395" r="15" fill="transparent" />
+
+  <path d="M0 0L60 0L0 60Z" fill="#6366F1" fill-opacity="0.8"/>
+  <path d="M300 420L240 420L300 360Z" fill="#6366F1" fill-opacity="0.8"/>
 </svg>
