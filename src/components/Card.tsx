@@ -34,6 +34,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         },
         ref
     ) => {
+        const resolveBgImage = (url: string | null | undefined) => {
+            if (!url) return undefined;
+            // If it's a relative path to a template, ensure it uses the base URL
+            if (url.startsWith('templates/') || url.startsWith('/templates/')) {
+                const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+                return `url(${import.meta.env.BASE_URL}${cleanPath})`;
+            }
+            return `url(${url})`;
+        };
+
         return (
             <div
                 ref={ref}
@@ -46,7 +56,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     width: '300px',
                     height: '420px',
                     border: '1px solid #000000',
-                    backgroundImage: deckStyle?.backgroundImage ? `url(${deckStyle.backgroundImage})` : undefined,
+                    backgroundImage: resolveBgImage(deckStyle?.backgroundImage),
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundColor: deckStyle?.backgroundImage ? 'transparent' : 'white',
