@@ -13,6 +13,7 @@ import { ToastContainer, type ToastType } from './components/Toast';
 import { driveService } from './services/googleDrive';
 import { calculateHash } from './utils/hash';
 import { imageService } from './services/imageService';
+import { GlobalStyleEditor } from './components/GlobalStyleEditor';
 
 const APP_VERSION = '1.2.0-drive-sync';
 const DECKS_STORAGE_KEY = 'cardcraftstudio-decks';
@@ -28,6 +29,18 @@ export interface DeckStyle {
   titleFont: string;
   descriptionFont: string;
   backgroundImage: string | null;
+  cornerContent: string;
+  // Transformation properties
+  titleX: number;
+  titleY: number;
+  titleRotate: number;
+  titleScale: number;
+  titleWidth: number;
+  descriptionX: number;
+  descriptionY: number;
+  descriptionRotate: number;
+  descriptionScale: number;
+  descriptionWidth: number;
 }
 
 const defaultDeckStyle: DeckStyle = {
@@ -37,7 +50,18 @@ const defaultDeckStyle: DeckStyle = {
   cornerFont: 'serif',
   titleFont: 'sans-serif',
   descriptionFont: 'sans-serif',
-  backgroundImage: null
+  backgroundImage: null,
+  cornerContent: 'A',
+  titleX: 0,
+  titleY: 0,
+  titleRotate: 0,
+  titleScale: 1,
+  titleWidth: 200,
+  descriptionX: 0,
+  descriptionY: 0,
+  descriptionRotate: 0,
+  descriptionScale: 1,
+  descriptionWidth: 250
 };
 
 function App() {
@@ -329,7 +353,7 @@ function App() {
   });
 
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
-  const [view, setView] = useState<'library' | 'deck' | 'editor'>('library');
+  const [view, setView] = useState<'library' | 'deck' | 'editor' | 'style'>('library');
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
 
   // Persistence
@@ -645,7 +669,7 @@ function App() {
                 onUpdateProjectName={handleUpdateProjectName}
                 onUpdateCard={handleUpdateCardInDeck}
                 onDuplicateCard={handleDuplicateCard}
-                onUpdateDeckStyle={handleUpdateDeckStyle}
+                onOpenStyleEditor={() => setView('style')}
               />
             </motion.div>
           )}
@@ -664,6 +688,28 @@ function App() {
                 deckStyle={activeDeck.style}
                 onSave={handleSaveCard}
                 onCancel={handleCancelEditor}
+              />
+            </motion.div>
+          )}
+          {view === 'style' && activeDeck && (
+            <motion.div
+              key="style-view"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+              <GlobalStyleEditor
+                deckStyle={activeDeck.style}
+                sampleCard={activeDeck.cards[0]}
+                onUpdateStyle={handleUpdateDeckStyle}
+                onUpdateStyleAndSync={async (style: DeckStyle) => {
+                  handleUpdateDeckStyle(style);
+                  // Passing the updated deck explicitly to ensure it syncs the new state
+                  const updatedDeck = { ...activeDeck, style, updatedAt: Date.now() };
+                  await handleSync([updatedDeck], false);
+                }}
+                onBack={() => setView('deck')}
               />
             </motion.div>
           )}

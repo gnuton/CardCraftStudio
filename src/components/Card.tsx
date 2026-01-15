@@ -20,8 +20,8 @@ interface CardProps {
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     (
         {
-            topLeftContent = 'A',
-            bottomRightContent = 'A',
+            topLeftContent,
+            bottomRightContent,
             topLeftImage,
             bottomRightImage,
             centerImage,
@@ -65,7 +65,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 fontFamily: deckStyle?.cornerFont || 'serif'
                             }}
                         >
-                            {topLeftContent}
+                            {topLeftContent || deckStyle?.cornerContent || 'A'}
                         </span>
                     )}
                 </div>
@@ -74,10 +74,13 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-hidden gap-2">
                     {title && (
                         <div
-                            className="w-full bg-slate-100 border border-slate-300 p-1 text-center font-bold text-sm rounded shadow-sm"
+                            className="bg-slate-100 border border-slate-300 p-1 text-center font-bold text-sm rounded shadow-sm relative z-10"
                             style={{
                                 color: deckStyle?.titleColor || '#000000',
-                                fontFamily: deckStyle?.titleFont || 'sans-serif'
+                                fontFamily: deckStyle?.titleFont || 'sans-serif',
+                                width: deckStyle?.titleWidth ? `${deckStyle.titleWidth}px` : '100%',
+                                transform: `translate(${deckStyle?.titleX || 0}px, ${deckStyle?.titleY || 0}px) rotate(${deckStyle?.titleRotate || 0}deg) scale(${deckStyle?.titleScale || 1})`,
+                                transition: 'all 0.2s ease-out'
                             }}
                         >
                             {title}
@@ -100,10 +103,13 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
 
                     {description && (
                         <div
-                            className="w-full bg-slate-50 border border-slate-200 p-1 text-center text-xs rounded prose prose-xs max-w-none"
+                            className="bg-slate-50 border border-slate-200 p-1 text-center text-xs rounded prose prose-xs max-w-none relative z-10"
                             style={{
                                 color: deckStyle?.descriptionColor || '#000000',
-                                fontFamily: deckStyle?.descriptionFont || 'sans-serif'
+                                fontFamily: deckStyle?.descriptionFont || 'sans-serif',
+                                width: deckStyle?.descriptionWidth ? `${deckStyle.descriptionWidth}px` : '100%',
+                                transform: `translate(${deckStyle?.descriptionX || 0}px, ${deckStyle?.descriptionY || 0}px) rotate(${deckStyle?.descriptionRotate || 0}deg) scale(${deckStyle?.descriptionScale || 1})`,
+                                transition: 'all 0.2s ease-out'
                             }}
                             dangerouslySetInnerHTML={{ __html: description }}
                         />
@@ -122,7 +128,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 fontFamily: deckStyle?.cornerFont || 'serif'
                             }}
                         >
-                            {bottomRightContent}
+                            {bottomRightContent || deckStyle?.cornerContent || 'A'}
                         </span>
                     )}
                 </div>

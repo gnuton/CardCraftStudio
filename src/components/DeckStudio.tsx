@@ -18,12 +18,11 @@ interface DeckStudioProps {
     onUpdateProjectName: (name: string) => void;
     onUpdateCard: (index: number, updates: Partial<CardConfig>) => void;
     onDuplicateCard: (index: number) => void;
-    onUpdateDeckStyle: (style: DeckStyle) => void;
+    onOpenStyleEditor: () => void;
 }
 
-export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard, onDeleteCard, onUpdateProjectName, onUpdateCard, onDuplicateCard, onUpdateDeckStyle }: DeckStudioProps) => {
+export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard, onDeleteCard, onUpdateProjectName, onUpdateCard, onDuplicateCard, onOpenStyleEditor }: DeckStudioProps) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isStylesOpen, setIsStylesOpen] = useState(false);
     const [tempName, setTempName] = useState(projectName);
     const [isGenerating, setIsGenerating] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
@@ -258,7 +257,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                         </div>
                         <div className="flex gap-2">
                             <button
-                                onClick={() => setIsStylesOpen(true)}
+                                onClick={onOpenStyleEditor}
                                 className="flex items-center px-4 py-2 bg-card border border-border text-foreground font-medium rounded-lg hover:bg-accent transition-colors shadow-sm"
                                 title="Global Deck Styles"
                             >
@@ -341,177 +340,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                     </div>
                 )}
 
-                {/* Deck Styles Modal */}
-                {isStylesOpen && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-                            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-                                <h3 className="font-bold text-lg text-slate-900">Global Deck Styles</h3>
-                                <button onClick={() => setIsStylesOpen(false)} className="text-slate-400 hover:text-slate-600">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
 
-                            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                                {/* Text Colors */}
-                                <div>
-                                    <h4 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                                        <div className="w-2 h-4 bg-indigo-500 rounded-full"></div>
-                                        Text Colors
-                                    </h4>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                        <div>
-                                            <label className="block text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold">Corner Content</label>
-                                            <div className="flex items-center gap-3">
-                                                <input
-                                                    type="color"
-                                                    value={deckStyle.cornerColor}
-                                                    onChange={(e) => onUpdateDeckStyle({ ...deckStyle, cornerColor: e.target.value })}
-                                                    className="w-10 h-10 rounded border border-slate-200 cursor-pointer"
-                                                />
-                                                <span className="text-sm text-slate-600 font-mono">{deckStyle.cornerColor}</span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold">Card Title</label>
-                                            <div className="flex items-center gap-3">
-                                                <input
-                                                    type="color"
-                                                    value={deckStyle.titleColor}
-                                                    onChange={(e) => onUpdateDeckStyle({ ...deckStyle, titleColor: e.target.value })}
-                                                    className="w-10 h-10 rounded border border-slate-200 cursor-pointer"
-                                                />
-                                                <span className="text-sm text-slate-600 font-mono">{deckStyle.titleColor}</span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold">Description</label>
-                                            <div className="flex items-center gap-3">
-                                                <input
-                                                    type="color"
-                                                    value={deckStyle.descriptionColor}
-                                                    onChange={(e) => onUpdateDeckStyle({ ...deckStyle, descriptionColor: e.target.value })}
-                                                    className="w-10 h-10 rounded border border-slate-200 cursor-pointer"
-                                                />
-                                                <span className="text-sm text-slate-600 font-mono">{deckStyle.descriptionColor}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Fonts */}
-                                <div>
-                                    <h4 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                                        <div className="w-2 h-4 bg-indigo-500 rounded-full"></div>
-                                        Typography
-                                    </h4>
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                        <div>
-                                            <label className="block text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold">Corner Font</label>
-                                            <select
-                                                value={deckStyle.cornerFont}
-                                                onChange={(e) => onUpdateDeckStyle({ ...deckStyle, cornerFont: e.target.value })}
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                                            >
-                                                <option value="serif">Serif</option>
-                                                <option value="sans-serif">Sans-serif</option>
-                                                <option value="monospace">Monospace</option>
-                                                <option value="cursive">Cursive</option>
-                                                <option value="fantasy">Fantasy</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold">Title Font</label>
-                                            <select
-                                                value={deckStyle.titleFont}
-                                                onChange={(e) => onUpdateDeckStyle({ ...deckStyle, titleFont: e.target.value })}
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                                            >
-                                                <option value="serif">Serif</option>
-                                                <option value="sans-serif">Sans-serif</option>
-                                                <option value="monospace">Monospace</option>
-                                                <option value="cursive">Cursive</option>
-                                                <option value="fantasy">Fantasy</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs text-slate-500 mb-2 uppercase tracking-wider font-bold">Description Font</label>
-                                            <select
-                                                value={deckStyle.descriptionFont}
-                                                onChange={(e) => onUpdateDeckStyle({ ...deckStyle, descriptionFont: e.target.value })}
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                                            >
-                                                <option value="serif">Serif</option>
-                                                <option value="sans-serif">Sans-serif</option>
-                                                <option value="monospace">Monospace</option>
-                                                <option value="cursive">Cursive</option>
-                                                <option value="fantasy">Fantasy</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Background Image */}
-                                <div>
-                                    <h4 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                                        <div className="w-2 h-4 bg-indigo-500 rounded-full"></div>
-                                        Background Image
-                                    </h4>
-                                    {deckStyle.backgroundImage ? (
-                                        <div className="relative group w-full max-w-sm aspect-[2.5/3.5] bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
-                                            <img
-                                                src={deckStyle.backgroundImage}
-                                                alt="Background"
-                                                className="w-full h-full object-cover"
-                                            />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <button
-                                                    onClick={() => onUpdateDeckStyle({ ...deckStyle, backgroundImage: null })}
-                                                    className="bg-white text-red-600 px-4 py-2 rounded-lg font-bold flex items-center gap-2"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                    Remove Background
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
-                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                <Upload className="w-10 h-10 text-slate-400 mb-3" />
-                                                <p className="text-sm text-slate-500 font-medium">Click to upload background</p>
-                                                <p className="text-xs text-slate-400 mt-1">PNG, JPG up to 5MB</p>
-                                            </div>
-                                            <input
-                                                type="file"
-                                                className="hidden"
-                                                accept="image/*"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => {
-                                                            onUpdateDeckStyle({ ...deckStyle, backgroundImage: reader.result as string });
-                                                        };
-                                                        reader.readAsDataURL(file);
-                                                    }
-                                                }}
-                                            />
-                                        </label>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="p-4 bg-slate-50 flex justify-end">
-                                <button
-                                    onClick={() => setIsStylesOpen(false)}
-                                    className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors shadow-lg"
-                                >
-                                    Done
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
                 {deck.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
                         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">

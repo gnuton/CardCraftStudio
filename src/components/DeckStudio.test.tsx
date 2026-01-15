@@ -63,7 +63,18 @@ const mockDeckStyle = {
     cornerFont: 'serif',
     titleFont: 'sans-serif',
     descriptionFont: 'sans-serif',
-    backgroundImage: null
+    backgroundImage: null,
+    cornerContent: 'A',
+    titleX: 0,
+    titleY: 0,
+    titleRotate: 0,
+    titleScale: 1,
+    titleWidth: 200,
+    descriptionX: 0,
+    descriptionY: 0,
+    descriptionRotate: 0,
+    descriptionScale: 1,
+    descriptionWidth: 250
 };
 
 describe('DeckStudio PDF Export', () => {
@@ -169,7 +180,7 @@ describe('DeckStudio PDF Export', () => {
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
                 onDuplicateCard={() => { }}
-                onUpdateDeckStyle={() => { }}
+                onOpenStyleEditor={() => { }}
             />
         );
 
@@ -189,7 +200,7 @@ describe('DeckStudio PDF Export', () => {
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
                 onDuplicateCard={() => { }}
-                onUpdateDeckStyle={() => { }}
+                onOpenStyleEditor={() => { }}
             />
         );
 
@@ -210,7 +221,7 @@ describe('DeckStudio PDF Export', () => {
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
                 onDuplicateCard={() => { }}
-                onUpdateDeckStyle={() => { }}
+                onOpenStyleEditor={() => { }}
             />
         );
 
@@ -290,7 +301,7 @@ describe('DeckStudio Import/Export', () => {
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
                 onDuplicateCard={() => { }}
-                onUpdateDeckStyle={() => { }}
+                onOpenStyleEditor={() => { }}
             />
         );
 
@@ -310,7 +321,7 @@ describe('DeckStudio Import/Export', () => {
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
                 onDuplicateCard={() => { }}
-                onUpdateDeckStyle={() => { }}
+                onOpenStyleEditor={() => { }}
             />
         );
 
@@ -339,7 +350,7 @@ describe('DeckStudio Import/Export', () => {
                 onUpdateProjectName={() => { }}
                 onUpdateCard={() => { }}
                 onDuplicateCard={() => { }}
-                onUpdateDeckStyle={() => { }}
+                onOpenStyleEditor={() => { }}
             />
         );
 
@@ -364,7 +375,7 @@ describe('DeckStudio Import/Export', () => {
                 onUpdateProjectName={mockOnUpdateProjectName}
                 onUpdateCard={mockOnUpdateCard}
                 onDuplicateCard={() => { }}
-                onUpdateDeckStyle={() => { }}
+                onOpenStyleEditor={() => { }}
             />
         );
 
