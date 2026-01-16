@@ -1224,18 +1224,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     </button>
                                 )}
 
-                                {!currentStyle.showWatermark && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showWatermark: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Shield className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Watermark</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
+
 
                                 {!currentStyle.showRarityIcon && (
                                     <button
