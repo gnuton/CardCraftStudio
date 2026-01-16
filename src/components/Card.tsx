@@ -171,7 +171,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             <div
                 ref={ref}
                 id={id}
-                onClick={() => onElementClick?.('background')}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onElementClick?.('background');
+                }}
                 className={cn(
                     "relative flex flex-col justify-between select-none",
                     isInteractive ? "cursor-default overflow-visible" : "cursor-pointer overflow-hidden rounded-xl shadow-2xl print:shadow-none",

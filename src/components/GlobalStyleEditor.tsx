@@ -1135,7 +1135,10 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
             </div>
 
             {/* Center Panel: Preview */}
-            <div className="flex-1 h-full bg-muted/20 relative flex items-center justify-center p-8 overflow-visible">
+            <div
+                className="flex-1 h-full bg-muted/20 relative flex items-center justify-center p-8 overflow-visible"
+                onClick={() => setSelectedElement(null)}
+            >
                 <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none"></div>
 
                 <div className="relative z-10 flex flex-col items-center gap-6">
