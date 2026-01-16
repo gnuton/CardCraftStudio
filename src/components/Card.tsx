@@ -183,10 +183,50 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 style={{
                     width: '300px',
                     height: '420px',
+                    borderRadius: `${deckStyle?.cornerRadius ?? 12}px`,
+                    boxShadow: isInteractive
+                        ? 'none'
+                        : `0 ${4 + (deckStyle?.shadowIntensity ?? 0) * 20}px ${10 + (deckStyle?.shadowIntensity ?? 0) * 40}px -${2 + (deckStyle?.shadowIntensity ?? 0) * 5}px rgba(0,0,0,${0.2 + (deckStyle?.shadowIntensity ?? 0) * 0.4})`,
+                    fontFamily: deckStyle?.globalFont || 'inherit',
+
+                    // Frame Style Application (Fix)
+                    border: deckStyle?.svgStrokeWidth ? `${deckStyle.svgStrokeWidth}px solid ${deckStyle.svgFrameColor || 'transparent'}` : undefined,
+
                     ...(!isInteractive ? backgroundStyle : {}),
                     ...style
                 }}
             >
+                {/* Texture Overlay */}
+                {deckStyle?.textureOverlay && deckStyle.textureOverlay !== 'none' && (
+                    <div
+                        className="absolute inset-0 z-[5] pointer-events-none rounded-[inherit]"
+                        style={{
+                            opacity: deckStyle.textureOpacity ?? 0.5,
+                            mixBlendMode: 'overlay',
+                            backgroundImage: deckStyle.textureOverlay === 'noise'
+                                ? `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")`
+                                : deckStyle.textureOverlay === 'paper'
+                                    ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.4' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E")`
+                                    : deckStyle.textureOverlay === 'foil'
+                                        ? 'linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 30%, rgba(255,255,255,0) 35%, rgba(255,255,255,0) 100%)'
+                                        : deckStyle.textureOverlay === 'grunge'
+                                            ? `radial-gradient(circle, transparent 50%, rgba(0,0,0,0.4) 100%)`
+                                            : 'none'
+                        }}
+                    />
+                )}
+
+                {/* Print Aids: Bleed & Safe Zone */}
+                {isInteractive && deckStyle?.showBleedLines && (
+                    <div className="absolute -inset-[3mm] border border-red-500/50 pointer-events-none z-[50]">
+                        <span className="absolute -top-4 left-0 text-[8px] text-red-500 bg-white px-1">Bleed</span>
+                    </div>
+                )}
+                {isInteractive && deckStyle?.showSafeZone && (
+                    <div className="absolute inset-[3mm] border border-dashed border-green-500/50 pointer-events-none z-[50]">
+                        <span className="absolute top-0 left-0 text-[8px] text-green-500 bg-white px-1">Safe</span>
+                    </div>
+                )}
                 {/* Interactive Mode: Separate Background Layer to allow handle overflow on parent */}
                 {isInteractive && (
                     <div

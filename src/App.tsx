@@ -144,6 +144,15 @@ export interface DeckStyle {
   svgFrameColor: string;
   svgCornerColor: string;
   svgStrokeWidth: number;
+
+  // New Base Settings
+  cornerRadius?: number;
+  shadowIntensity?: number;
+  textureOverlay?: 'none' | 'paper' | 'noise' | 'foil' | 'grunge';
+  textureOpacity?: number;
+  globalFont?: string;
+  showBleedLines?: boolean;
+  showSafeZone?: boolean;
   id?: string;
   isLocked?: boolean;
 }

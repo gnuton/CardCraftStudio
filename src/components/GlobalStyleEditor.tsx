@@ -776,6 +776,111 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                     </div>
                     <p className="text-xs text-muted-foreground">Configure the base appearance of the card frame and background.</p>
 
+                    <div className="space-y-4 pt-2">
+                        {/* Global Font & Corner Radius */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-foreground/70">Global Font</label>
+                                <select
+                                    value={currentStyle.globalFont || ''}
+                                    onChange={(e) => handleStyleChange({ globalFont: e.target.value })}
+                                    className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs"
+                                >
+                                    <option value="">Inherit / Default</option>
+                                    {FONTS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-foreground/70 flex justify-between">
+                                    <span>Corner Radius</span>
+                                    <span className="text-muted-foreground">{currentStyle.cornerRadius ?? 12}px</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="30"
+                                    value={currentStyle.cornerRadius ?? 12}
+                                    onChange={(e) => handleStyleChange({ cornerRadius: parseInt(e.target.value) })}
+                                    className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Shadow Intensity */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-foreground/70 flex justify-between">
+                                <span>Shadow Intensity</span>
+                                <span className="text-muted-foreground">{Math.round((currentStyle.shadowIntensity ?? 0) * 100)}%</span>
+                            </label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.1"
+                                value={currentStyle.shadowIntensity ?? 0}
+                                onChange={(e) => handleStyleChange({ shadowIntensity: parseFloat(e.target.value) })}
+                                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                            />
+                        </div>
+
+                        {/* Texture Overlay */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-foreground/70">Texture</label>
+                                <select
+                                    value={currentStyle.textureOverlay || 'none'}
+                                    onChange={(e) => handleStyleChange({ textureOverlay: e.target.value as any })}
+                                    className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs"
+                                >
+                                    <option value="none">None</option>
+                                    <option value="paper">Paper Grain</option>
+                                    <option value="noise">Static Noise</option>
+                                    <option value="foil">Holo Foil</option>
+                                    <option value="grunge">Grunge Vignette</option>
+                                </select>
+                            </div>
+                            {currentStyle.textureOverlay && currentStyle.textureOverlay !== 'none' && (
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-foreground/70 flex justify-between">
+                                        <span>Opacity</span>
+                                        <span className="text-muted-foreground">{Math.round((currentStyle.textureOpacity ?? 0.5) * 100)}%</span>
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.1"
+                                        value={currentStyle.textureOpacity ?? 0.5}
+                                        onChange={(e) => handleStyleChange({ textureOpacity: parseFloat(e.target.value) })}
+                                        className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Print Aids */}
+                        <div className="flex gap-4 pt-2">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={currentStyle.showBleedLines || false}
+                                    onChange={(e) => handleStyleChange({ showBleedLines: e.target.checked })}
+                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <span className="text-xs font-medium text-foreground/80">Show Bleed</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={currentStyle.showSafeZone || false}
+                                    onChange={(e) => handleStyleChange({ showSafeZone: e.target.checked })}
+                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <span className="text-xs font-medium text-foreground/80">Show Safe Zone</span>
+                            </label>
+                        </div>
+                    </div>
+
 
                     {/* SVG/Frame Colors */}
                     <div className="space-y-3">
