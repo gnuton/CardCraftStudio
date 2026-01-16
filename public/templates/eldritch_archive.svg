@@ -1,0 +1,45 @@
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions for gradients and filters -->
+  <defs>
+    <linearGradient id="frameGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C0C0C0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#808080;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#404040;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#DAA520;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background Texture -->
+  <rect x="0" y="0" width="300" height="420" rx="15" fill="#2c2c2c" stroke="#1a1a1a" stroke-width="2"/>
+  
+  <!-- Outer Frame border -->
+  <path d="M15,15 h270 a10,10 0 0 1 10,10 v370 a10,10 0 0 1 -10,10 h-270 a10,10 0 0 1 -10,-10 v-370 a10,10 0 0 1 10,-10 z" 
+        fill="none" stroke="url(#frameGradient)" stroke-width="6" />
+
+  <!-- Title Bar Background -->
+  <path d="M20,20 h260 v35 h-260 z" fill="url(#frameGradient)" filter="url(#shadow)" opacity="0.9"/>
+  <!-- Decorative Title Trim -->
+  <rect x="25" y="22" width="250" height="31" fill="none" stroke="#DAA520" stroke-width="1"/>
+
+  <!-- Art Frame Area (Center) -->
+  <rect x="25" y="60" width="250" height="180" fill="#1a1a1a" stroke="#DAA520" stroke-width="2"/>
+
+  <!-- Type Bar Background -->
+  <path d="M20,245 h260 v28 h-260 z" fill="url(#frameGradient)" filter="url(#shadow)"/>
+  <rect x="25" y="247" width="250" height="24" fill="none" stroke="#DAA520" stroke-width="1"/>
+
+  <!-- Text Box Area (Bottom) -->
+  <path d="M25,280 h250 v115 h-250 z" fill="#e0e0e0" opacity="0.1" stroke="#DAA520" stroke-width="1"/>
+  
+  <!-- Stats Box Area (Bottom Right) -->
+  <path d="M230,380 h45 v30 h-45 z" fill="#2c2c2c" stroke="#DAA520" stroke-width="2" rx="5"/>
+
+  <!-- Footer/Collector Info Divider -->
+  <line x1="30" y1="405" x2="200" y2="405" stroke="#808080" stroke-width="1" />
+</svg>

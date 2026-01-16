@@ -265,6 +265,120 @@ const TEMPLATES: Template[] = [
             svgCornerColor: '#eab308',
             svgStrokeWidth: 4
         }
+    },
+    {
+        id: 'eldritch_archive',
+        name: 'Eldritch Archive',
+        style: {
+            cornerColor: '#ffffff',
+            titleColor: '#000000',
+            descriptionColor: '#000000',
+            cornerFont: 'serif',
+            titleFont: 'serif',
+            descriptionFont: 'serif',
+            backgroundImage: 'templates/eldritch_archive.svg',
+            cornerContent: '?',
+            showTitle: true,
+            titleX: -5,
+            titleY: -160,
+            titleWidth: 240,
+            titleBackgroundColor: 'transparent',
+            showArt: true,
+            artX: 0,
+            artY: -30,
+            artWidth: 250,
+            artHeight: 180,
+            showTypeBar: true,
+            typeBarX: 0,
+            typeBarY: 78, // Adjusted based on SVG layout (approx 210px from top is center 0 + 78?) No wait, center is 210. 245 + 14 = 259. 259 - 210 = 49.
+            typeBarWidth: 240,
+            typeBarBackgroundColor: 'transparent',
+            typeBarContent: 'Creature - Horror',
+            showDescription: true,
+            descriptionY: 130,
+            descriptionWidth: 240,
+            descriptionBackgroundColor: 'transparent',
+            showFlavorText: true,
+            flavorTextY: 180,
+            flavorTextContent: '"That is not dead which can eternal lie..."',
+            showStatsBox: true,
+            statsBoxX: 105,
+            statsBoxY: 185,
+            statsBoxContent: '6 / 6',
+            statsBoxBackgroundColor: 'transparent',
+            showCorner: false, // Hidden for this style usually, or top left
+            showReversedCorner: false,
+            showCollectorInfo: true,
+            collectorInfoY: 200,
+
+            // Unused but required by TS if not fully partial
+            titleRotate: 0, titleScale: 1, descriptionRotate: 0, descriptionScale: 1,
+            cornerX: 0, cornerY: 0, cornerRotate: 0, cornerWidth: 0, cornerHeight: 0,
+            reversedCornerX: 0, reversedCornerY: 0, reversedCornerRotate: 0, reversedCornerWidth: 0, reversedCornerHeight: 0,
+            gameHp: '20', gameMana: '10', gameSuit: 'A', svgFrameColor: '#000', svgCornerColor: '#000', svgStrokeWidth: 1
+        } as unknown as DeckStyle
+    },
+    {
+        id: 'neon_data',
+        name: 'Neon Data',
+        style: {
+            cornerColor: '#00ffff',
+            titleColor: '#00ffff',
+            descriptionColor: '#e0e0e0',
+            cornerFont: 'monospace',
+            titleFont: 'monospace',
+            descriptionFont: 'monospace',
+            backgroundImage: 'templates/neon_data.svg',
+            cornerContent: 'NET',
+
+            // Layout
+            showTitle: true,
+            titleX: 0,
+            titleY: -180,
+            titleWidth: 260,
+            titleBackgroundColor: 'transparent',
+
+            showArt: true,
+            artX: 0,
+            artY: -45,
+            artWidth: 270,
+            artHeight: 170,
+
+            showTypeBar: true,
+            typeBarX: 0,
+            typeBarY: 60,
+            typeBarWidth: 220,
+            typeBarBackgroundColor: 'transparent',
+            typeBarColor: '#ff00ff',
+            typeBarContent: 'PROGRAM // VIRUS',
+
+            showDescription: true,
+            descriptionY: 120,
+            descriptionWidth: 260,
+            descriptionBackgroundColor: 'transparent',
+
+            showStatsBox: true,
+            statsBoxX: 125,
+            statsBoxY: 175,
+            statsBoxContent: 'mem:4',
+            statsBoxColor: '#ff00ff',
+            statsBoxBackgroundColor: 'transparent',
+
+            showWatermark: true,
+            watermarkOpacity: 0.1,
+
+            showCorner: false,
+            showReversedCorner: false,
+            showCollectorInfo: true,
+            collectorInfoContent: 'SYSDAT-2026 // ROOT ACCESS',
+            collectorInfoColor: '#00ffff',
+
+            // TS Defaults
+            titleRotate: 0, titleScale: 1, descriptionRotate: 0, descriptionScale: 1,
+            cornerX: 0, cornerY: 0, cornerRotate: 0, cornerWidth: 0, cornerHeight: 0,
+            reversedCornerX: 0, reversedCornerY: 0, reversedCornerRotate: 0, reversedCornerWidth: 0, reversedCornerHeight: 0,
+            gameHp: 'N/A', gameMana: 'N/A', gameSuit: '#', svgFrameColor: '#00ffff', svgCornerColor: '#00ffff', svgStrokeWidth: 1
+        } as unknown as DeckStyle
     }
 ];
 

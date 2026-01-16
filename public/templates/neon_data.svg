@@ -1,0 +1,50 @@
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff00ff;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#00ffff" stroke-width="0.5" opacity="0.2"/>
+    </pattern>
+    <filter id="glow">
+        <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+        <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Background -->
+  <rect width="300" height="420" fill="#050510" />
+  <!-- Grid Overlay -->
+  <rect width="300" height="420" fill="url(#grid)" />
+
+  <!-- Hexagonal Tech Decoration Top Right -->
+  <path d="M250,0 l50,0 l0,50 l-25,25 l-25,-25 z" fill="#1a1a2e" stroke="url(#neonGradient)" stroke-width="2"/>
+
+  <!-- Title Bar Area (Left vertical?) -->
+  <!-- Actually keep standard top bar for compatibility but style it techy -->
+  <path d="M0,20 l220,0 l20,20 l-240,0 z" fill="#1a1a2e" stroke="#00ffff" stroke-width="1" opacity="0.8"/>
+  
+  <!-- Image Frame -->
+  <path d="M10,50 h280 v180 h-280 z" fill="none" stroke="url(#neonGradient)" stroke-width="2" />
+  <rect x="15" y="55" width="5" height="5" fill="#00ffff" />
+  <rect x="280" y="55" width="5" height="5" fill="#ff00ff" />
+  <rect x="15" y="220" width="5" height="5" fill="#ff00ff" />
+  <rect x="280" y="220" width="5" height="5" fill="#00ffff" />
+
+  <!-- Type/Subtype Bar -->
+  <path d="M10,240 h200 l20,20 h-220 z" fill="#1a1a2e" stroke="#ff00ff" stroke-width="1"/>
+
+  <!-- Text Box -->
+  <path d="M10,270 h280 v140 h-280 z" fill="#0a0a1a" stroke="#00ffff" stroke-width="1" opacity="0.9"/>
+  <!-- Scanlines on text box -->
+  <line x1="10" y1="300" x2="290" y2="300" stroke="#00ffff" stroke-width="0.5" opacity="0.1"/>
+  <line x1="10" y1="340" x2="290" y2="340" stroke="#00ffff" stroke-width="0.5" opacity="0.1"/>
+  <line x1="10" y1="380" x2="290" y2="380" stroke="#00ffff" stroke-width="0.5" opacity="0.1"/>
+
+  <!-- Stats Hexagon Bottom Right -->
+  <path d="M260,370 l20,-10 l20,10 l0,20 l-20,10 l-20,-10 z" fill="#1a1a2e" stroke="#ff00ff" stroke-width="2"/>
+</svg>
