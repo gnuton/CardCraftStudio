@@ -879,6 +879,9 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 <span className="text-xs font-medium text-foreground/80">Show Safe Zone</span>
                             </label>
                         </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                            Use <strong>Bleed</strong> for printing margins (cut area) and <strong>Safe Zone</strong> to ensure vital content isn't chopped.
+                        </p>
                     </div>
 
 
