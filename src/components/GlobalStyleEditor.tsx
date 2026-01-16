@@ -1060,7 +1060,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     </button>
                                 )}
 
-                                {currentStyle.showTypeBar === false && (
+                                {!currentStyle.showTypeBar && (
                                     <button
                                         onClick={() => handleStyleChange({ showTypeBar: true })}
                                         className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
@@ -1073,7 +1073,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     </button>
                                 )}
 
-                                {currentStyle.showFlavorText === false && (
+                                {!currentStyle.showFlavorText && (
                                     <button
                                         onClick={() => handleStyleChange({ showFlavorText: true })}
                                         className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
@@ -1086,7 +1086,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     </button>
                                 )}
 
-                                {currentStyle.showStatsBox === false && (
+                                {!currentStyle.showStatsBox && (
                                     <button
                                         onClick={() => handleStyleChange({ showStatsBox: true })}
                                         className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
@@ -1099,7 +1099,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     </button>
                                 )}
 
-                                {currentStyle.showWatermark === false && (
+                                {!currentStyle.showWatermark && (
                                     <button
                                         onClick={() => handleStyleChange({ showWatermark: true })}
                                         className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
@@ -1112,7 +1112,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     </button>
                                 )}
 
-                                {currentStyle.showRarityIcon === false && (
+                                {!currentStyle.showRarityIcon && (
                                     <button
                                         onClick={() => handleStyleChange({ showRarityIcon: true })}
                                         className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
@@ -1125,7 +1125,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     </button>
                                 )}
 
-                                {currentStyle.showCollectorInfo === false && (
+                                {!currentStyle.showCollectorInfo && (
                                     <button
                                         onClick={() => handleStyleChange({ showCollectorInfo: true })}
                                         className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
@@ -1143,12 +1143,12 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     currentStyle.showArt !== false &&
                                     currentStyle.showCorner !== false &&
                                     currentStyle.showReversedCorner !== false &&
-                                    currentStyle.showTypeBar !== false &&
-                                    currentStyle.showFlavorText !== false &&
-                                    currentStyle.showStatsBox !== false &&
-                                    currentStyle.showWatermark !== false &&
-                                    currentStyle.showRarityIcon !== false &&
-                                    currentStyle.showCollectorInfo !== false) && (
+                                    currentStyle.showTypeBar &&
+                                    currentStyle.showFlavorText &&
+                                    currentStyle.showStatsBox &&
+                                    currentStyle.showWatermark &&
+                                    currentStyle.showRarityIcon &&
+                                    currentStyle.showCollectorInfo) && (
                                         <div className="text-center py-4 text-xs text-muted-foreground italic">
                                             All elements added to layout
                                         </div>
