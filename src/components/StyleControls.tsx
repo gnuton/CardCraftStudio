@@ -2,7 +2,7 @@ import type { DeckStyle } from '../App';
 import { Palette, Box, Layers, Eye } from 'lucide-react';
 
 interface StyleControlsProps {
-    prefix: 'title' | 'description' | 'art' | 'corner' | 'reversedCorner';
+    prefix: string;
     currentStyle: DeckStyle;
     onUpdate: (updates: Partial<DeckStyle>) => void;
 }

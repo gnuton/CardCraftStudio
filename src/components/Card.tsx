@@ -16,7 +16,7 @@ interface CardProps {
     style?: React.CSSProperties;
     id?: string;
     deckStyle?: DeckStyle;
-    onElementClick?: (element: 'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner') => void;
+    onElementClick?: (element: 'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo') => void;
     // New interactive props
     isInteractive?: boolean;
     selectedElement?: string | null;
@@ -67,7 +67,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         };
 
         const renderTransformable = (
-            elementKey: 'corner' | 'reversedCorner' | 'title' | 'description' | 'art',
+            elementKey: 'corner' | 'reversedCorner' | 'title' | 'description' | 'art' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo',
             content: React.ReactNode,
             config: {
                 xKey: keyof DeckStyle,
@@ -125,6 +125,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                             if (config.sKey && newVals.scale !== undefined) updates[config.sKey] = newVals.scale as any;
 
                             onElementUpdate?.(elementKey, updates);
+                        }}
+                        onDelete={() => {
+                            const showKey = `show${elementKey.charAt(0).toUpperCase()}${elementKey.slice(1)}`;
+                            onElementUpdate?.(elementKey, { [showKey]: false } as any);
                         }}
                         lockAspectRatio={config.lockAspect}
                         useScaleForResize={config.useScale}
@@ -188,6 +192,30 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     />
                 )}
 
+
+
+                {/* Watermark (Behind Content) */}
+                {deckStyle?.showWatermark && renderTransformable('watermark',
+                    <div className="w-full h-full relative flex items-center justify-center">
+                        {deckStyle?.watermarkUrl ? (
+                            <img
+                                src={deckStyle.watermarkUrl}
+                                className="w-full h-full object-contain pointer-events-none opacity-50" // Base opacity 50% for watermark feel
+                                style={{ opacity: deckStyle.watermarkOpacity ?? 0.3 }}
+                                alt="Watermark"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-slate-300 rounded opacity-50">
+                                <span className="text-[10px] text-slate-400">WM</span>
+                            </div>
+                        )}
+                    </div>,
+                    {
+                        xKey: 'watermarkX', yKey: 'watermarkY', wKey: 'watermarkWidth', hKey: 'watermarkHeight', rKey: 'watermarkRotate',
+                        defaultX: 0, defaultY: 0, defaultW: 100, defaultH: 100, zIndex: deckStyle?.watermarkZIndex ?? 5
+                    }
+                )}
+
                 {/* Top Left Corner */}
                 {deckStyle?.showCorner !== false && renderTransformable('corner',
                     <div className="w-full h-full relative flex items-center justify-center">
@@ -218,7 +246,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 )}
 
                 {/* Title */}
-                {title && renderTransformable('title',
+                {title && deckStyle?.showTitle !== false && renderTransformable('title',
                     <div className="w-full h-full relative">
                         <div
                             className="absolute inset-0 rounded shadow-sm overflow-hidden"
@@ -240,8 +268,31 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     }
                 )}
 
+                {/* Type Bar */}
+                {deckStyle?.showTypeBar && renderTransformable('typeBar',
+                    <div className="w-full h-full relative">
+                        <div
+                            className="absolute inset-0 rounded-sm shadow-sm"
+                            style={getElementStyle('typeBar')}
+                        />
+                        <div
+                            className="relative z-10 w-full h-full px-2 flex items-center justify-center font-bold text-xs uppercase tracking-wide"
+                            style={{
+                                color: deckStyle?.typeBarColor || '#000000',
+                                fontFamily: deckStyle?.typeBarFont || 'sans-serif'
+                            }}
+                        >
+                            {deckStyle?.typeBarContent || 'Type - Subtype'}
+                        </div>
+                    </div>,
+                    {
+                        xKey: 'typeBarX', yKey: 'typeBarY', wKey: 'typeBarWidth', rKey: 'typeBarRotate',
+                        defaultX: 0, defaultY: -20, defaultW: 200, zIndex: deckStyle?.typeBarZIndex ?? 25
+                    } as any
+                )}
+
                 {/* Art / Center Image Area */}
-                {renderTransformable('art',
+                {deckStyle?.showArt !== false && renderTransformable('art',
                     <div className="w-full h-full relative">
                         <div
                             className="absolute inset-0 rounded overflow-hidden"
@@ -268,7 +319,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 )}
 
                 {/* Description Area */}
-                {description && renderTransformable('description',
+                {description && deckStyle?.showDescription !== false && renderTransformable('description',
                     <div className="w-full relative flex flex-col">
                         <div
                             className="absolute inset-0 rounded-lg shadow-inner"
@@ -288,6 +339,77 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         xKey: 'descriptionX', yKey: 'descriptionY', wKey: 'descriptionWidth', rKey: 'descriptionRotate', sKey: 'descriptionScale',
                         defaultX: 0, defaultY: 0, defaultW: 250, zIndex: deckStyle?.descriptionZIndex ?? 20
                     }
+                )}
+
+                {/* Flavor Text */}
+                {deckStyle?.showFlavorText && renderTransformable('flavorText',
+                    <div className="w-full relative flex flex-col items-center justify-center text-center italic">
+                        <div
+                            className="absolute inset-0"
+                            style={getElementStyle('flavorText')}
+                        />
+                        <p
+                            className="relative z-10 p-1 text-xs"
+                            style={{
+                                color: deckStyle?.flavorTextColor || '#000000',
+                                fontFamily: deckStyle?.flavorTextFont || 'serif'
+                            }}
+                        >
+                            {deckStyle?.flavorTextContent || 'Flavor text...'}
+                        </p>
+                    </div>,
+                    {
+                        xKey: 'flavorTextX', yKey: 'flavorTextY', wKey: 'flavorTextWidth', rKey: 'flavorTextRotate',
+                        defaultX: 0, defaultY: 100, defaultW: 220, zIndex: deckStyle?.flavorTextZIndex ?? 25
+                    } as any
+                )}
+
+                {/* Stats Box */}
+                {deckStyle?.showStatsBox && renderTransformable('statsBox',
+                    <div className="w-full h-full relative">
+                        <div
+                            className="absolute inset-0 rounded border"
+                            style={getElementStyle('statsBox')}
+                        />
+                        <div
+                            className="relative z-10 w-full h-full flex items-center justify-center font-bold text-sm"
+                            style={{
+                                color: deckStyle?.statsBoxColor || '#000000',
+                                fontFamily: deckStyle?.statsBoxFont || 'sans-serif'
+                            }}
+                        >
+                            {deckStyle?.statsBoxContent || '1 / 1'}
+                        </div>
+                    </div>,
+                    {
+                        xKey: 'statsBoxX', yKey: 'statsBoxY', wKey: 'statsBoxWidth', hKey: 'statsBoxHeight', rKey: 'statsBoxRotate',
+                        defaultX: 100, defaultY: 150, defaultW: 60, defaultH: 30, zIndex: deckStyle?.statsBoxZIndex ?? 35
+                    }
+                )}
+
+                {/* Rarity Icon */}
+                {deckStyle?.showRarityIcon && renderTransformable('rarityIcon',
+                    <div className="w-full h-full relative rounded-full overflow-hidden border border-black/20" style={{ backgroundColor: 'gold' }}>
+                        {/* Placeholder or Image */}
+                        <div className="w-full h-full bg-gradient-to-br from-yellow-300 to-yellow-600"></div>
+                    </div>,
+                    {
+                        xKey: 'rarityIconX', yKey: 'rarityIconY', wKey: 'rarityIconWidth', hKey: 'rarityIconHeight', rKey: 'rarityIconRotate',
+                        defaultX: 110, defaultY: 0, defaultW: 20, defaultH: 20, zIndex: deckStyle?.rarityIconZIndex ?? 35
+                    }
+                )}
+
+                {/* Collector Info */}
+                {deckStyle?.showCollectorInfo && renderTransformable('collectorInfo',
+                    <div className="w-full relative text-[8px] flex justify-between px-1 opacity-70">
+                        <span style={{ color: deckStyle?.collectorInfoColor, fontFamily: deckStyle?.collectorInfoFont }}>
+                            {deckStyle?.collectorInfoContent || 'Artist | 001/100'}
+                        </span>
+                    </div>,
+                    {
+                        xKey: 'collectorInfoX', yKey: 'collectorInfoY', wKey: 'collectorInfoWidth', rKey: 'collectorInfoRotate',
+                        defaultX: 0, defaultY: 195, defaultW: 250, zIndex: deckStyle?.collectorInfoZIndex ?? 35
+                    } as any
                 )}
 
                 {/* Bottom Right Corner */}

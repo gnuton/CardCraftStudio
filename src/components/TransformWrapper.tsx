@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { RotateCw } from 'lucide-react';
+import { RotateCw, Trash2 } from 'lucide-react';
 
 interface TransformValues {
     x: number;
@@ -24,6 +24,7 @@ interface TransformWrapperProps {
     style?: React.CSSProperties;
     // If true, resize handles update 'scale' instead of width/height (for text scaling vs resizing)
     useScaleForResize?: boolean;
+    onDelete?: () => void;
 }
 
 export const TransformWrapper = ({
@@ -38,7 +39,8 @@ export const TransformWrapper = ({
     children,
     className,
     style,
-    useScaleForResize = false
+    useScaleForResize = false,
+    onDelete
 }: TransformWrapperProps) => {
     const [isDragging, setIsDragging] = useState(false);
 
@@ -287,6 +289,23 @@ export const TransformWrapper = ({
                                     onMouseDown={(e) => handleMouseDown(e, 'resize-scale')}
                                 />
                             </>
+                        )}
+
+                        {/* Delete Button */}
+                        {onDelete && (
+                            <button
+                                className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-red-500 rounded-full shadow hover:bg-red-50 z-50 text-red-500 transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete();
+                                }}
+                                title="Delete element"
+                            >
+                                <div style={{ transform: `rotate(${-values.rotate}deg)` }}>
+                                    <Trash2 size={16} />
+                                </div>
+                                <div className="absolute bottom-full left-1/2 w-px h-2 bg-red-400 -translate-x-1/2 pointer-events-none" />
+                            </button>
                         )}
                     </>
                 )}

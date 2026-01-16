@@ -18,6 +18,9 @@ describe('Card Component', () => {
         // Basic defaults
         showCorner: true,
         showReversedCorner: true,
+        showTitle: true,
+        showDescription: true,
+        showArt: true,
 
         // Title Styles
         titleColor: '#000000',

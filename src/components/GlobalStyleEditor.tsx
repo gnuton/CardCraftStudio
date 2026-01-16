@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
 import type { DeckStyle } from '../App';
-import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Heart, Zap, Box, PenTool } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Heart, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { driveService } from '../services/googleDrive';
 import { Download, Cloud, Loader2 } from 'lucide-react';
@@ -270,7 +270,7 @@ const TEMPLATES: Template[] = [
 
 export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack }: GlobalStyleEditorProps) => {
     const [currentStyle, setCurrentStyle] = useState<DeckStyle>(deckStyle);
-    const [selectedElement, setSelectedElement] = useState<'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | null>(null);
+    const [selectedElement, setSelectedElement] = useState<'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo' | null>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
@@ -458,6 +458,18 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         setCurrentStyle(finalStyle);
     };
 
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+        templates: true,
+        elements: true
+    });
+
+    const toggleGroup = (group: string) => {
+        setExpandedGroups(prev => ({
+            ...prev,
+            [group]: !prev[group]
+        }));
+    };
+
     const handleBackClick = () => {
         if (hasChanges) {
             setShowConfirmDialog(true);
@@ -473,211 +485,137 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     // ... inside GlobalStyleEditor ...
 
     const renderInspectorContent = () => {
-        // Title Inspector
-        if (selectedElement === 'title') {
-            return (
-                <div className="space-y-6 animate-in slide-in-from-right-5 duration-300">
-                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                        <Palette className="w-4 h-4 text-indigo-500" />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">Title Style</h3>
-                    </div>
+        // Generic Element Inspector Logic
+        const getElementConfig = (element: string) => {
+            const configs: Record<string, { label: string, icon: any, desc: string, hasContent?: boolean, hasFont?: boolean, hasColor?: boolean, hasUrl?: boolean }> = {
+                title: { label: 'Title', icon: Type, desc: 'The main name of the card.', hasFont: true, hasColor: true },
+                description: { label: 'Description', icon: Layout, desc: 'The main rules text of the card.', hasFont: true, hasColor: true },
+                corner: { label: 'Corner', icon: Hash, desc: 'Top-left value indicator.', hasContent: true, hasFont: true, hasColor: true },
+                reversedCorner: { label: 'Inverted Corner', icon: Shield, desc: 'Bottom-right inverted value.', hasFont: true, hasColor: true }, // No explicit content edit for reversed usually? Or mirrors corner? Let's assume style only for now or same logic as corner
+                art: { label: 'Illustration', icon: Palette, desc: 'The main card artwork.', },
+                typeBar: { label: 'Type Bar', icon: Type, desc: 'Component for card type and subtype.', hasContent: true, hasFont: true, hasColor: true },
+                flavorText: { label: 'Flavor Text', icon: Type, desc: 'Lore text section.', hasContent: true, hasFont: true, hasColor: true },
+                statsBox: { label: 'Stats Box', icon: Hash, desc: 'Combat statistics display.', hasContent: true, hasFont: true, hasColor: true },
+                watermark: { label: 'Watermark', icon: Shield, desc: 'Faction symbol background.', hasUrl: true },
+                rarityIcon: { label: 'Rarity Icon', icon: Zap, desc: 'Set and rarity indicator.', hasUrl: true },
+                collectorInfo: { label: 'Collector Info', icon: Hash, desc: 'Artist and copyright details.', hasContent: true, hasFont: true, hasColor: true },
+            };
+            return configs[element];
+        };
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-foreground/70">Font Family</label>
-                            <select
-                                value={currentStyle.titleFont}
-                                onChange={(e) => handleStyleChange({ titleFont: e.target.value })}
-                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            >
-                                {FONTS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-foreground/70">Text Color</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="color"
-                                    value={currentStyle.titleColor}
-                                    onChange={(e) => handleStyleChange({ titleColor: e.target.value })}
-                                    className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer overflow-hidden"
-                                />
-                                <input
-                                    type="text"
-                                    value={currentStyle.titleColor}
-                                    onChange={(e) => handleStyleChange({ titleColor: e.target.value })}
-                                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase"
-                                />
-                            </div>
-                        </div>
-                    </div>
+        const config = selectedElement ? getElementConfig(selectedElement) : null;
 
-                    <StyleControls
-                        prefix="title"
-                        currentStyle={currentStyle}
-                        onUpdate={handleStyleChange}
-                    />
+        if (selectedElement && config) {
+            // Collapsible State (Local to this render cycle effectively, or need state? 
+            // Ideally state, but for simplicity let's use the requested structure which implies headers imply sections.
+            // We can use Details/Summary or just sections.
 
-
-                </div>
-            );
-        }
-
-        // Description Inspector
-        if (selectedElement === 'description') {
-            return (
-                <div className="space-y-6 animate-in slide-in-from-right-5 duration-300">
-                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                        <Type className="w-4 h-4 text-indigo-500" />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">Description Style</h3>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-foreground/70">Font Family</label>
-                            <select
-                                value={currentStyle.descriptionFont}
-                                onChange={(e) => handleStyleChange({ descriptionFont: e.target.value })}
-                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            >
-                                {FONTS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-foreground/70">Text Color</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="color"
-                                    value={currentStyle.descriptionColor}
-                                    onChange={(e) => handleStyleChange({ descriptionColor: e.target.value })}
-                                    className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer overflow-hidden"
-                                />
-                                <input
-                                    type="text"
-                                    value={currentStyle.descriptionColor}
-                                    onChange={(e) => handleStyleChange({ descriptionColor: e.target.value })}
-                                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <StyleControls
-                        prefix="description"
-                        currentStyle={currentStyle}
-                        onUpdate={handleStyleChange}
-                    />
-
-
-                </div>
-            );
-        }
-
-        // Corner Inspector
-        if (selectedElement === 'corner' || selectedElement === 'reversedCorner') {
-            const isReversed = selectedElement === 'reversedCorner';
-            const prefix = isReversed ? 'reversedCorner' : 'corner';
-            const icon = isReversed ? <Shield className="w-4 h-4 text-indigo-500" /> : <Hash className="w-4 h-4 text-indigo-500" />;
-            const title = isReversed ? 'Reversed Corner Style' : 'Corner Style';
+            // Mapping properties dynamically
+            const prefix = selectedElement;
+            const contentKey = `${prefix}Content` as keyof DeckStyle;
+            const fontKey = `${prefix}Font` as keyof DeckStyle;
+            const colorKey = `${prefix}Color` as keyof DeckStyle;
+            const urlKey = `${prefix}Url` as keyof DeckStyle;
 
             return (
                 <div className="space-y-6 animate-in slide-in-from-right-5 duration-300">
                     <div className="flex items-center gap-2 pb-2 border-b border-border">
-                        {icon}
-                        <h3 className="font-bold text-sm uppercase tracking-wider">{title}</h3>
+                        <Settings className="w-4 h-4 text-indigo-500" />
+                        <h3 className="font-bold text-sm uppercase tracking-wider">Properties</h3>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-foreground/70">Content</label>
-                            <input
-                                type="text"
-                                value={currentStyle.cornerContent}
-                                onChange={(e) => handleStyleChange({ cornerContent: e.target.value })}
-                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                placeholder="e.g. A, 10, ★"
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <config.icon className="w-4 h-4 text-muted-foreground" />
+                            <h4 className="font-bold text-base">{config.label}</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{config.desc}</p>
+                    </div>
+
+                    {/* Content Section (if applicable) */}
+                    {(config.hasContent || config.hasUrl) && (
+                        <div className="space-y-4 pt-4 border-t border-border">
+                            <h4 className="text-xs font-bold text-muted-foreground uppercase">Content</h4>
+                            {config.hasContent && (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-foreground/70">Text</label>
+                                    <input
+                                        type="text"
+                                        value={currentStyle[contentKey] as string || ''}
+                                        onChange={(e) => handleStyleChange({ [contentKey]: e.target.value })}
+                                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                    />
+                                </div>
+                            )}
+                            {config.hasUrl && (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-foreground/70">Image URL</label>
+                                    <input
+                                        type="text"
+                                        value={currentStyle[urlKey] as string || ''}
+                                        onChange={(e) => handleStyleChange({ [urlKey]: e.target.value })}
+                                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                        placeholder="https://..."
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Appearance Group (Collapsible) */}
+                    <div className="space-y-4 pt-2">
+                        <div className="flex items-center justify-between cursor-pointer" onClick={() => {/* Toggle logic typically, assuming always open for now or add state if critical */ }}>
+                            <h4 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
+                                <Palette className="w-3 h-3" /> Appearance
+                            </h4>
+                        </div>
+
+                        <div className="space-y-4 pl-2 border-l-2 border-border/50 ml-1">
+                            {/* Font & Color Standard Controls */}
+                            {(config.hasFont || config.hasColor) && (
+                                <div className="space-y-4 mb-4">
+                                    {config.hasFont && (
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-foreground/70">Font Family</label>
+                                            <select
+                                                value={currentStyle[fontKey] as string || 'sans-serif'}
+                                                onChange={(e) => handleStyleChange({ [fontKey]: e.target.value })}
+                                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                            >
+                                                {FONTS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
+                                            </select>
+                                        </div>
+                                    )}
+                                    {config.hasColor && (
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-foreground/70">Color</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="color"
+                                                    value={currentStyle[colorKey] as string || '#000000'}
+                                                    onChange={(e) => handleStyleChange({ [colorKey]: e.target.value })}
+                                                    className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer overflow-hidden"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={currentStyle[colorKey] as string || '#000000'}
+                                                    onChange={(e) => handleStyleChange({ [colorKey]: e.target.value })}
+                                                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Shared Style Controls (Opacity, Z-Index, Border, etc.) */}
+                            <StyleControls
+                                prefix={prefix}
+                                currentStyle={currentStyle}
+                                onUpdate={handleStyleChange}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-foreground/70">Font Family</label>
-                            <select
-                                value={currentStyle.cornerFont}
-                                onChange={(e) => handleStyleChange({ cornerFont: e.target.value })}
-                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            >
-                                {FONTS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-foreground/70">Text Color</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="color"
-                                    value={currentStyle.cornerColor}
-                                    onChange={(e) => handleStyleChange({ cornerColor: e.target.value })}
-                                    className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer overflow-hidden"
-                                />
-                                <input
-                                    type="text"
-                                    value={currentStyle.cornerColor}
-                                    onChange={(e) => handleStyleChange({ cornerColor: e.target.value })}
-                                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase"
-                                />
-                            </div>
-                        </div>
                     </div>
-
-                    <StyleControls
-                        prefix={prefix}
-                        currentStyle={currentStyle}
-                        onUpdate={handleStyleChange}
-                    />
-
-                    <div className="space-y-4">
-                        <h4 className="text-xs font-bold text-muted-foreground uppercase">Visibility</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            <label className="text-xs font-semibold text-foreground/70 flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={currentStyle.showCorner}
-                                    onChange={(e) => handleStyleChange({ showCorner: e.target.checked })}
-                                    className="rounded border-border text-indigo-600 focus:ring-indigo-500"
-                                />
-                                Show Corner
-                            </label>
-                            <label className="text-xs font-semibold text-foreground/70 flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={currentStyle.showReversedCorner}
-                                    onChange={(e) => handleStyleChange({ showReversedCorner: e.target.checked })}
-                                    className="rounded border-border text-indigo-600 focus:ring-indigo-500"
-                                />
-                                Show Reversed
-                            </label>
-                        </div>
-                    </div>
-
-
-                </div>
-            );
-        }
-
-        // Art Inspector
-        if (selectedElement === 'art') {
-            return (
-                <div className="space-y-6 animate-in slide-in-from-right-5 duration-300">
-                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                        <Box className="w-4 h-4 text-indigo-500" />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">Art Position</h3>
-                    </div>
-
-                    <StyleControls
-                        prefix="art"
-                        currentStyle={currentStyle}
-                        onUpdate={handleStyleChange}
-                    />
-
-
                 </div>
             );
         }
@@ -829,7 +767,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
     return (
         <div className="flex h-[calc(100vh-4rem)] bg-background overflow-hidden animate-in fade-in duration-300">
-            {/* Left Panel: Templates Only */}
+            {/* Left Panel: Assets */}
             <div className="w-[300px] flex-shrink-0 h-full border-r border-border bg-card overflow-y-auto custom-scrollbar flex flex-col">
                 <div className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border p-4">
                     <button
@@ -841,54 +779,244 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                     </button>
                     <div className="flex items-center justify-between mb-2">
                         <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                            <Layout className="w-4 h-4" />
-                            Templates
+                            <Box className="w-4 h-4" />
+                            Assets
                         </h3>
-                        <div className="flex gap-1">
-                            <button
-                                onClick={handleSave}
-                                className="p-1.5 hover:bg-muted rounded-md text-green-500 transition-colors"
-                                title="Save Template"
-                            >
-                                <Save className="w-4 h-4" />
-                            </button>
-                        </div>
                     </div>
                 </div>
 
-                <div className="p-4 space-y-3">
-                    {[...TEMPLATES, ...customTemplates].map(template => (
+                <div className="p-4 space-y-6">
+                    {/* Templates Group */}
+                    <div className="space-y-2">
                         <button
-                            key={template.id}
-                            onClick={() => applyTemplate(template.style)}
-                            className={cn(
-                                "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden",
-                                currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor
-                                    ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
-                                    : "border-border bg-muted/30"
-                            )}
+                            onClick={() => toggleGroup('templates')}
+                            className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
                         >
-                            {template.style.backgroundImage && (
-                                <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <img src={template.style.backgroundImage} className="w-full h-full object-cover" />
-                                </div>
-                            )}
-                            <div className="flex items-center gap-1.5 relative z-10">
-                                <span className="text-xs font-bold block truncate">{template.name}</span>
-                                {template.isCustom && (
-                                    <Cloud className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
-                                )}
-                            </div>
-                            <div className="flex gap-1 relative z-10">
-                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.cornerColor }}></div>
-                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.titleColor }}></div>
-                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.descriptionColor }}></div>
-                            </div>
-                            {currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor && (
-                                <Check className="absolute top-2 right-2 w-4 h-4 text-indigo-500 z-10" />
-                            )}
+                            {expandedGroups.templates ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                            Templates
                         </button>
-                    ))}
+
+                        {expandedGroups.templates && (
+                            <div className="space-y-3 pl-2">
+                                <div className="flex justify-end mb-2">
+                                    <button
+                                        onClick={handleSave}
+                                        className="p-1 px-2 text-xs hover:bg-muted rounded-md text-green-600 flex items-center gap-1 transition-colors"
+                                        title="Save current style as template"
+                                    >
+                                        <Save className="w-3 h-3" />
+                                        Save Current
+                                    </button>
+                                </div>
+                                {[...TEMPLATES, ...customTemplates].map(template => (
+                                    <button
+                                        key={template.id}
+                                        onClick={() => applyTemplate(template.style)}
+                                        className={cn(
+                                            "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden",
+                                            currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor
+                                                ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+                                                : "border-border bg-muted/30"
+                                        )}
+                                    >
+                                        {template.style.backgroundImage && (
+                                            <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
+                                                <img src={template.style.backgroundImage} className="w-full h-full object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-1.5 relative z-10">
+                                            <span className="text-xs font-bold block truncate">{template.name}</span>
+                                            {template.isCustom && (
+                                                <Cloud className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+                                            )}
+                                        </div>
+                                        <div className="flex gap-1 relative z-10">
+                                            <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.cornerColor }}></div>
+                                            <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.titleColor }}></div>
+                                            <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.descriptionColor }}></div>
+                                        </div>
+                                        {currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor && (
+                                            <Check className="absolute top-2 right-2 w-4 h-4 text-indigo-500 z-10" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Card Elements Group */}
+                    <div className="space-y-2">
+                        <button
+                            onClick={() => toggleGroup('elements')}
+                            className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
+                        >
+                            {expandedGroups.elements ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                            Card Elements
+                        </button>
+
+                        {expandedGroups.elements && (
+                            <div className="space-y-2 pl-2">
+                                {currentStyle.showTitle === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showTitle: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Type className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Title</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showDescription === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showDescription: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Layout className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Description</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showArt === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showArt: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Palette className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Illustration</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showCorner === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showCorner: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Box className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Corner</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showReversedCorner === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showReversedCorner: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Box className="w-3 h-3 rotate-180" />
+                                        </div>
+                                        <span className="text-sm font-medium">Inverted Corner</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showTypeBar === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showTypeBar: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Type className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Type Bar</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showFlavorText === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showFlavorText: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Type className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Flavor Text</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showStatsBox === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showStatsBox: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Hash className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Stats Box</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showWatermark === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showWatermark: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Shield className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Watermark</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showRarityIcon === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showRarityIcon: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Zap className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Rarity Icon</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {currentStyle.showCollectorInfo === false && (
+                                    <button
+                                        onClick={() => handleStyleChange({ showCollectorInfo: true })}
+                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                    >
+                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                            <Type className="w-3 h-3" />
+                                        </div>
+                                        <span className="text-sm font-medium">Collector Info</span>
+                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                    </button>
+                                )}
+
+                                {(currentStyle.showTitle !== false &&
+                                    currentStyle.showDescription !== false &&
+                                    currentStyle.showArt !== false &&
+                                    currentStyle.showCorner !== false &&
+                                    currentStyle.showReversedCorner !== false &&
+                                    currentStyle.showTypeBar !== false &&
+                                    currentStyle.showFlavorText !== false &&
+                                    currentStyle.showStatsBox !== false &&
+                                    currentStyle.showWatermark !== false &&
+                                    currentStyle.showRarityIcon !== false &&
+                                    currentStyle.showCollectorInfo !== false) && (
+                                        <div className="text-center py-4 text-xs text-muted-foreground italic">
+                                            All elements added to layout
+                                        </div>
+                                    )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

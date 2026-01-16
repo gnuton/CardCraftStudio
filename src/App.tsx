@@ -70,6 +70,44 @@ export interface DeckStyle {
   artZIndex?: number;
   artRotate?: number; // Added explicitly as it was missing in standard but used in transform
 
+  // Visibility Flags
+  showTitle?: boolean;
+  showDescription?: boolean;
+  showArt?: boolean;
+  showTypeBar?: boolean;
+  showFlavorText?: boolean;
+  showStatsBox?: boolean;
+  showWatermark?: boolean;
+  showRarityIcon?: boolean;
+  showCollectorInfo?: boolean;
+
+  // Type Bar
+  typeBarX?: number; typeBarY?: number; typeBarWidth?: number; typeBarRotate?: number;
+  typeBarBackgroundColor?: string; typeBarBorderColor?: string; typeBarBorderWidth?: number; typeBarOpacity?: number; typeBarZIndex?: number;
+  typeBarContent?: string; typeBarColor?: string; typeBarFont?: string;
+
+  // Flavor Text
+  flavorTextX?: number; flavorTextY?: number; flavorTextWidth?: number; flavorTextRotate?: number;
+  flavorTextBackgroundColor?: string; flavorTextBorderColor?: string; flavorTextBorderWidth?: number; flavorTextOpacity?: number; flavorTextZIndex?: number;
+  flavorTextContent?: string; flavorTextColor?: string; flavorTextFont?: string;
+
+  // Stats Box
+  statsBoxX?: number; statsBoxY?: number; statsBoxWidth?: number; statsBoxHeight?: number; statsBoxRotate?: number;
+  statsBoxBackgroundColor?: string; statsBoxBorderColor?: string; statsBoxBorderWidth?: number; statsBoxOpacity?: number; statsBoxZIndex?: number;
+  statsBoxContent?: string; statsBoxColor?: string; statsBoxFont?: string;
+
+  // Watermark
+  watermarkX?: number; watermarkY?: number; watermarkWidth?: number; watermarkHeight?: number; watermarkRotate?: number;
+  watermarkOpacity?: number; watermarkZIndex?: number; watermarkUrl?: string | null;
+
+  // Rarity Icon
+  rarityIconX?: number; rarityIconY?: number; rarityIconWidth?: number; rarityIconHeight?: number; rarityIconRotate?: number;
+  rarityIconZIndex?: number; rarityIconUrl?: string | null;
+
+  // Collector Info
+  collectorInfoX?: number; collectorInfoY?: number; collectorInfoWidth?: number; collectorInfoRotate?: number;
+  collectorInfoZIndex?: number; collectorInfoContent?: string; collectorInfoColor?: string; collectorInfoFont?: string;
+
   // Corner Extended Styles
   showCorner: boolean;
   cornerX: number;
@@ -150,6 +188,42 @@ const defaultDeckStyle: DeckStyle = {
   artHeight: 164,
   artRotate: 0,
   artZIndex: 10,
+  showTitle: true,
+  showDescription: true,
+  showArt: true,
+  showTypeBar: false,
+  showFlavorText: false,
+  showStatsBox: false,
+  showWatermark: false,
+  showRarityIcon: false,
+  showCollectorInfo: false,
+
+  // Type Bar Defaults
+  typeBarX: 0, typeBarY: -20, typeBarWidth: 200, typeBarRotate: 0,
+  typeBarBackgroundColor: 'rgba(255, 255, 255, 0.9)', typeBarBorderColor: '#000000', typeBarBorderWidth: 1, typeBarOpacity: 1, typeBarZIndex: 25,
+  typeBarContent: 'Type - Subtype', typeBarColor: '#000000', typeBarFont: 'sans-serif',
+
+  // Flavor Text Defaults
+  flavorTextX: 0, flavorTextY: 100, flavorTextWidth: 220, flavorTextRotate: 0,
+  flavorTextBackgroundColor: 'transparent', flavorTextBorderColor: 'transparent', flavorTextBorderWidth: 0, flavorTextOpacity: 1, flavorTextZIndex: 25,
+  flavorTextContent: 'Flavor text goes here.', flavorTextColor: '#000000', flavorTextFont: 'serif',
+
+  // Stats Box Defaults
+  statsBoxX: 100, statsBoxY: 150, statsBoxWidth: 60, statsBoxHeight: 30, statsBoxRotate: 0,
+  statsBoxBackgroundColor: '#ffffff', statsBoxBorderColor: '#000000', statsBoxBorderWidth: 1, statsBoxOpacity: 1, statsBoxZIndex: 35,
+  statsBoxContent: '1 / 1', statsBoxColor: '#000000', statsBoxFont: 'sans-serif',
+
+  // Watermark Defaults
+  watermarkX: 0, watermarkY: 0, watermarkWidth: 100, watermarkHeight: 100, watermarkRotate: 0,
+  watermarkOpacity: 0.3, watermarkZIndex: 5, watermarkUrl: null,
+
+  // Rarity Icon Defaults
+  rarityIconX: 110, rarityIconY: 0, rarityIconWidth: 20, rarityIconHeight: 20, rarityIconRotate: 0,
+  rarityIconZIndex: 35, rarityIconUrl: null,
+
+  // Collector Info Defaults
+  collectorInfoX: 0, collectorInfoY: 195, collectorInfoWidth: 250, collectorInfoRotate: 0,
+  collectorInfoZIndex: 35, collectorInfoContent: 'Artist Name | 001/100', collectorInfoColor: '#000000', collectorInfoFont: 'sans-serif',
 
   showCorner: true,
   cornerX: -125,
