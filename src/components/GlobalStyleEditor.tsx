@@ -9,6 +9,7 @@ import { cn } from '../utils/cn';
 import { driveService } from '../services/googleDrive';
 import { Download, Cloud, Loader2 } from 'lucide-react';
 import { StyleControls } from './StyleControls';
+import { FontPicker } from './FontPicker';
 
 interface Template {
     id: string;
@@ -384,6 +385,7 @@ const TEMPLATES: Template[] = [
 
 export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack }: GlobalStyleEditorProps) => {
     const [currentStyle, setCurrentStyle] = useState<DeckStyle>(deckStyle);
+    const [isFontPickerOpen, setIsFontPickerOpen] = useState(false);
     const [selectedElement, setSelectedElement] = useState<'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo' | null>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
@@ -405,8 +407,14 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         setViewPan({ x: 0, y: 0 });
     };
 
+    const handleWheel = (e: React.WheelEvent) => {
+        // Zoom without modifiers
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setViewScale(prev => Math.min(Math.max(0.5, prev + delta), 3));
+    };
+
     const handlePanMouseDown = (e: React.MouseEvent) => {
-        if (!isPanMode) return;
+        if (!isPanMode && e.button !== 2) return;
         setIsDraggingPan(true);
         setStartPanPoint({ x: e.clientX - viewPan.x, y: e.clientY - viewPan.y });
     };
@@ -781,14 +789,22 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-semibold text-foreground/70">Global Font</label>
-                                <select
-                                    value={currentStyle.globalFont || ''}
-                                    onChange={(e) => handleStyleChange({ globalFont: e.target.value })}
-                                    className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs"
+                                <button
+                                    onClick={() => setIsFontPickerOpen(true)}
+                                    className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs text-left flex items-center justify-between"
                                 >
-                                    <option value="">Inherit / Default</option>
-                                    {FONTS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
-                                </select>
+                                    <span className="truncate">{currentStyle.globalFont || 'Inherit / Default'}</span>
+                                    <ChevronDown className="w-3 h-3 opacity-50" />
+                                </button>
+                                <FontPicker
+                                    isOpen={isFontPickerOpen}
+                                    onClose={() => setIsFontPickerOpen(false)}
+                                    onSelect={(font) => {
+                                        handleStyleChange({ globalFont: font });
+                                        setIsFontPickerOpen(false);
+                                    }}
+                                    currentFont={currentStyle.globalFont}
+                                />
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-semibold text-foreground/70 flex justify-between">
@@ -890,6 +906,9 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                         <label className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
                             <PenTool className="w-3 h-3" /> Frame Styles
                         </label>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                            Customize the card border color, accent color (used for corners/type), and stroke width.
+                        </p>
 
                         <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-4">
@@ -942,6 +961,9 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                         <label className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
                             <Upload className="w-3 h-3" /> Background
                         </label>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                            Upload a custom image to fill the entire card text/frame area (behind the text).
+                        </p>
                         <div className="space-y-3">
                             {currentStyle.backgroundImage ? (
                                 <div className="relative group rounded-xl overflow-hidden border border-border aspect-video">
@@ -1267,17 +1289,19 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
             <div
                 className={cn(
                     "flex-1 h-full bg-muted/20 relative flex items-center justify-center overflow-hidden select-none",
-                    isPanMode ? (isDraggingPan ? "cursor-grabbing" : "cursor-grab") : "cursor-default"
+                    isDraggingPan ? "cursor-grabbing" : (isPanMode ? "cursor-grab" : "cursor-[zoom-in]")
                 )}
                 onClick={() => {
                     if (!isPanMode && !isDraggingPan) {
                         setSelectedElement(null);
                     }
                 }}
+                onContextMenu={(e) => e.preventDefault()}
                 onMouseDown={handlePanMouseDown}
                 onMouseMove={handlePanMouseMove}
                 onMouseUp={handlePanMouseUp}
                 onMouseLeave={handlePanMouseUp}
+                onWheel={handleWheel}
             >
                 <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none"></div>
 
@@ -1288,7 +1312,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                         transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${viewScale})`
                     }}
                 >
-                    <div className={cn("shadow-2xl rounded-xl", isPanMode && "pointer-events-none")}>
+                    <div className={cn("shadow-2xl rounded-xl", (isPanMode || isDraggingPan) && "pointer-events-none")}>
                         <Card
                             {...previewCard}
                             deckStyle={currentStyle}

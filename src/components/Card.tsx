@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { cn } from '../utils/cn';
 import type { DeckStyle } from '../App';
 import { ResolvedImage } from './ResolvedImage';
 import { TransformWrapper } from './TransformWrapper';
+import { getGoogleFontUrl } from '../utils/fonts';
 
 interface CardProps {
     topLeftContent?: string;
@@ -44,6 +45,26 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         },
         ref
     ) => {
+        // Load Global Font
+        useEffect(() => {
+            if (deckStyle?.globalFont) {
+                const url = getGoogleFontUrl([deckStyle.globalFont]);
+                if (url) {
+                    const link = document.createElement('link');
+                    link.href = url;
+                    link.rel = 'stylesheet';
+                    link.id = `font-${deckStyle.globalFont}`;
+
+                    // Check if already exists
+                    if (!document.getElementById(link.id)) {
+                        document.head.appendChild(link);
+                        // Cleanup? Maybe not, keep them loaded for now to avoid flickering if switching back.
+                        // Ideally we would manage a font manager but for this scope essentially appending is fine.
+                    }
+                }
+            }
+        }, [deckStyle?.globalFont]);
+
         const resolveBgImage = (url: string | null | undefined) => {
             if (!url) return undefined;
             if (url.startsWith('templates/') || url.startsWith('/templates/')) {

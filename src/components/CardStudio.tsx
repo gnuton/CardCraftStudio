@@ -4,6 +4,7 @@ import { Controls } from './Controls';
 import { toSvg } from 'html-to-image';
 import { Loader2, ArrowLeft, Save } from 'lucide-react';
 import type { DeckStyle } from '../App';
+import { cn } from '../utils/cn';
 
 export interface CardConfig {
     id?: string;
@@ -71,18 +72,46 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
     };
 
     const [zoom, setZoom] = useState(2);
+    // Pan state
+    const [viewPan, setViewPan] = useState({ x: 0, y: 0 });
+    const [isDraggingPan, setIsDraggingPan] = useState(false);
+    const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
 
     const handleWheel = (e: React.WheelEvent) => {
-        if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            setZoom(prev => Math.min(Math.max(0.5, prev + delta), 3));
-        }
+        // e.preventDefault(); // React's synthetic event wrapper might warn about this if passive, but let's try.
+        // Actually, we usually want to stop propagation/default if we are consuming the scroll.
+
+        // Simple zoom without modifiers
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setZoom(prev => Math.min(Math.max(0.5, prev + delta), 3));
     };
 
     const zoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3));
     const zoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
-    const resetZoom = () => setZoom(1);
+    const resetZoom = () => {
+        setZoom(1);
+        setViewPan({ x: 0, y: 0 });
+    };
+
+    const handlePanMouseDown = (e: React.MouseEvent) => {
+        // Allow pan on Middle Click (1) or Right Click (2)
+        if (e.button !== 1 && e.button !== 2) return;
+
+        e.preventDefault();
+        setIsDraggingPan(true);
+        setStartPanPoint({ x: e.clientX - viewPan.x, y: e.clientY - viewPan.y });
+    };
+
+    const handlePanMouseMove = (e: React.MouseEvent) => {
+        if (!isDraggingPan) return;
+        e.preventDefault();
+        setViewPan({
+            x: e.clientX - startPanPoint.x,
+            y: e.clientY - startPanPoint.y
+        });
+    };
+
+    const handlePanMouseUp = () => setIsDraggingPan(false);
 
     return (
         <div className="flex h-[calc(100vh-7.5rem)] bg-background overflow-hidden font-sans transition-colors duration-300">
@@ -122,8 +151,16 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
 
             {/* Main Preview Area */}
             <div
-                className="flex-1 h-full flex items-center justify-center p-10 bg-muted/20 relative cursor-zoom-in"
+                className={cn(
+                    "flex-1 h-full flex items-center justify-center p-10 bg-muted/20 relative select-none",
+                    isDraggingPan ? "cursor-grabbing" : "cursor-[zoom-in]"
+                )}
                 onWheel={handleWheel}
+                onContextMenu={(e) => e.preventDefault()}
+                onMouseDown={handlePanMouseDown}
+                onMouseMove={handlePanMouseMove}
+                onMouseUp={handlePanMouseUp}
+                onMouseLeave={handlePanMouseUp}
             >
                 <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none"></div>
 
@@ -155,13 +192,18 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
                 <div className="flex flex-col items-center gap-6 z-0">
                     <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Preview (Poker Size)</div>
                     <div
-                        className="transition-transform duration-200 ease-out shadow-2xl rounded-[16px]"
-                        style={{ transform: `scale(${zoom})` }}
+                        className={cn(
+                            "transition-transform duration-200 ease-out shadow-2xl rounded-[16px] will-change-transform",
+                            isDraggingPan && "pointer-events-none"
+                        )}
+                        style={{
+                            transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${zoom})`
+                        }}
                     >
                         <Card {...config} deckStyle={deckStyle} ref={cardRef} />
                     </div>
                     <div className="text-xs text-muted-foreground mt-4 italic">
-                        Tip: Hold Ctrl + Mouse Wheel to zoom
+                        Tip: Scroll to zoom • Right-click to pan
                     </div>
                 </div>
             </div>
