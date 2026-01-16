@@ -907,53 +907,78 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                             className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
                         >
                             {expandedGroups.templates ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                            Templates
+                            Styles
                         </button>
 
                         {expandedGroups.templates && (
-                            <div className="space-y-3 pl-2">
-                                <div className="flex justify-end mb-2">
-                                    <button
-                                        onClick={handleSave}
-                                        className="p-1 px-2 text-xs hover:bg-muted rounded-md text-green-600 flex items-center gap-1 transition-colors"
-                                        title="Save current style as template"
-                                    >
-                                        <Save className="w-3 h-3" />
-                                        Save Current
-                                    </button>
+                            <div className="space-y-4 pl-0">
+                                {/* Current Editing Style - Always visible at top when expanded */}
+                                <div className="mb-4 p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm relative overflow-hidden group">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                                    <div className="flex flex-col gap-2 pl-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                                                <PenTool className="w-3 h-3" />
+                                                Current Style
+                                            </span>
+                                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-200/50 text-indigo-700 dark:bg-indigo-800/50 dark:text-indigo-300">
+                                                Editing
+                                            </span>
+                                        </div>
+
+                                        <div className="flex gap-1 mt-1">
+                                            <div className="w-3 h-3 rounded-full border border-border/50 shadow-sm" style={{ backgroundColor: currentStyle.cornerColor }}></div>
+                                            <div className="w-3 h-3 rounded-full border border-border/50 shadow-sm" style={{ backgroundColor: currentStyle.titleColor }}></div>
+                                            <div className="w-3 h-3 rounded-full border border-border/50 shadow-sm" style={{ backgroundColor: currentStyle.descriptionColor }}></div>
+                                        </div>
+
+                                        <button
+                                            onClick={handleSave}
+                                            className="mt-2 w-full py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm hover:shadow"
+                                        >
+                                            <Save className="w-3 h-3" />
+                                            Save to Styles
+                                        </button>
+                                    </div>
                                 </div>
-                                {[...TEMPLATES, ...customTemplates].map(template => (
-                                    <button
-                                        key={template.id}
-                                        onClick={() => applyTemplate(template.style)}
-                                        className={cn(
-                                            "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden",
-                                            currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor
-                                                ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
-                                                : "border-border bg-muted/30"
-                                        )}
-                                    >
-                                        {template.style.backgroundImage && (
-                                            <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
-                                                <img src={template.style.backgroundImage} className="w-full h-full object-cover" />
-                                            </div>
-                                        )}
-                                        <div className="flex items-center gap-1.5 relative z-10">
-                                            <span className="text-xs font-bold block truncate">{template.name}</span>
-                                            {template.isCustom && (
-                                                <Cloud className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+
+                                <div className="h-px bg-border/50 my-2 mx-2" />
+
+                                <div className="space-y-3 pl-2">
+                                    {[...TEMPLATES, ...customTemplates].map(template => (
+                                        <button
+                                            key={template.id}
+                                            onClick={() => applyTemplate(template.style)}
+                                            className={cn(
+                                                "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden",
+                                                currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor
+                                                    ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+                                                    : "border-border bg-muted/30"
                                             )}
-                                        </div>
-                                        <div className="flex gap-1 relative z-10">
-                                            <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.cornerColor }}></div>
-                                            <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.titleColor }}></div>
-                                            <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.descriptionColor }}></div>
-                                        </div>
-                                        {currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor && (
-                                            <Check className="absolute top-2 right-2 w-4 h-4 text-indigo-500 z-10" />
-                                        )}
-                                    </button>
-                                ))}
+                                        >
+                                            {template.style.backgroundImage && (
+                                                <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
+                                                    <img src={template.style.backgroundImage} className="w-full h-full object-cover" />
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-1.5 relative z-10">
+                                                <span className="text-xs font-bold block truncate">{template.name}</span>
+                                                {template.isCustom && (
+                                                    <Cloud className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+                                                )}
+                                            </div>
+                                            <div className="flex gap-1 relative z-10">
+                                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.cornerColor }}></div>
+                                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.titleColor }}></div>
+                                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.descriptionColor }}></div>
+                                            </div>
+                                            {currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor && (
+                                                <Check className="absolute top-2 right-2 w-4 h-4 text-indigo-500 z-10" />
+                                            )}
+                                        </button>
+                                    ))}
+
+                                </div>
                             </div>
                         )}
                     </div>
