@@ -273,7 +273,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 <span
                                     className="text-2xl font-bold leading-none pointer-events-none"
                                     style={{
-                                        color: deckStyle?.cornerColor || '#000000',
+                                        color: deckStyle?.cornerColor || deckStyle?.svgCornerColor || '#000000',
                                         fontFamily: deckStyle?.cornerFont || 'serif'
                                     }}
                                 >
@@ -468,7 +468,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                             ) : (
                                 <div className="text-2xl font-bold leading-none pointer-events-none"
                                     style={{
-                                        color: deckStyle?.cornerColor || '#000000',
+                                        color: deckStyle?.cornerColor || deckStyle?.svgCornerColor || '#000000',
                                         fontFamily: deckStyle?.cornerFont || 'serif'
                                     }}
                                 >
