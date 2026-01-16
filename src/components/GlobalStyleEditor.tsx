@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
 import type { DeckStyle } from '../App';
-import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Heart, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2 } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { driveService } from '../services/googleDrive';
 import { Download, Cloud, Loader2 } from 'lucide-react';
@@ -768,145 +768,109 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         // Global Inspector (Default)
         return (
             <div className="space-y-8 animate-in slide-in-from-right-5 duration-300">
-                {/* Global / Game Logic */}
+                {/* Global / Card Base Settings */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 pb-2 border-b border-border">
                         <Settings className="w-4 h-4 text-indigo-500" />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">Game Logic</h3>
+                        <h3 className="font-bold text-sm uppercase tracking-wider">Card Base Settings</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">Define global constants for SVG text nodes.</p>
+                    <p className="text-xs text-muted-foreground">Configure the base appearance of the card frame and background.</p>
 
-                    <div className="grid grid-cols-3 gap-3">
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-foreground/70 flex items-center gap-1">
-                                <Heart className="w-3 h-3 text-red-500" /> HP
-                            </label>
-                            <input
-                                type="text"
-                                value={currentStyle.gameHp || '20'}
-                                onChange={(e) => handleStyleChange({ gameHp: e.target.value })}
-                                className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs font-mono text-center"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-foreground/70 flex items-center gap-1">
-                                <Zap className="w-3 h-3 text-blue-500" /> Mana
-                            </label>
-                            <input
-                                type="text"
-                                value={currentStyle.gameMana || '10'}
-                                onChange={(e) => handleStyleChange({ gameMana: e.target.value })}
-                                className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs font-mono text-center"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-foreground/70 flex items-center gap-1">
-                                <Box className="w-3 h-3 text-amber-500" /> Suit
-                            </label>
-                            <input
-                                type="text"
-                                value={currentStyle.gameSuit || '♥'}
-                                onChange={(e) => handleStyleChange({ gameSuit: e.target.value })}
-                                className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs font-mono text-center"
-                            />
-                        </div>
-                    </div>
-                </section>
 
-                {/* SVG Styling (Corner/Frame) */}
-                <section className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                        <PenTool className="w-4 h-4 text-indigo-500" />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">SVG Styles</h3>
-                    </div>
-
+                    {/* SVG/Frame Colors */}
                     <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground/70">Frame Color</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="color"
-                                        value={currentStyle.svgFrameColor || '#000000'}
-                                        onChange={(e) => handleStyleChange({ svgFrameColor: e.target.value })}
-                                        className="w-8 h-8 rounded border-0 p-0 cursor-pointer overflow-hidden"
-                                    />
-                                    <span className="text-xs font-mono self-center text-muted-foreground">{currentStyle.svgFrameColor || '-'}</span>
-                                </div>
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground/70">Accent Color</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="color"
-                                        value={currentStyle.svgCornerColor || '#000000'}
-                                        onChange={(e) => handleStyleChange({ svgCornerColor: e.target.value })}
-                                        className="w-8 h-8 rounded border-0 p-0 cursor-pointer overflow-hidden"
-                                    />
-                                    <span className="text-xs font-mono self-center text-muted-foreground">{currentStyle.svgCornerColor || '-'}</span>
-                                </div>
-                            </div>
-                        </div>
+                        <label className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
+                            <PenTool className="w-3 h-3" /> Frame Styles
+                        </label>
 
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-foreground/70 flex justify-between">
-                                <span>Stroke Width</span>
-                                <span className="text-muted-foreground">{currentStyle.svgStrokeWidth || 2}px</span>
-                            </label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="10"
-                                step="0.5"
-                                value={currentStyle.svgStrokeWidth || 2}
-                                onChange={(e) => handleStyleChange({ svgStrokeWidth: parseFloat(e.target.value) })}
-                                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                            />
-                        </div>
-                    </div>
-                </section>
-
-                {/* Background Section */}
-                <section className="space-y-4 pb-10">
-                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                        <Upload className="w-4 h-4" />
-                        Card Background
-                    </h3>
-                    <div className="space-y-3">
-                        {currentStyle.backgroundImage ? (
-                            <div className="relative group rounded-xl overflow-hidden border border-border aspect-video">
-                                <img src={currentStyle.backgroundImage} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
-                                    <button
-                                        onClick={() => handleStyleChange({ backgroundImage: null })}
-                                        className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold"
-                                    >
-                                        Remove Background
-                                    </button>
+                        <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-foreground/70">Frame Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={currentStyle.svgFrameColor || '#000000'}
+                                            onChange={(e) => handleStyleChange({ svgFrameColor: e.target.value })}
+                                            className="w-8 h-8 rounded border-0 p-0 cursor-pointer overflow-hidden"
+                                        />
+                                        <span className="text-xs font-mono self-center text-muted-foreground">{currentStyle.svgFrameColor || '-'}</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-foreground/70">Accent Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={currentStyle.svgCornerColor || '#000000'}
+                                            onChange={(e) => handleStyleChange({ svgCornerColor: e.target.value })}
+                                            className="w-8 h-8 rounded border-0 p-0 cursor-pointer overflow-hidden"
+                                        />
+                                        <span className="text-xs font-mono self-center text-muted-foreground">{currentStyle.svgCornerColor || '-'}</span>
+                                    </div>
                                 </div>
                             </div>
-                        ) : (
-                            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
-                                <Upload className="w-5 h-5 text-muted-foreground mb-2" />
-                                <span className="text-[10px] font-semibold text-muted-foreground">Upload Image</span>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-foreground/70 flex justify-between">
+                                    <span>Stroke Width</span>
+                                    <span className="text-muted-foreground">{currentStyle.svgStrokeWidth || 2}px</span>
+                                </label>
                                 <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => handleStyleChange({ backgroundImage: reader.result as string });
-                                            reader.readAsDataURL(file);
-                                        }
-                                    }}
+                                    type="range"
+                                    min="0"
+                                    max="10"
+                                    step="0.5"
+                                    value={currentStyle.svgStrokeWidth || 2}
+                                    onChange={(e) => handleStyleChange({ svgStrokeWidth: parseFloat(e.target.value) })}
+                                    className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
                                 />
-                            </label>
-                        )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Background Settings */}
+                    <div className="space-y-3 pt-4 border-t border-border">
+                        <label className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
+                            <Upload className="w-3 h-3" /> Background
+                        </label>
+                        <div className="space-y-3">
+                            {currentStyle.backgroundImage ? (
+                                <div className="relative group rounded-xl overflow-hidden border border-border aspect-video">
+                                    <img src={currentStyle.backgroundImage} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
+                                        <button
+                                            onClick={() => handleStyleChange({ backgroundImage: null })}
+                                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
+                                    <Upload className="w-5 h-5 text-muted-foreground mb-2" />
+                                    <span className="text-[10px] font-semibold text-muted-foreground">Upload Image</span>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => handleStyleChange({ backgroundImage: reader.result as string });
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                    />
+                                </label>
+                            )}
+                        </div>
                     </div>
                 </section>
-            </div>
+
+            </div >
         );
     };
 
