@@ -243,7 +243,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
     }
 
     return (
-        <div className="min-h-screen bg-background p-8 font-sans transition-colors duration-300">
+        <div className="min-h-screen bg-background p-8 pb-24 font-sans transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="sticky top-16 z-40 -mx-8 px-8 py-4 mb-4 bg-background/80 backdrop-blur-md border-b border-transparent transition-all overflow-hidden">

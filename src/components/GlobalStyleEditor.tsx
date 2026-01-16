@@ -983,7 +983,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     };
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] bg-background overflow-hidden animate-in fade-in duration-300">
+        <div className="flex h-[calc(100vh-7.5rem)] bg-background overflow-hidden animate-in fade-in duration-300">
             {/* Left Panel: Assets */}
             <div className="w-[300px] flex-shrink-0 h-full border-r border-border bg-card overflow-y-auto custom-scrollbar flex flex-col">
                 <div className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border p-4">

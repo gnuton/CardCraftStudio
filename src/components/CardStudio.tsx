@@ -85,7 +85,7 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
     const resetZoom = () => setZoom(1);
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] bg-background overflow-hidden font-sans transition-colors duration-300">
+        <div className="flex h-[calc(100vh-7.5rem)] bg-background overflow-hidden font-sans transition-colors duration-300">
             {/* Sidebar Controls */}
             <div className="w-[400px] flex-shrink-0 h-full shadow-xl z-10 flex flex-col bg-card border-r border-border">
                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
