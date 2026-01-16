@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
 import type { DeckStyle } from '../App';
-import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Heart, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Heart, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { driveService } from '../services/googleDrive';
 import { Download, Cloud, Loader2 } from 'lucide-react';
@@ -390,6 +390,37 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const [newTemplateName, setNewTemplateName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [customTemplates, setCustomTemplates] = useState<Template[]>([]);
+
+    // Viewport Controls
+    const [viewScale, setViewScale] = useState(1.1);
+    const [viewPan, setViewPan] = useState({ x: 0, y: 0 });
+    const [isPanMode, setIsPanMode] = useState(false);
+    const [isDraggingPan, setIsDraggingPan] = useState(false);
+    const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
+
+    const handleZoomIn = () => setViewScale(s => Math.min(s + 0.1, 3));
+    const handleZoomOut = () => setViewScale(s => Math.max(s - 0.1, 0.5));
+    const handleResetView = () => {
+        setViewScale(1.1);
+        setViewPan({ x: 0, y: 0 });
+    };
+
+    const handlePanMouseDown = (e: React.MouseEvent) => {
+        if (!isPanMode) return;
+        setIsDraggingPan(true);
+        setStartPanPoint({ x: e.clientX - viewPan.x, y: e.clientY - viewPan.y });
+    };
+
+    const handlePanMouseMove = (e: React.MouseEvent) => {
+        if (!isDraggingPan) return;
+        e.preventDefault();
+        setViewPan({
+            x: e.clientX - startPanPoint.x,
+            y: e.clientY - startPanPoint.y
+        });
+    };
+
+    const handlePanMouseUp = () => setIsDraggingPan(false);
 
     const hasChanges = JSON.stringify(deckStyle) !== JSON.stringify(currentStyle);
 
@@ -1160,31 +1191,85 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
             </div>
 
             {/* Center Panel: Preview */}
+            {/* Center Panel: Preview */}
             <div
-                className="flex-1 h-full bg-muted/20 relative flex items-center justify-center p-8 overflow-visible"
-                onClick={() => setSelectedElement(null)}
+                className={cn(
+                    "flex-1 h-full bg-muted/20 relative flex items-center justify-center overflow-hidden select-none",
+                    isPanMode ? (isDraggingPan ? "cursor-grabbing" : "cursor-grab") : "cursor-default"
+                )}
+                onClick={() => {
+                    if (!isPanMode && !isDraggingPan) {
+                        setSelectedElement(null);
+                    }
+                }}
+                onMouseDown={handlePanMouseDown}
+                onMouseMove={handlePanMouseMove}
+                onMouseUp={handlePanMouseUp}
+                onMouseLeave={handlePanMouseUp}
             >
                 <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none"></div>
 
-                <div className="relative z-10 flex flex-col items-center gap-6">
-                    <div className="transform scale-[1.1] shadow-2xl rounded-xl">
+                {/* Transformable Canvas Container */}
+                <div
+                    className="relative z-10 transition-transform duration-75 ease-linear will-change-transform"
+                    style={{
+                        transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${viewScale})`
+                    }}
+                >
+                    <div className={cn("shadow-2xl rounded-xl", isPanMode && "pointer-events-none")}>
                         <Card
                             {...previewCard}
                             deckStyle={currentStyle}
-                            onElementClick={(el) => setSelectedElement(el)}
-                            isInteractive={true}
+                            onElementClick={(el) => {
+                                if (!isPanMode) setSelectedElement(el);
+                            }}
+                            isInteractive={!isPanMode} // Disable internal interactivity when in pan mode
                             selectedElement={selectedElement}
                             onElementUpdate={(_, updates) => handleStyleChange(updates)}
                         />
                     </div>
-                    <div className="text-center space-y-1">
-                        <p className="text-xs font-semibold text-muted-foreground animate-pulse">Click elements on the card to edit styles</p>
-                        {selectedElement && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                                Editing: {selectedElement}
-                            </span>
-                        )}
+                </div>
+
+                {/* Viewport Controls Toolbar */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-2 py-1.5 bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg z-50">
+                    <div className="flex items-center border-r border-border pr-2 mr-1">
+                        <button
+                            onClick={() => setIsPanMode(false)}
+                            className={cn(
+                                "p-2 rounded-full transition-all",
+                                !isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
+                            title="Select Mode"
+                        >
+                            <MousePointer2 className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => setIsPanMode(true)}
+                            className={cn(
+                                "p-2 rounded-full transition-all",
+                                isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
+                            title="Pan Mode"
+                        >
+                            <Hand className="w-4 h-4" />
+                        </button>
                     </div>
+
+                    <button onClick={handleZoomOut} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+                        <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-mono font-medium min-w-[3ch] text-center">
+                        {Math.round(viewScale * 100)}%
+                    </span>
+                    <button onClick={handleZoomIn} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+                        <ZoomIn className="w-4 h-4" />
+                    </button>
+
+                    <div className="w-px h-4 bg-border mx-1" />
+
+                    <button onClick={handleResetView} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors" title="Reset View">
+                        <RotateCcw className="w-3 h-3" />
+                    </button>
                 </div>
             </div>
 
