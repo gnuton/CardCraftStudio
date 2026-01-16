@@ -172,6 +172,39 @@ class TemplateService {
             if (el) el.remove();
         }
 
+        // --- Apply Global/Game Logic Styles ---
+        const applyStyle = (id: string, attrs: Record<string, string | number>) => {
+            const el = svgDoc.getElementById(id);
+            if (el) {
+                Object.entries(attrs).forEach(([key, value]) => {
+                    el.setAttribute(key, String(value));
+                });
+            }
+        };
+
+        if (style.svgFrameColor) applyStyle('frame', { fill: style.svgFrameColor });
+        if (style.svgCornerColor) {
+            applyStyle('corner-bg-top-left', { fill: style.svgCornerColor });
+            applyStyle('corner-bg-bottom-right', { fill: style.svgCornerColor });
+        }
+        if (style.svgStrokeWidth !== undefined) {
+            applyStyle('frame', { 'stroke-width': style.svgStrokeWidth });
+            // Also apply to corners?
+            applyStyle('corner-bg-top-left', { 'stroke-width': style.svgStrokeWidth });
+            applyStyle('corner-bg-bottom-right', { 'stroke-width': style.svgStrokeWidth });
+        }
+
+        // Update Game Logic Text
+        const updateText = (id: string, text: string) => {
+            const el = svgDoc.getElementById(id);
+            if (el) el.textContent = text;
+        };
+
+        if (style.gameHp) updateText('text-hp', style.gameHp);
+        if (style.gameMana) updateText('text-mana', style.gameMana);
+        if (style.gameSuit) updateText('text-suit', style.gameSuit);
+
+
         const serializer = new XMLSerializer();
         return serializer.serializeToString(svgDoc);
     }

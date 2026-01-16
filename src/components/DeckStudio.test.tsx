@@ -90,7 +90,15 @@ const mockDeckStyle = {
     reversedCornerY: 185,
     reversedCornerRotate: 180,
     reversedCornerWidth: 40,
-    reversedCornerHeight: 40
+    reversedCornerHeight: 40,
+    // Game Logic
+    gameHp: '10',
+    gameMana: '10',
+    gameSuit: 'hearts',
+    // SVG Styling
+    svgFrameColor: '#000000',
+    svgCornerColor: '#000000',
+    svgStrokeWidth: 2
 };
 
 describe('DeckStudio PDF Export', () => {

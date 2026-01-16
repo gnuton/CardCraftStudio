@@ -30,36 +30,82 @@ export interface DeckStyle {
   descriptionFont: string;
   backgroundImage: string | null;
   cornerContent: string;
-  // Transformation properties
+
+  // Title Extended Styles
   titleX: number;
   titleY: number;
   titleRotate: number;
   titleScale: number;
   titleWidth: number;
+  titleBackgroundColor?: string;
+  titleBorderColor?: string;
+  titleBorderStyle?: string;
+  titleBorderWidth?: number; // pixels
+  titleOpacity?: number;
+  titleZIndex?: number;
+
+  // Description Extended Styles
   descriptionX: number;
   descriptionY: number;
   descriptionRotate: number;
   descriptionScale: number;
   descriptionWidth: number;
-  // Art/Center Image properties
+  descriptionBackgroundColor?: string;
+  descriptionBorderColor?: string;
+  descriptionBorderStyle?: string;
+  descriptionBorderWidth?: number;
+  descriptionOpacity?: number;
+  descriptionZIndex?: number;
+
+  // Art/Center Image Extended Styles
   artX: number;
   artY: number;
   artWidth: number;
   artHeight: number;
-  // Corner properties
+  artBackgroundColor?: string;
+  artBorderColor?: string;
+  artBorderStyle?: string;
+  artBorderWidth?: number;
+  artOpacity?: number;
+  artZIndex?: number;
+  artRotate?: number; // Added explicitly as it was missing in standard but used in transform
+
+  // Corner Extended Styles
   showCorner: boolean;
   cornerX: number;
   cornerY: number;
   cornerRotate: number;
   cornerWidth: number;
   cornerHeight: number;
-  // Reversed Corner properties
+  cornerBackgroundColor?: string;
+  cornerBorderColor?: string;
+  cornerBorderStyle?: string;
+  cornerBorderWidth?: number;
+  cornerOpacity?: number;
+  cornerZIndex?: number;
+
+  // Reversed Corner Extended Styles
   showReversedCorner: boolean;
   reversedCornerX: number;
   reversedCornerY: number;
   reversedCornerRotate: number;
   reversedCornerWidth: number;
   reversedCornerHeight: number;
+  reversedCornerBackgroundColor?: string;
+  reversedCornerBorderColor?: string;
+  reversedCornerBorderStyle?: string;
+  reversedCornerBorderWidth?: number;
+  reversedCornerOpacity?: number;
+  reversedCornerZIndex?: number;
+
+  // Game Logic
+  gameHp: string;
+  gameMana: string;
+  gameSuit: string;
+  // SVG Styling
+  svgFrameColor: string;
+  svgCornerColor: string;
+  svgStrokeWidth: number;
   id?: string;
   isLocked?: boolean;
 }
@@ -73,32 +119,61 @@ const defaultDeckStyle: DeckStyle = {
   descriptionFont: 'sans-serif',
   backgroundImage: null,
   cornerContent: 'A',
+
   titleX: 0,
   titleY: 0,
   titleRotate: 0,
   titleScale: 1,
   titleWidth: 200,
+  titleBackgroundColor: 'rgba(241, 245, 249, 0.9)', // slate-100/90
+  titleBorderColor: '#cbd5e1', // slate-300
+  titleBorderStyle: 'solid',
+  titleBorderWidth: 1,
+  titleOpacity: 1,
+  titleZIndex: 20,
+
   descriptionX: 0,
   descriptionY: 0,
   descriptionRotate: 0,
   descriptionScale: 1,
   descriptionWidth: 250,
+  descriptionBackgroundColor: 'rgba(255, 255, 255, 0.1)', // white/10
+  descriptionBorderColor: 'rgba(255, 255, 255, 0.2)', // white/20
+  descriptionBorderStyle: 'solid',
+  descriptionBorderWidth: 1,
+  descriptionOpacity: 1,
+  descriptionZIndex: 20,
+
   artX: 0,
   artY: 0,
   artWidth: 264,
   artHeight: 164,
+  artRotate: 0,
+  artZIndex: 10,
+
   showCorner: true,
   cornerX: -125,
   cornerY: -185,
   cornerRotate: 0,
   cornerWidth: 40,
   cornerHeight: 40,
+  cornerZIndex: 30,
+
   showReversedCorner: true,
   reversedCornerX: 125,
   reversedCornerY: 185,
   reversedCornerRotate: 180,
   reversedCornerWidth: 40,
-  reversedCornerHeight: 40
+  reversedCornerHeight: 40,
+  reversedCornerZIndex: 30,
+
+  // Functionality defaults
+  gameHp: '20',
+  gameMana: '10',
+  gameSuit: '♥',
+  svgFrameColor: '#000000',
+  svgCornerColor: '#000000',
+  svgStrokeWidth: 2
 };
 
 function App() {
