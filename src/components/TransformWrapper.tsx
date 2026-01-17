@@ -32,6 +32,7 @@ interface TransformWrapperProps {
         maxY: number;
     };
     disableDrag?: boolean;
+    hideControls?: boolean;
 }
 
 export const TransformWrapper = ({
@@ -49,7 +50,8 @@ export const TransformWrapper = ({
     useScaleForResize = false,
     onDelete,
     bounds,
-    disableDrag = false
+    disableDrag = false,
+    hideControls = false
 }: TransformWrapperProps) => {
     const [isDragging, setIsDragging] = useState(false);
 
@@ -294,7 +296,7 @@ export const TransformWrapper = ({
                 {children}
 
                 {/* Overlays/Controls */}
-                {isSelected && isActive && (
+                {isSelected && isActive && !hideControls && (
                     <>
                         {/* Rotation Handle */}
                         <div

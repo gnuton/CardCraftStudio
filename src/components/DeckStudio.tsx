@@ -246,7 +246,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
         <div className="min-h-screen bg-background p-8 pb-24 font-sans transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="sticky top-16 z-40 -mx-8 px-8 py-4 mb-4 bg-background/80 backdrop-blur-md border-b border-transparent transition-all overflow-hidden">
+                <div className="sticky top-16 z-40 -mx-8 px-8 py-4 mb-8 bg-background/95 backdrop-blur-md border-b border-border transition-all">
                     <div className="flex items-center justify-between">
                         <div>
                             <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsSettingsOpen(true)}>
@@ -335,82 +335,86 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
 
 
                 {deck.length === 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        <div
-                            onClick={onAddCard}
-                            className="flex flex-col items-center justify-center aspect-[2.5/3.5] border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-accent/50 transition-colors group"
-                        >
-                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
-                                <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-600 transition-colors" />
+                    <div className="px-4 py-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            <div
+                                onClick={onAddCard}
+                                className="flex flex-col items-center justify-center aspect-[2.5/3.5] border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-accent/50 transition-colors group"
+                            >
+                                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                                    <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-600 transition-colors" />
+                                </div>
+                                <h3 className="font-medium text-foreground">Create New Card</h3>
+                                <p className="text-sm text-muted-foreground mt-1">Click to add your first card</p>
                             </div>
-                            <h3 className="font-medium text-foreground">Create New Card</h3>
-                            <p className="text-sm text-muted-foreground mt-1">Click to add your first card</p>
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {/* Create New Card Placeholder */}
-                        <div
-                            onClick={onAddCard}
-                            className="flex flex-col items-center justify-center aspect-[2.5/3.5] border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-accent/50 transition-colors group"
-                        >
-                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
-                                <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-600 transition-colors" />
+                    <div className="px-4 py-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {/* Create New Card Placeholder */}
+                            <div
+                                onClick={onAddCard}
+                                className="flex flex-col items-center justify-center aspect-[2.5/3.5] border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-accent/50 transition-colors group"
+                            >
+                                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                                    <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-600 transition-colors" />
+                                </div>
+                                <h3 className="font-medium text-foreground">Create New Card</h3>
                             </div>
-                            <h3 className="font-medium text-foreground">Create New Card</h3>
+                            {deck.map((card, index) => (
+                                <div key={card.id || index} className="group relative bg-card rounded-xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow">
+                                    <div className="aspect-[2.5/3.5] bg-muted relative overflow-hidden">
+                                        <div className="absolute inset-0 flex items-center justify-center transform scale-[0.8] origin-center pointer-events-none">
+                                            <Card {...card} deckStyle={deckStyle} />
+                                        </div>
+                                        {/* Overlay Actions */}
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
+                                            <button
+                                                onClick={() => onEditCard(index)}
+                                                className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-indigo-600 transition-colors"
+                                                title="Edit Card"
+                                            >
+                                                <Edit className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => onDuplicateCard(index)}
+                                                className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-green-600 transition-colors"
+                                                title="Duplicate Card"
+                                            >
+                                                <Copy className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => onDeleteCard(index)}
+                                                className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-red-600 transition-colors"
+                                                title="Delete Card"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="p-3 border-t border-border flex items-center justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <h3 className="font-medium text-foreground truncate">{card.title || 'Untitled Card'}</h3>
+                                            <p className="text-xs text-muted-foreground truncate mt-0.5">{card.description ? 'Has description' : 'No description'}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-xs text-muted-foreground font-medium">Qty</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={card.count !== undefined ? card.count : 1}
+                                                onChange={(e) => {
+                                                    const val = parseInt(e.target.value) || 0;
+                                                    onUpdateCard(index, { count: val });
+                                                }}
+                                                className="w-12 h-7 text-sm text-center bg-muted border border-border text-foreground rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        {deck.map((card, index) => (
-                            <div key={card.id || index} className="group relative bg-card rounded-xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow">
-                                <div className="aspect-[2.5/3.5] bg-muted relative overflow-hidden">
-                                    <div className="absolute inset-0 flex items-center justify-center transform scale-[0.8] origin-center pointer-events-none">
-                                        <Card {...card} deckStyle={deckStyle} />
-                                    </div>
-                                    {/* Overlay Actions */}
-                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
-                                        <button
-                                            onClick={() => onEditCard(index)}
-                                            className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-indigo-600 transition-colors"
-                                            title="Edit Card"
-                                        >
-                                            <Edit className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => onDuplicateCard(index)}
-                                            className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-green-600 transition-colors"
-                                            title="Duplicate Card"
-                                        >
-                                            <Copy className="w-5 h-5" />
-                                        </button>
-                                        <button
-                                            onClick={() => onDeleteCard(index)}
-                                            className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-red-600 transition-colors"
-                                            title="Delete Card"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="p-3 border-t border-border flex items-center justify-between gap-3">
-                                    <div className="min-w-0 flex-1">
-                                        <h3 className="font-medium text-foreground truncate">{card.title || 'Untitled Card'}</h3>
-                                        <p className="text-xs text-muted-foreground truncate mt-0.5">{card.description ? 'Has description' : 'No description'}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <label className="text-xs text-muted-foreground font-medium">Qty</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={card.count !== undefined ? card.count : 1}
-                                            onChange={(e) => {
-                                                const val = parseInt(e.target.value) || 0;
-                                                onUpdateCard(index, { count: val });
-                                            }}
-                                            className="w-12 h-7 text-sm text-center bg-muted border border-border text-foreground rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
                     </div>
                 )}
             </div>

@@ -50,6 +50,7 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [selectedElement, setSelectedElement] = useState<string | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
 
     const handleConfigChange = (key: string, value: any) => {
@@ -154,6 +155,8 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
                         onGenerateSvg={handleGenerateSvg}
                         isGenerating={isGenerating}
                         deckStyle={deckStyle}
+                        selectedElement={selectedElement}
+                        onClearSelection={() => setSelectedElement(null)}
                     />
                 </div>
             </div>
@@ -215,6 +218,8 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
                             ref={cardRef}
                             isInteractive={true}
                             onContentChange={handleConfigChange}
+                            selectedElement={selectedElement}
+                            onSelectElement={setSelectedElement}
                         />
                     </div>
                     <div className="text-xs text-muted-foreground mt-4 italic">

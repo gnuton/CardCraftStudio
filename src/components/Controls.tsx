@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 import type { DeckStyle } from '../App';
 
@@ -23,9 +23,19 @@ interface ControlsProps {
     onGenerateSvg: () => void;
     isGenerating: boolean;
     deckStyle: DeckStyle;
+    selectedElement?: string | null;
+    onClearSelection?: () => void;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerateSvg, isGenerating, deckStyle }) => {
+export const Controls: React.FC<ControlsProps> = ({
+    config,
+    onChange,
+    onGenerateSvg,
+    isGenerating,
+    deckStyle,
+    selectedElement,
+    onClearSelection
+}) => {
 
     const handleImageUpload = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -38,17 +48,67 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
         }
     };
 
+    // Map card element names to control section names
+    const elementSectionMap: Record<string, string> = {
+        corner: 'corner',
+        reversedCorner: 'corner',
+        title: 'title',
+        description: 'description',
+        typeBar: 'typeBar',
+        flavorText: 'flavorText',
+        statsBox: 'statsBox',
+        collectorInfo: 'collectorInfo',
+        art: 'art',
+    };
+
+    // Check if a section should be highlighted
+    const isHighlighted = (sectionName: string) => {
+        if (!selectedElement) return false;
+        return elementSectionMap[selectedElement] === sectionName;
+    };
+
+    // Get highlight classes for a section
+    const getHighlightClasses = (sectionName: string) => {
+        return isHighlighted(sectionName)
+            ? 'ring-2 ring-indigo-500 bg-indigo-500/10 rounded-lg p-3 -m-3 transition-all'
+            : 'transition-all';
+    };
+
     return (
         <div className="w-full h-full bg-card p-6 border-r border-border overflow-y-auto overflow-x-hidden">
             <h1 className="text-2xl font-bold mb-6 text-foreground">Card Editor</h1>
 
             <div className="space-y-6">
+                {/* Element Selection Indicator - shown when an element is selected */}
+                {selectedElement && (
+                    <div className="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+                                <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 capitalize">
+                                    {selectedElement.replace(/([A-Z])/g, ' $1').trim()}
+                                </span>
+                            </div>
+                            <button
+                                onClick={onClearSelection}
+                                className="p-1.5 hover:bg-indigo-500/20 rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                                title="Clear selection"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Edit the content below or double-click on the card to edit inline.
+                        </p>
+                    </div>
+                )}
+
                 {/* Border Settings Removed - enforced to 1px Black */
                 }
 
                 {/* Content Settings */}
                 {deckStyle.showCorner && (
-                    <div className="space-y-3">
+                    <div className={`space-y-3 ${getHighlightClasses('corner')}`}>
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Corner Content</label>
                         <div className="space-y-4">
                             {config.topLeftImage ? (
@@ -104,7 +164,7 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Card Content</label>
                         <div className="space-y-4">
                             {deckStyle.showTitle && (
-                                <div>
+                                <div className={getHighlightClasses('title')}>
                                     <label className="text-xs text-muted-foreground mb-1 block">Title</label>
                                     <input
                                         type="text"
@@ -116,7 +176,7 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                                 </div>
                             )}
                             {deckStyle.showDescription && (
-                                <div>
+                                <div className={getHighlightClasses('description')}>
                                     <label className="text-xs text-muted-foreground mb-1 block">Description</label>
                                     <RichTextEditor
                                         value={config.description}
@@ -125,7 +185,7 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                                 </div>
                             )}
                             {deckStyle.showTypeBar && (
-                                <div>
+                                <div className={getHighlightClasses('typeBar')}>
                                     <label className="text-xs text-muted-foreground mb-1 block">Type Bar</label>
                                     <input
                                         type="text"
@@ -137,7 +197,7 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                                 </div>
                             )}
                             {deckStyle.showFlavorText && (
-                                <div>
+                                <div className={getHighlightClasses('flavorText')}>
                                     <label className="text-xs text-muted-foreground mb-1 block">Flavor Text</label>
                                     <textarea
                                         value={config['flavorTextContent'] || ''}
@@ -150,7 +210,7 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                             {(deckStyle.showStatsBox || deckStyle.showCollectorInfo) && (
                                 <div className="grid grid-cols-2 gap-4">
                                     {deckStyle.showStatsBox && (
-                                        <div>
+                                        <div className={getHighlightClasses('statsBox')}>
                                             <label className="text-xs text-muted-foreground mb-1 block">Stats</label>
                                             <input
                                                 type="text"
@@ -162,7 +222,7 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
                                         </div>
                                     )}
                                     {deckStyle.showCollectorInfo && (
-                                        <div>
+                                        <div className={getHighlightClasses('collectorInfo')}>
                                             <label className="text-xs text-muted-foreground mb-1 block">Collector Info</label>
                                             <input
                                                 type="text"
@@ -181,7 +241,7 @@ export const Controls: React.FC<ControlsProps> = ({ config, onChange, onGenerate
 
                 {/* Image Upload */}
                 {deckStyle.showArt && (
-                    <div className="space-y-3">
+                    <div className={`space-y-3 ${getHighlightClasses('art')}`}>
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Illustration</label>
                         <div className="space-y-3">
                             {config.centerImage ? (

@@ -125,4 +125,46 @@ describe('TransformWrapper Boundary Constraints', () => {
         // Allow some float precision error
         expect(lastCall.x).toBeCloseTo(79.3, 0);
     });
+
+    it('hides control handles when hideControls is true', () => {
+        const { queryByTitle, getByText } = render(
+            <TransformWrapper
+                isActive={true}
+                isSelected={true}
+                values={initialValues}
+                onUpdate={handleUpdate}
+                onSelect={handleSelect}
+                hideControls={true}
+                onDelete={() => { }}
+            >
+                <div>Content</div>
+            </TransformWrapper>
+        );
+
+        // Content should be rendered
+        expect(getByText('Content')).toBeInTheDocument();
+
+        // Delete button should NOT be rendered when hideControls is true
+        expect(queryByTitle('Delete element')).not.toBeInTheDocument();
+    });
+
+    it('shows control handles when hideControls is false or undefined', () => {
+        const handleDelete = vi.fn();
+        const { getByTitle } = render(
+            <TransformWrapper
+                isActive={true}
+                isSelected={true}
+                values={initialValues}
+                onUpdate={handleUpdate}
+                onSelect={handleSelect}
+                hideControls={false}
+                onDelete={handleDelete}
+            >
+                <div>Content</div>
+            </TransformWrapper>
+        );
+
+        // Delete button should be rendered
+        expect(getByTitle('Delete element')).toBeInTheDocument();
+    });
 });

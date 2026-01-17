@@ -28,6 +28,7 @@ interface CardProps {
     selectedElement?: string | null;
     onElementUpdate?: (element: 'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo' | 'cardBackTitle' | 'cardBackCopyright', updates: Partial<DeckStyle>) => void;
     onContentChange?: (key: string, value: string) => void;
+    onSelectElement?: (element: string | null) => void;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -53,7 +54,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             isFlipped = false,
             selectedElement,
             onElementUpdate,
-            onContentChange
+            onContentChange,
+            onSelectElement
         },
         ref
     ) => {
@@ -151,7 +153,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         style={{ ...zIndexStyle }}
                         bounds={{ minX: -150, maxX: 150, minY: -210, maxY: 210 }}
                         disableDrag={editingElement === elementKey}
-                        onSelect={() => onElementClick?.(elementKey)}
+                        onSelect={() => {
+                            onElementClick?.(elementKey);
+                            onSelectElement?.(elementKey);
+                        }}
                         onUpdate={(newVals) => {
                             const updates: Partial<DeckStyle> = {};
                             updates[config.xKey] = newVals.x as any;
@@ -335,16 +340,37 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 <div className="relative z-10 w-full h-full flex items-center justify-center">
                                     {topLeftImage ? (
                                         <ResolvedImage src={topLeftImage} alt="Top Left" className="w-full h-full object-cover rounded" />
+                                    ) : editingElement === 'corner' ? (
+                                        <textarea
+                                            value={topLeftContent ?? deckStyle?.cornerContent ?? ''}
+                                            onChange={(e) => onContentChange?.('topLeftContent', e.target.value)}
+                                            onBlur={() => setEditingElement(null)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            onFocus={(e) => {
+                                                const len = e.target.value.length;
+                                                e.target.setSelectionRange(len, len);
+                                            }}
+                                            autoFocus
+                                            className="w-full h-full bg-white/90 dark:bg-black/50 resize-none outline-none border-none p-1 text-center ring-2 ring-indigo-500 ring-offset-1 rounded"
+                                            style={{
+                                                color: deckStyle?.cornerColor || deckStyle?.svgCornerColor || '#000000',
+                                                fontFamily: deckStyle?.cornerFont || 'serif',
+                                                fontSize: `${deckStyle?.cornerFontSize || 24}px`,
+                                                fontWeight: 'bold'
+                                            }}
+                                        />
                                     ) : (
                                         <span
-                                            className="font-bold leading-none pointer-events-none"
+                                            className="font-bold leading-none cursor-text"
                                             style={{
                                                 color: deckStyle?.cornerColor || deckStyle?.svgCornerColor || '#000000',
                                                 fontFamily: deckStyle?.cornerFont || 'serif',
                                                 fontSize: `${deckStyle?.cornerFontSize || 24}px`
                                             }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('corner'); }}
                                         >
-                                            {topLeftContent || deckStyle?.cornerContent || 'A'}
+                                            {(topLeftContent ?? deckStyle?.cornerContent) || (isInteractive ? <span className="opacity-50 italic text-sm">Edit</span> : 'A')}
                                         </span>
                                     )}
                                 </div>
@@ -356,7 +382,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         )}
 
                         {/* Title */}
-                        {title && deckStyle?.showTitle !== false && renderTransformable('title',
+                        {title !== undefined && deckStyle?.showTitle !== false && renderTransformable('title',
                             <div className="w-full h-full relative">
                                 <div
                                     className="absolute inset-0 rounded shadow-sm overflow-hidden"
@@ -372,12 +398,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 >
                                     {editingElement === 'title' ? (
                                         <textarea
-                                            value={title || ''}
+                                            value={title ?? ''}
                                             onChange={(e) => onContentChange?.('title', e.target.value)}
                                             onBlur={() => setEditingElement(null)}
                                             onKeyDown={(e) => e.stopPropagation()}
+                                            onFocus={(e) => {
+                                                const len = e.target.value.length;
+                                                e.target.setSelectionRange(len, len);
+                                            }}
                                             autoFocus
-                                            className="w-full h-full bg-transparent resize-none outline-none border-none p-0 text-center"
+                                            className="w-full h-full bg-white/90 dark:bg-black/50 resize-none outline-none border-none p-1 text-center ring-2 ring-indigo-500 ring-offset-1 rounded"
                                             style={{
                                                 color: deckStyle?.titleColor || '#000000',
                                                 fontFamily: deckStyle?.titleFont || 'sans-serif',
@@ -392,7 +422,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                             onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('title'); }}
                                             className="cursor-text"
                                         >
-                                            {title}
+                                            {title || (isInteractive ? <span className="opacity-50 italic">Double-click to edit</span> : '')}
                                         </span>
                                     )}
                                 </div>
@@ -420,12 +450,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 >
                                     {editingElement === 'typeBar' ? (
                                         <textarea
-                                            value={typeBarContent || deckStyle?.typeBarContent || ''}
+                                            value={typeBarContent ?? deckStyle?.typeBarContent ?? ''}
                                             onChange={(e) => onContentChange?.('typeBarContent', e.target.value)}
                                             onBlur={() => setEditingElement(null)}
                                             onKeyDown={(e) => e.stopPropagation()}
+                                            onFocus={(e) => {
+                                                const len = e.target.value.length;
+                                                e.target.setSelectionRange(len, len);
+                                            }}
                                             autoFocus
-                                            className="w-full h-full bg-transparent resize-none outline-none border-none p-0 text-center uppercase tracking-wide"
+                                            className="w-full h-full bg-white/90 dark:bg-black/50 resize-none outline-none border-none p-1 text-center uppercase tracking-wide ring-2 ring-indigo-500 ring-offset-1 rounded"
                                             style={{
                                                 color: deckStyle?.typeBarColor || '#000000',
                                                 fontFamily: deckStyle?.typeBarFont || 'sans-serif',
@@ -440,7 +474,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                             onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('typeBar'); }}
                                             className="cursor-text"
                                         >
-                                            {typeBarContent || deckStyle?.typeBarContent || 'Type - Subtype'}
+                                            {(typeBarContent ?? deckStyle?.typeBarContent) || (isInteractive ? <span className="opacity-50 italic normal-case">Double-click to edit</span> : 'Type - Subtype')}
                                         </span>
                                     )}
                                 </div>
@@ -519,12 +553,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 >
                                     {editingElement === 'flavorText' ? (
                                         <textarea
-                                            value={flavorTextContent || deckStyle?.flavorTextContent || ''}
+                                            value={flavorTextContent ?? deckStyle?.flavorTextContent ?? ''}
                                             onChange={(e) => onContentChange?.('flavorTextContent', e.target.value)}
                                             onBlur={() => setEditingElement(null)}
                                             onKeyDown={(e) => e.stopPropagation()}
+                                            onFocus={(e) => {
+                                                const len = e.target.value.length;
+                                                e.target.setSelectionRange(len, len);
+                                            }}
                                             autoFocus
-                                            className="w-full h-full bg-transparent resize-none outline-none border-none p-1 text-center italic"
+                                            className="w-full h-full bg-white/90 dark:bg-black/50 resize-none outline-none border-none p-1 text-center italic ring-2 ring-indigo-500 ring-offset-1 rounded"
                                             style={{
                                                 color: deckStyle?.flavorTextColor || '#000000',
                                                 fontFamily: deckStyle?.flavorTextFont || 'serif',
@@ -537,7 +575,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                             onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('flavorText'); }}
                                             className="cursor-text"
                                         >
-                                            {flavorTextContent || deckStyle?.flavorTextContent || 'Flavor text...'}
+                                            {(flavorTextContent ?? deckStyle?.flavorTextContent) || (isInteractive ? <span className="opacity-50">Double-click to edit</span> : 'Flavor text...')}
                                         </span>
                                     )}
                                 </p>
@@ -565,12 +603,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 >
                                     {editingElement === 'statsBox' ? (
                                         <textarea
-                                            value={statsBoxContent || deckStyle?.statsBoxContent || ''}
+                                            value={statsBoxContent ?? deckStyle?.statsBoxContent ?? ''}
                                             onChange={(e) => onContentChange?.('statsBoxContent', e.target.value)}
                                             onBlur={() => setEditingElement(null)}
                                             onKeyDown={(e) => e.stopPropagation()}
+                                            onFocus={(e) => {
+                                                const len = e.target.value.length;
+                                                e.target.setSelectionRange(len, len);
+                                            }}
                                             autoFocus
-                                            className="w-full h-full bg-transparent resize-none outline-none border-none p-0 text-center"
+                                            className="w-full h-full bg-white/90 dark:bg-black/50 resize-none outline-none border-none p-1 text-center ring-2 ring-indigo-500 ring-offset-1 rounded"
                                             style={{
                                                 color: deckStyle?.statsBoxColor || '#000000',
                                                 fontFamily: deckStyle?.statsBoxFont || 'sans-serif',
@@ -584,7 +626,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                             onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('statsBox'); }}
                                             className="cursor-text"
                                         >
-                                            {statsBoxContent || deckStyle?.statsBoxContent || '1 / 1'}
+                                            {(statsBoxContent ?? deckStyle?.statsBoxContent) || (isInteractive ? <span className="opacity-50 italic font-normal">Edit</span> : '1 / 1')}
                                         </span>
                                     )}
                                 </div>
@@ -612,12 +654,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                             <div className="w-full relative text-[8px] flex justify-between px-1 opacity-70">
                                 {editingElement === 'collectorInfo' ? (
                                     <textarea
-                                        value={collectorInfoContent || deckStyle?.collectorInfoContent || ''}
+                                        value={collectorInfoContent ?? deckStyle?.collectorInfoContent ?? ''}
                                         onChange={(e) => onContentChange?.('collectorInfoContent', e.target.value)}
                                         onBlur={() => setEditingElement(null)}
                                         onKeyDown={(e) => e.stopPropagation()}
+                                        onFocus={(e) => {
+                                            const len = e.target.value.length;
+                                            e.target.setSelectionRange(len, len);
+                                        }}
                                         autoFocus
-                                        className="w-full h-full bg-transparent resize-none outline-none border-none p-0 text-center"
+                                        className="w-full h-full bg-white/90 dark:bg-black/50 resize-none outline-none border-none p-1 text-center ring-2 ring-indigo-500 ring-offset-1 rounded"
                                         style={{
                                             color: deckStyle?.collectorInfoColor,
                                             fontFamily: deckStyle?.collectorInfoFont,
@@ -631,7 +677,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                         onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('collectorInfo'); }}
                                         className="cursor-text"
                                     >
-                                        {collectorInfoContent || deckStyle?.collectorInfoContent || 'Artist | 001/100'}
+                                        {(collectorInfoContent ?? deckStyle?.collectorInfoContent) || (isInteractive ? <span className="opacity-50 italic">Double-click to edit</span> : 'Artist | 001/100')}
                                     </span>
                                 )}
                             </div>,
@@ -651,16 +697,38 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 <div className="relative z-10 w-full h-full flex items-center justify-center">
                                     {bottomRightImage ? (
                                         <ResolvedImage src={bottomRightImage} alt="Bottom Right" className="w-full h-full object-cover rounded" />
+                                    ) : editingElement === 'reversedCorner' ? (
+                                        <textarea
+                                            value={bottomRightContent ?? deckStyle?.cornerContent ?? ''}
+                                            onChange={(e) => onContentChange?.('bottomRightContent', e.target.value)}
+                                            onBlur={() => setEditingElement(null)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            onFocus={(e) => {
+                                                const len = e.target.value.length;
+                                                e.target.setSelectionRange(len, len);
+                                            }}
+                                            autoFocus
+                                            className="w-full h-full bg-white/90 dark:bg-black/50 resize-none outline-none border-none p-1 text-center ring-2 ring-indigo-500 ring-offset-1 rounded"
+                                            style={{
+                                                color: deckStyle?.cornerColor || deckStyle?.svgCornerColor || '#000000',
+                                                fontFamily: deckStyle?.cornerFont || 'serif',
+                                                fontSize: `${deckStyle?.reversedCornerFontSize || 24}px`,
+                                                fontWeight: 'bold'
+                                            }}
+                                        />
                                     ) : (
-                                        <div className="font-bold leading-none pointer-events-none"
+                                        <span
+                                            className="font-bold leading-none cursor-text"
                                             style={{
                                                 color: deckStyle?.cornerColor || deckStyle?.svgCornerColor || '#000000',
                                                 fontFamily: deckStyle?.cornerFont || 'serif',
                                                 fontSize: `${deckStyle?.reversedCornerFontSize || 24}px`
                                             }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('reversedCorner'); }}
                                         >
-                                            {bottomRightContent || deckStyle?.cornerContent || 'A'}
-                                        </div>
+                                            {(bottomRightContent ?? deckStyle?.cornerContent) || (isInteractive ? <span className="opacity-50 italic text-sm">Edit</span> : 'A')}
+                                        </span>
                                     )}
                                 </div>
                             </div>,
