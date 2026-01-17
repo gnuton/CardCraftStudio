@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
 import type { DeckStyle } from '../App';
-import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, Trash2 } from 'lucide-react';
+import { Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, Trash2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { driveService } from '../services/googleDrive';
 import { Download, Cloud, Loader2 } from 'lucide-react';
@@ -675,20 +675,6 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         }));
     };
 
-    const handleBackClick = () => {
-        if (hasChanges) {
-            setShowConfirmDialog(true);
-        } else {
-            onBack();
-        }
-    };
-
-
-
-    // ... existing imports
-
-    // ... inside GlobalStyleEditor ...
-
     const renderInspectorContent = () => {
         // Generic Element Inspector Logic
         const getElementConfig = (element: string) => {
@@ -1098,13 +1084,6 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
             {/* Left Panel: Assets */}
             <div className="w-[300px] flex-shrink-0 h-full border-r border-border bg-card overflow-y-auto custom-scrollbar flex flex-col">
                 <div className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border p-4">
-                    <button
-                        onClick={handleBackClick}
-                        className="w-full p-2 mb-4 hover:bg-muted rounded-lg transition-colors flex items-center gap-2 text-sm font-medium text-muted-foreground"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back to Deck
-                    </button>
                     <div className="flex items-center justify-between mb-2">
                         <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
                             <Box className="w-4 h-4" />

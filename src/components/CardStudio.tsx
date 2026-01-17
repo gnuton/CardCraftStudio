@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Card } from './Card';
 import { Controls } from './Controls';
 import { toSvg } from 'html-to-image';
-import { Loader2, ArrowLeft, Save } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import type { DeckStyle } from '../App';
 import { cn } from '../utils/cn';
 
@@ -31,6 +31,7 @@ interface CardStudioProps {
     onCancel: () => void;
 }
 
+// @ts-expect-error - onCancel is part of the interface but navigation is now handled by global nav bar
 export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStudioProps) => {
     const [config, setConfig] = useState<CardConfig>(initialCard || {
         id: crypto.randomUUID(),
@@ -127,19 +128,7 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
             {/* Sidebar Controls */}
             <div className="w-[400px] flex-shrink-0 h-full shadow-xl z-10 flex flex-col bg-card border-r border-border">
                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
-                    <button
-                        onClick={() => {
-                            if (window.confirm('Do you want to save changes before leaving?')) {
-                                onSave(config);
-                            } else {
-                                onCancel();
-                            }
-                        }}
-                        className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4 mr-1" />
-                        Back to Deck
-                    </button>
+                    <h2 className="text-lg font-semibold text-foreground">Card Editor</h2>
                     <button
                         onClick={() => onSave(config)}
                         className="flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-medium rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm"

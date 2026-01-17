@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sun, Moon, ArrowLeft, Cloud, CloudOff, CloudAlert } from 'lucide-react';
+import { Sun, Moon, Cloud, CloudOff, CloudAlert } from 'lucide-react';
 import logo from './assets/logo.png';
 import { CardStudio, type CardConfig } from './components/CardStudio';
 import { DeckStudio } from './components/DeckStudio';
@@ -14,6 +14,7 @@ import { driveService } from './services/googleDrive';
 import { calculateHash } from './utils/hash';
 import { imageService } from './services/imageService';
 import { GlobalStyleEditor } from './components/GlobalStyleEditor';
+import { Navigation } from './components/Navigation';
 
 const APP_VERSION = '1.2.0-drive-sync';
 const DECKS_STORAGE_KEY = 'cardcraftstudio-decks';
@@ -788,15 +789,25 @@ function App() {
       {/* Global Top Bar */}
       <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-8 mx-auto max-w-7xl">
-          <div
-            className="flex items-center gap-3 cursor-pointer group"
-            onClick={handleBackToLibrary}
-            title="Back to Library"
-          >
-            <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform" />
-            <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              CardCraft Studio
-            </span>
+          <div className="flex items-center gap-8">
+            <div
+              className="flex items-center gap-3 cursor-pointer group"
+              onClick={handleBackToLibrary}
+              title="CardCraft Studio"
+            >
+              <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform" />
+              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                CardCraft Studio
+              </span>
+            </div>
+
+            {/* Navigation Breadcrumbs */}
+            <Navigation
+              view={view}
+              deckName={activeDeck?.name}
+              onNavigateToLibrary={handleBackToLibrary}
+              onNavigateToDeck={() => setView('deck')}
+            />
           </div>
 
           <div className="flex items-center gap-4">
@@ -830,16 +841,6 @@ function App() {
                 <CloudOff className="w-5 h-5" />
               )}
             </button>
-
-            {view !== 'library' && (
-              <button
-                onClick={handleBackToLibrary}
-                className="hidden sm:flex items-center text-sm font-medium text-muted-foreground hover:text-indigo-600 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to Library
-              </button>
-            )}
 
             <div className="h-6 w-px bg-border mx-2 hidden sm:block"></div>
 
