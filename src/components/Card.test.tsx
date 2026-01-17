@@ -60,16 +60,18 @@ describe('Card Component', () => {
             />
         );
 
-        // Find the title content
-        const titleContent = screen.getByText('Test Title');
-        expect(titleContent).toBeInTheDocument();
+        // Find the title content (now wrapped in a span for in-place editing)
+        const titleSpan = screen.getByText('Test Title');
+        expect(titleSpan).toBeInTheDocument();
+        expect(titleSpan).toHaveClass('cursor-text'); // In-place editing class
 
-        // Verify Content Layer (should be relative, z-10)
-        expect(titleContent).toHaveClass('relative');
-        expect(titleContent).toHaveClass('z-10');
+        // Verify Content Layer (the parent div should be relative, z-10)
+        const contentDiv = titleSpan.parentElement;
+        expect(contentDiv).toHaveClass('relative');
+        expect(contentDiv).toHaveClass('z-10');
 
         // Verify Parent Wrapper contains the Background Layer
-        const wrapper = titleContent.parentElement;
+        const wrapper = contentDiv?.parentElement;
         expect(wrapper).toHaveClass('relative');
 
         // Find Background Layer (absolute, inset-0) in the same wrapper
@@ -78,7 +80,7 @@ describe('Card Component', () => {
         // Since we can't easily query by style with standard queries, we iterate children.
         const children = Array.from(wrapper?.children || []);
         const bgLayer = children.find(child =>
-            child !== titleContent &&
+            child !== contentDiv &&
             child.tagName === 'DIV' &&
             child.classList.contains('absolute') &&
             child.classList.contains('inset-0')

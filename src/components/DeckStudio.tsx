@@ -289,13 +289,6 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                                 {isGenerating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Download className="w-5 h-5 mr-2" />}
                                 Download PDF
                             </button>
-                            <button
-                                onClick={onAddCard}
-                                className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                            >
-                                <Plus className="w-5 h-5 mr-2" />
-                                Add New Card
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -342,21 +335,30 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
 
 
                 {deck.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
-                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                            <Plus className="w-8 h-8 text-slate-400" />
-                        </div>
-                        <h3 className="text-lg font-medium text-slate-900">Your deck is empty</h3>
-                        <p className="text-slate-500 mt-1 mb-6">Create your first card to get started.</p>
-                        <button
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        <div
                             onClick={onAddCard}
-                            className="text-indigo-600 font-medium hover:text-indigo-700"
+                            className="flex flex-col items-center justify-center aspect-[2.5/3.5] border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-accent/50 transition-colors group"
                         >
-                            Create Card
-                        </button>
+                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                                <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-600 transition-colors" />
+                            </div>
+                            <h3 className="font-medium text-foreground">Create New Card</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Click to add your first card</p>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {/* Create New Card Placeholder */}
+                        <div
+                            onClick={onAddCard}
+                            className="flex flex-col items-center justify-center aspect-[2.5/3.5] border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-accent/50 transition-colors group"
+                        >
+                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                                <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-600 transition-colors" />
+                            </div>
+                            <h3 className="font-medium text-foreground">Create New Card</h3>
+                        </div>
                         {deck.map((card, index) => (
                             <div key={card.id || index} className="group relative bg-card rounded-xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow">
                                 <div className="aspect-[2.5/3.5] bg-muted relative overflow-hidden">

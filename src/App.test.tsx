@@ -24,13 +24,13 @@ describe('App Component SVG Export', () => {
 
         render(<App />);
 
-        // Navigate: Library -> Deck Studio
-        const createDeckBtn = screen.getByRole('button', { name: /Create New Deck/i });
-        fireEvent.click(createDeckBtn);
+        // Navigate: Library -> Deck Studio (click the Create New Deck placeholder card)
+        const createDeckPlaceholder = screen.getByText('Create New Deck');
+        fireEvent.click(createDeckPlaceholder);
 
-        // Navigate: Deck Studio -> Editor
-        const addCardBtn = await screen.findByText('Add New Card');
-        fireEvent.click(addCardBtn);
+        // Navigate: Deck Studio -> Editor (click the Create New Card placeholder)
+        const createCardPlaceholder = await screen.findByText('Create New Card');
+        fireEvent.click(createCardPlaceholder);
 
         const exportBtn = await screen.findByRole('button', { name: /Export SVG/i });
         expect(exportBtn).toBeInTheDocument();

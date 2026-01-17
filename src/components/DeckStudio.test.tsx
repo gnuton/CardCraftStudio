@@ -432,3 +432,136 @@ describe('DeckStudio Import/Export', () => {
         expect(mockOnUpdateProjectName).toHaveBeenCalledWith('Imported Deck');
     });
 });
+
+describe('DeckStudio Create Card Placeholder', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+
+        // Setup jsPDF mock
+        mockJsPDF.mockImplementation(function (this: any) {
+            this.addPage = mockAddPage;
+            this.addImage = mockAddImage;
+            this.save = mockSave;
+            return this;
+        });
+
+        mockToJpeg.mockResolvedValue('data:image/jpeg;base64,mockdata');
+
+        // Setup JSZip mock
+        mockZipFile.mockReturnValue(undefined);
+        mockZipFolder.mockReturnValue({ file: mockZipFile });
+        mockZipGenerateAsync.mockResolvedValue(new Blob(['mock zip data']));
+
+        mockJSZip.mockImplementation(function (this: any) {
+            this.file = mockZipFile;
+            this.folder = mockZipFolder;
+            this.generateAsync = mockZipGenerateAsync;
+            this.loadAsync = mockZipLoadAsync;
+            return this;
+        });
+    });
+
+    it('shows Create New Card placeholder when deck is empty', () => {
+        const mockOnAddCard = vi.fn();
+
+        render(
+            <DeckStudio
+                deck={[]}
+                projectName="Empty Deck"
+                deckStyle={mockDeckStyle}
+                onAddCard={mockOnAddCard}
+                onEditCard={() => { }}
+                onDeleteCard={() => { }}
+                onUpdateProjectName={() => { }}
+                onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onOpenStyleEditor={() => { }}
+            />
+        );
+
+        expect(screen.getByText('Create New Card')).toBeInTheDocument();
+        expect(screen.getByText('Click to add your first card')).toBeInTheDocument();
+    });
+
+    it('shows Create New Card placeholder alongside cards when deck has cards', () => {
+        const mockDeck: CardConfig[] = [
+            {
+                id: '1',
+                title: 'Test Card',
+                description: '<p>Test</p>',
+                borderColor: '#000',
+                borderWidth: 1,
+                centerImage: null,
+                topLeftContent: 'A',
+                bottomRightContent: 'A',
+                topLeftImage: null,
+                bottomRightImage: null,
+                count: 1
+            }
+        ];
+
+        render(
+            <DeckStudio
+                deck={mockDeck}
+                projectName="Test Deck"
+                deckStyle={mockDeckStyle}
+                onAddCard={() => { }}
+                onEditCard={() => { }}
+                onDeleteCard={() => { }}
+                onUpdateProjectName={() => { }}
+                onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onOpenStyleEditor={() => { }}
+            />
+        );
+
+        // Should show both the placeholder and the card
+        expect(screen.getByText('Create New Card')).toBeInTheDocument();
+        expect(screen.getByText('Test Card')).toBeInTheDocument();
+    });
+
+    it('calls onAddCard when clicking Create New Card placeholder', () => {
+        const mockOnAddCard = vi.fn();
+
+        render(
+            <DeckStudio
+                deck={[]}
+                projectName="Empty Deck"
+                deckStyle={mockDeckStyle}
+                onAddCard={mockOnAddCard}
+                onEditCard={() => { }}
+                onDeleteCard={() => { }}
+                onUpdateProjectName={() => { }}
+                onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onOpenStyleEditor={() => { }}
+            />
+        );
+
+        const createCardPlaceholder = screen.getByText('Create New Card').closest('div[class*="cursor-pointer"]');
+        expect(createCardPlaceholder).toBeInTheDocument();
+
+        fireEvent.click(createCardPlaceholder!);
+        expect(mockOnAddCard).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not show Add New Card button in header', () => {
+        render(
+            <DeckStudio
+                deck={[]}
+                projectName="Test Deck"
+                deckStyle={mockDeckStyle}
+                onAddCard={() => { }}
+                onEditCard={() => { }}
+                onDeleteCard={() => { }}
+                onUpdateProjectName={() => { }}
+                onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onOpenStyleEditor={() => { }}
+            />
+        );
+
+        // The "Add New Card" text button should not exist
+        expect(screen.queryByText('Add New Card')).not.toBeInTheDocument();
+    });
+});

@@ -209,7 +209,13 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
                             transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${zoom})`
                         }}
                     >
-                        <Card {...config} deckStyle={deckStyle} ref={cardRef} />
+                        <Card
+                            {...config}
+                            deckStyle={deckStyle}
+                            ref={cardRef}
+                            isInteractive={true}
+                            onContentChange={handleConfigChange}
+                        />
                     </div>
                     <div className="text-xs text-muted-foreground mt-4 italic">
                         Tip: Scroll to zoom • Right-click to pan

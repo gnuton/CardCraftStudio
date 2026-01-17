@@ -27,15 +27,6 @@ export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck }:
                         <h1 className="text-3xl font-bold text-foreground">My Decks</h1>
                         <p className="text-muted-foreground mt-1">Manage your card collections</p>
                     </div>
-                    <div className="flex gap-4">
-                        <button
-                            onClick={onCreateDeck}
-                            className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                        >
-                            <Plus className="w-5 h-5 mr-2" />
-                            Create New Deck
-                        </button>
-                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

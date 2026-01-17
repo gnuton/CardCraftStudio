@@ -27,6 +27,7 @@ interface CardProps {
     isFlipped?: boolean;
     selectedElement?: string | null;
     onElementUpdate?: (element: 'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo' | 'cardBackTitle' | 'cardBackCopyright', updates: Partial<DeckStyle>) => void;
+    onContentChange?: (key: string, value: string) => void;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -51,10 +52,13 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             isInteractive = false,
             isFlipped = false,
             selectedElement,
-            onElementUpdate
+            onElementUpdate,
+            onContentChange
         },
         ref
     ) => {
+        const [editingElement, setEditingElement] = React.useState<string | null>(null);
+
         // Load Global Font
         useEffect(() => {
             if (deckStyle?.globalFont) {
@@ -146,6 +150,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         }}
                         style={{ ...zIndexStyle }}
                         bounds={{ minX: -150, maxX: 150, minY: -210, maxY: 210 }}
+                        disableDrag={editingElement === elementKey}
                         onSelect={() => onElementClick?.(elementKey)}
                         onUpdate={(newVals) => {
                             const updates: Partial<DeckStyle> = {};
@@ -365,7 +370,31 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                         fontSize: `${deckStyle?.titleFontSize || 14}px`
                                     }}
                                 >
-                                    {title}
+                                    {editingElement === 'title' ? (
+                                        <textarea
+                                            value={title || ''}
+                                            onChange={(e) => onContentChange?.('title', e.target.value)}
+                                            onBlur={() => setEditingElement(null)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            autoFocus
+                                            className="w-full h-full bg-transparent resize-none outline-none border-none p-0 text-center"
+                                            style={{
+                                                color: deckStyle?.titleColor || '#000000',
+                                                fontFamily: deckStyle?.titleFont || 'sans-serif',
+                                                fontSize: `${deckStyle?.titleFontSize || 14}px`,
+                                                fontWeight: 'bold',
+                                                lineHeight: '1.2'
+                                            }}
+                                        />
+                                    ) : (
+                                        <span
+                                            onClick={(e) => e.stopPropagation()}
+                                            onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('title'); }}
+                                            className="cursor-text"
+                                        >
+                                            {title}
+                                        </span>
+                                    )}
                                 </div>
                             </div>,
                             {
@@ -389,7 +418,31 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                         fontSize: `${deckStyle?.typeBarFontSize || 12}px`
                                     }}
                                 >
-                                    {typeBarContent || deckStyle?.typeBarContent || 'Type - Subtype'}
+                                    {editingElement === 'typeBar' ? (
+                                        <textarea
+                                            value={typeBarContent || deckStyle?.typeBarContent || ''}
+                                            onChange={(e) => onContentChange?.('typeBarContent', e.target.value)}
+                                            onBlur={() => setEditingElement(null)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            autoFocus
+                                            className="w-full h-full bg-transparent resize-none outline-none border-none p-0 text-center uppercase tracking-wide"
+                                            style={{
+                                                color: deckStyle?.typeBarColor || '#000000',
+                                                fontFamily: deckStyle?.typeBarFont || 'sans-serif',
+                                                fontSize: `${deckStyle?.typeBarFontSize || 12}px`,
+                                                fontWeight: 'bold',
+                                                lineHeight: '1.2'
+                                            }}
+                                        />
+                                    ) : (
+                                        <span
+                                            onClick={(e) => e.stopPropagation()}
+                                            onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('typeBar'); }}
+                                            className="cursor-text"
+                                        >
+                                            {typeBarContent || deckStyle?.typeBarContent || 'Type - Subtype'}
+                                        </span>
+                                    )}
                                 </div>
                             </div>,
                             {
@@ -464,7 +517,29 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                         fontSize: `${deckStyle?.flavorTextFontSize || 12}px`
                                     }}
                                 >
-                                    {flavorTextContent || deckStyle?.flavorTextContent || 'Flavor text...'}
+                                    {editingElement === 'flavorText' ? (
+                                        <textarea
+                                            value={flavorTextContent || deckStyle?.flavorTextContent || ''}
+                                            onChange={(e) => onContentChange?.('flavorTextContent', e.target.value)}
+                                            onBlur={() => setEditingElement(null)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            autoFocus
+                                            className="w-full h-full bg-transparent resize-none outline-none border-none p-1 text-center italic"
+                                            style={{
+                                                color: deckStyle?.flavorTextColor || '#000000',
+                                                fontFamily: deckStyle?.flavorTextFont || 'serif',
+                                                fontSize: `${deckStyle?.flavorTextFontSize || 12}px`
+                                            }}
+                                        />
+                                    ) : (
+                                        <span
+                                            onClick={(e) => e.stopPropagation()}
+                                            onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('flavorText'); }}
+                                            className="cursor-text"
+                                        >
+                                            {flavorTextContent || deckStyle?.flavorTextContent || 'Flavor text...'}
+                                        </span>
+                                    )}
                                 </p>
                             </div>,
                             {
@@ -488,7 +563,30 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                         fontSize: `${deckStyle?.statsBoxFontSize || 14}px`
                                     }}
                                 >
-                                    {statsBoxContent || deckStyle?.statsBoxContent || '1 / 1'}
+                                    {editingElement === 'statsBox' ? (
+                                        <textarea
+                                            value={statsBoxContent || deckStyle?.statsBoxContent || ''}
+                                            onChange={(e) => onContentChange?.('statsBoxContent', e.target.value)}
+                                            onBlur={() => setEditingElement(null)}
+                                            onKeyDown={(e) => e.stopPropagation()}
+                                            autoFocus
+                                            className="w-full h-full bg-transparent resize-none outline-none border-none p-0 text-center"
+                                            style={{
+                                                color: deckStyle?.statsBoxColor || '#000000',
+                                                fontFamily: deckStyle?.statsBoxFont || 'sans-serif',
+                                                fontSize: `${deckStyle?.statsBoxFontSize || 14}px`,
+                                                fontWeight: 'bold'
+                                            }}
+                                        />
+                                    ) : (
+                                        <span
+                                            onClick={(e) => e.stopPropagation()}
+                                            onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('statsBox'); }}
+                                            className="cursor-text"
+                                        >
+                                            {statsBoxContent || deckStyle?.statsBoxContent || '1 / 1'}
+                                        </span>
+                                    )}
                                 </div>
                             </div>,
                             {
@@ -512,9 +610,30 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         {/* Collector Info */}
                         {deckStyle?.showCollectorInfo && renderTransformable('collectorInfo',
                             <div className="w-full relative text-[8px] flex justify-between px-1 opacity-70">
-                                <span style={{ color: deckStyle?.collectorInfoColor, fontFamily: deckStyle?.collectorInfoFont, fontSize: `${deckStyle?.collectorInfoFontSize || 8}px` }}>
-                                    {collectorInfoContent || deckStyle?.collectorInfoContent || 'Artist | 001/100'}
-                                </span>
+                                {editingElement === 'collectorInfo' ? (
+                                    <textarea
+                                        value={collectorInfoContent || deckStyle?.collectorInfoContent || ''}
+                                        onChange={(e) => onContentChange?.('collectorInfoContent', e.target.value)}
+                                        onBlur={() => setEditingElement(null)}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                        autoFocus
+                                        className="w-full h-full bg-transparent resize-none outline-none border-none p-0 text-center"
+                                        style={{
+                                            color: deckStyle?.collectorInfoColor,
+                                            fontFamily: deckStyle?.collectorInfoFont,
+                                            fontSize: `${deckStyle?.collectorInfoFontSize || 8}px`
+                                        }}
+                                    />
+                                ) : (
+                                    <span
+                                        style={{ color: deckStyle?.collectorInfoColor, fontFamily: deckStyle?.collectorInfoFont, fontSize: `${deckStyle?.collectorInfoFontSize || 8}px` }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('collectorInfo'); }}
+                                        className="cursor-text"
+                                    >
+                                        {collectorInfoContent || deckStyle?.collectorInfoContent || 'Artist | 001/100'}
+                                    </span>
+                                )}
                             </div>,
                             {
                                 xKey: 'collectorInfoX', yKey: 'collectorInfoY', wKey: 'collectorInfoWidth', rKey: 'collectorInfoRotate',

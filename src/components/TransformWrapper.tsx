@@ -31,6 +31,7 @@ interface TransformWrapperProps {
         minY: number;
         maxY: number;
     };
+    disableDrag?: boolean;
 }
 
 export const TransformWrapper = ({
@@ -47,7 +48,8 @@ export const TransformWrapper = ({
     style,
     useScaleForResize = false,
     onDelete,
-    bounds
+    bounds,
+    disableDrag = false
 }: TransformWrapperProps) => {
     const [isDragging, setIsDragging] = useState(false);
 
@@ -64,6 +66,13 @@ export const TransformWrapper = ({
 
     const handleMouseDown = (e: React.MouseEvent, action: string) => {
         if (!isActive) return;
+
+        // Allow text selection/editing when drag is disabled
+        if (action === 'drag' && disableDrag) {
+            e.stopPropagation();
+            return;
+        }
+
         e.stopPropagation();
         e.preventDefault();
 
