@@ -16,6 +16,8 @@ vi.mock('html-to-image', () => ({
 describe('App Component SVG Export', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.stubGlobal('crypto', { randomUUID: () => Math.random().toString() });
+        localStorage.clear();
     });
 
     it('triggers toSvg and downloads file when Export SVG is clicked', async () => {
@@ -50,4 +52,5 @@ describe('App Component SVG Export', () => {
         // We can inspect the arguments if we want to ensure config is passed
         // expect(htmlToImage.toSvg).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ backgroundColor: '#ffffff' }));
     });
+
 });

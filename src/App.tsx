@@ -10,6 +10,7 @@ import { SyncErrorDialog } from './components/SyncErrorDialog';
 import { SyncPromptDialog } from './components/SyncPromptDialog';
 import { SyncConflictDialog } from './components/SyncConflictDialog';
 import { NewDeckDialog } from './components/NewDeckDialog';
+import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { ToastContainer, type ToastType } from './components/Toast';
 import { driveService } from './services/googleDrive';
 import { calculateHash } from './utils/hash';
@@ -611,6 +612,7 @@ function App() {
   const [view, setView] = useState<'library' | 'deck' | 'editor' | 'style'>('library');
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [isNewDeckDialogOpen, setIsNewDeckDialogOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<number | null>(null);
 
   // Persistence
   useEffect(() => {
@@ -720,10 +722,16 @@ function App() {
 
   const handleDeleteCard = (index: number) => {
     if (!activeDeck) return;
-    if (confirm('Are you sure you want to delete this card?')) {
-      const newCards = activeDeck.cards.filter((_, i) => i !== index);
+    setCardToDelete(index);
+  };
+
+  const confirmDeleteCard = () => {
+    if (activeDeck && cardToDelete !== null) {
+      const newCards = activeDeck.cards.filter((_, i) => i !== cardToDelete);
       updateActiveDeck({ cards: newCards });
+      addToast('Card deleted', 'success');
     }
+    setCardToDelete(null);
   };
 
   const handleDuplicateCard = (index: number) => {
@@ -1017,6 +1025,16 @@ function App() {
           &copy; 2026 Antonio 'GNUton' Aloisio. Released under GPL-3.0.
         </p>
       </footer>
+
+      <ConfirmationDialog
+        isOpen={cardToDelete !== null}
+        title="Delete Card"
+        message="Are you sure you want to delete this card? This action cannot be undone."
+        onConfirm={confirmDeleteCard}
+        onCancel={() => setCardToDelete(null)}
+        confirmLabel="Delete"
+        isDestructive={true}
+      />
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
