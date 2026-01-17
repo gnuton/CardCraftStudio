@@ -565,3 +565,48 @@ describe('DeckStudio Create Card Placeholder', () => {
         expect(screen.queryByText('Add New Card')).not.toBeInTheDocument();
     });
 });
+
+describe('Overlay Actions Visibility', () => {
+    const mockDeck: CardConfig[] = [
+        {
+            id: '1',
+            title: 'Card 1',
+            description: '<p>Desc 1</p>',
+            borderColor: '#000',
+            borderWidth: 1,
+            centerImage: null,
+            topLeftContent: 'A',
+            bottomRightContent: 'A',
+            topLeftImage: null,
+            bottomRightImage: null,
+            count: 1
+        }
+    ];
+
+    it('renders overlay action buttons for each card with correct stacking context', () => {
+        render(
+            <DeckStudio
+                deck={mockDeck}
+                projectName="Test Deck"
+                deckStyle={mockDeckStyle}
+                onAddCard={() => { }}
+                onEditCard={() => { }}
+                onDeleteCard={() => { }}
+                onUpdateProjectName={() => { }}
+                onUpdateCard={() => { }}
+                onDuplicateCard={() => { }}
+                onOpenStyleEditor={() => { }}
+            />
+        );
+
+        // Check for presence of buttons by title
+        expect(screen.getByTitle('Edit Card')).toBeInTheDocument();
+        expect(screen.getByTitle('Duplicate Card')).toBeInTheDocument();
+        expect(screen.getByTitle('Delete Card')).toBeInTheDocument();
+
+        // We verify the overlay container has z-50 class to ensure visibility over card content
+        const editBtn = screen.getByTitle('Edit Card');
+        const overlayContainer = editBtn.parentElement;
+        expect(overlayContainer).toHaveClass('z-50');
+    });
+});
