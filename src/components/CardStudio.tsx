@@ -17,6 +17,10 @@ export interface CardConfig {
     centerImage: string | null;
     title: string;
     description: string;
+    typeBarContent?: string;
+    flavorTextContent?: string;
+    statsBoxContent?: string;
+    collectorInfoContent?: string;
     count?: number;
 }
 
@@ -38,7 +42,11 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
         bottomRightImage: null,
         centerImage: null,
         title: 'Card Title',
-        description: 'This is a description of the card ability or effect.'
+        description: 'This is a description of the card ability or effect.',
+        typeBarContent: 'Type - Subtype',
+        flavorTextContent: 'Flavor text...',
+        statsBoxContent: '1 / 1',
+        collectorInfoContent: 'Artist | 001/100'
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -145,6 +153,7 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
                         onChange={handleConfigChange}
                         onGenerateSvg={handleGenerateSvg}
                         isGenerating={isGenerating}
+                        deckStyle={deckStyle}
                     />
                 </div>
             </div>

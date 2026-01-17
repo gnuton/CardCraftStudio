@@ -10,7 +10,11 @@ vi.mock('./ResolvedImage', () => ({
 }));
 
 vi.mock('./TransformWrapper', () => ({
-    TransformWrapper: ({ children }: any) => <div data-testid="transform-wrapper">{children}</div>
+    TransformWrapper: ({ children, bounds }: any) => (
+        <div data-testid="transform-wrapper" data-bounds={JSON.stringify(bounds)}>
+            {children}
+        </div>
+    )
 }));
 
 describe('Card Component', () => {
@@ -98,5 +102,29 @@ describe('Card Component', () => {
         );
 
         expect(screen.getByText('X')).toBeInTheDocument();
+    });
+
+    it('passes strict boundary constraints to transform wrapper', () => {
+        render(
+            <Card
+                title="Bound Test"
+                deckStyle={mockStyle}
+                isInteractive={true}
+                selectedElement="title"
+            />
+        );
+
+        const wrappers = screen.getAllByTestId('transform-wrapper');
+        const titleWrapper = wrappers.find(w => w.textContent?.includes('Bound Test'));
+
+        expect(titleWrapper).toBeDefined();
+        // Check strict bounds: [-150, 150] x [-210, 210]
+        const boundsData = JSON.parse(titleWrapper?.getAttribute('data-bounds') || '{}');
+        expect(boundsData).toEqual({
+            minX: -150,
+            maxX: 150,
+            minY: -210,
+            maxY: 210
+        });
     });
 });

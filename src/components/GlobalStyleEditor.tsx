@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
 import type { DeckStyle } from '../App';
-import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2 } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Type, Palette, Layout, Check, Hash, AlertCircle, X, Settings, Shield, Zap, Box, PenTool, ChevronRight, ChevronDown, Plus, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, Trash2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { driveService } from '../services/googleDrive';
 import { Download, Cloud, Loader2 } from 'lucide-react';
@@ -26,14 +26,64 @@ interface GlobalStyleEditorProps {
     onBack: () => void;
 }
 
-const FONTS = [
-    { name: 'Serif', value: 'serif' },
-    { name: 'Sans Serif', value: 'sans-serif' },
-    { name: 'Monospace', value: 'monospace' },
-    { name: 'Cursive', value: 'cursive' },
-    { name: 'Outfit', value: 'Outfit, sans-serif' },
-    { name: 'Inter', value: 'Inter, sans-serif' },
-    { name: 'Roboto Slab', value: 'Roboto Slab, serif' }
+
+const BACK_PATTERNS = [
+    { name: 'Hexagons', value: 'backs/pattern_hex.svg' },
+    { name: 'Geometric', value: 'backs/pattern_geo.svg' },
+    { name: 'Waves', value: 'backs/pattern_waves.svg' },
+    { name: 'Simple', value: 'backs/pattern_simple.svg' },
+    { name: 'Dots Small', value: 'backs/dots_sm.svg' },
+    { name: 'Dots Large', value: 'backs/dots_lg.svg' },
+    { name: 'Dots Spaced', value: 'backs/dots_spaced.svg' },
+    { name: 'Grid Thin', value: 'backs/grid_thin.svg' },
+    { name: 'Grid Thick', value: 'backs/grid_thick.svg' },
+    { name: 'Lines H', value: 'backs/lines_h.svg' },
+    { name: 'Lines V', value: 'backs/lines_v.svg' },
+    { name: 'Diag L', value: 'backs/diag_l.svg' },
+    { name: 'Diag R', value: 'backs/diag_r.svg' },
+    { name: 'Cross', value: 'backs/cross.svg' },
+    { name: 'Chevrons', value: 'backs/chevrons.svg' },
+    { name: 'Diamonds', value: 'backs/diamonds.svg' },
+    { name: 'Squares', value: 'backs/squares.svg' },
+    { name: 'Circles', value: 'backs/circles_hollow.svg' },
+    { name: 'Zigzag', value: 'backs/zigzag.svg' },
+    { name: 'Waves Sharp', value: 'backs/waves_sharp.svg' },
+    { name: 'Plus Sign', value: 'backs/plus_sign.svg' },
+    { name: 'Mesh', value: 'backs/mesh.svg' },
+    { name: 'Scales', value: 'backs/scales.svg' },
+    { name: 'Bricks', value: 'backs/bricks.svg' },
+    { name: 'Hatch', value: 'backs/hatch.svg' },
+    { name: 'Weave', value: 'backs/weave.svg' },
+    { name: 'Honeycomb', value: 'backs/honeycomb.svg' },
+    { name: 'Stars', value: 'backs/stars.svg' },
+    { name: 'Triangles', value: 'backs/triangles.svg' },
+    { name: 'Polka Dot', value: 'backs/polka.svg' },
+    { name: 'Stripes Wide', value: 'backs/stripes_wide.svg' },
+    { name: 'Confetti', value: 'backs/confetti.svg' },
+    { name: 'Plaid', value: 'backs/plaid.svg' },
+    { name: 'Circuit', value: 'backs/circuit.svg' },
+    { name: 'Bubbles', value: 'backs/bubbles.svg' },
+    { name: 'Leaves', value: 'backs/leaves.svg' },
+    { name: 'Greek', value: 'backs/greek.svg' },
+    { name: 'Maze', value: 'backs/maze.svg' },
+    { name: 'Pixels', value: 'backs/pixels.svg' },
+    { name: 'Shingles', value: 'backs/shingles.svg' },
+    { name: 'Ripples', value: 'backs/ripples.svg' },
+    { name: 'Parquet', value: 'backs/parquet.svg' },
+    { name: 'Arrows', value: 'backs/arrows.svg' },
+    { name: 'Eyes', value: 'backs/eyes.svg' },
+    { name: 'Cloud', value: 'backs/cloud.svg' },
+    { name: 'Sun', value: 'backs/sun.svg' },
+    { name: 'Moon', value: 'backs/moon.svg' },
+    { name: 'Cog', value: 'backs/cog.svg' },
+    { name: 'Bolt', value: 'backs/bolt.svg' },
+    { name: 'Heart', value: 'backs/heart.svg' },
+    { name: 'Spade', value: 'backs/spade.svg' },
+    { name: 'Club', value: 'backs/club.svg' },
+    { name: 'Diamond Suit', value: 'backs/diamond_suit.svg' },
+    { name: 'Shield', value: 'backs/shield.svg' },
+    { name: 'Sword', value: 'backs/sword.svg' },
+    { name: 'Crown', value: 'backs/crown.svg' }
 ];
 
 const TEMPLATES: Template[] = [
@@ -386,7 +436,7 @@ const TEMPLATES: Template[] = [
 export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack }: GlobalStyleEditorProps) => {
     const [currentStyle, setCurrentStyle] = useState<DeckStyle>(deckStyle);
     const [isFontPickerOpen, setIsFontPickerOpen] = useState(false);
-    const [selectedElement, setSelectedElement] = useState<'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo' | null>(null);
+    const [selectedElement, setSelectedElement] = useState<'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo' | 'cardBackTitle' | 'cardBackCopyright' | null>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
@@ -399,6 +449,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const [isPanMode, setIsPanMode] = useState(false);
     const [isDraggingPan, setIsDraggingPan] = useState(false);
     const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
+    const [isFlipped, setIsFlipped] = useState(false);
 
     const handleZoomIn = () => setViewScale(s => Math.min(s + 0.1, 3));
     const handleZoomOut = () => setViewScale(s => Math.max(s - 0.1, 0.5));
@@ -482,6 +533,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const handleStyleChange = (updates: Partial<DeckStyle>) => {
         const newStyle = { ...currentStyle, ...updates };
         setCurrentStyle(newStyle);
+        onUpdateStyle(newStyle);
     };
 
     const handleDownloadSVG = async () => {
@@ -644,7 +696,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                 title: { label: 'Title', icon: Type, desc: 'The main name of the card.', hasFont: true, hasColor: true },
                 description: { label: 'Description', icon: Layout, desc: 'The main rules text of the card.', hasFont: true, hasColor: true },
                 corner: { label: 'Corner', icon: Hash, desc: 'Top-left value indicator.', hasContent: true, hasFont: true, hasColor: true },
-                reversedCorner: { label: 'Inverted Corner', icon: Shield, desc: 'Bottom-right inverted value.', hasFont: true, hasColor: true }, // No explicit content edit for reversed usually? Or mirrors corner? Let's assume style only for now or same logic as corner
+                reversedCorner: { label: 'Inverted Corner', icon: Shield, desc: 'Bottom-right inverted value.', hasFont: true, hasColor: true },
                 art: { label: 'Illustration', icon: Palette, desc: 'The main card artwork.', },
                 typeBar: { label: 'Type Bar', icon: Type, desc: 'Component for card type and subtype.', hasContent: true, hasFont: true, hasColor: true },
                 flavorText: { label: 'Flavor Text', icon: Type, desc: 'Lore text section.', hasContent: true, hasFont: true, hasColor: true },
@@ -652,6 +704,8 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                 watermark: { label: 'Watermark', icon: Shield, desc: 'Faction symbol background.', hasUrl: true },
                 rarityIcon: { label: 'Rarity Icon', icon: Zap, desc: 'Set and rarity indicator.', hasUrl: true },
                 collectorInfo: { label: 'Collector Info', icon: Hash, desc: 'Artist and copyright details.', hasContent: true, hasFont: true, hasColor: true },
+                cardBackTitle: { label: 'Game Title', icon: Type, desc: 'Main game title displayed on card back.', hasContent: true, hasFont: true, hasColor: true },
+                cardBackCopyright: { label: 'Back: Copyright', icon: Shield, desc: 'Legal and version information on the back.', hasContent: true, hasFont: true, hasColor: true },
             };
             return configs[element];
         };
@@ -659,16 +713,9 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         const config = selectedElement ? getElementConfig(selectedElement) : null;
 
         if (selectedElement && config) {
-            // Collapsible State (Local to this render cycle effectively, or need state? 
-            // Ideally state, but for simplicity let's use the requested structure which implies headers imply sections.
-            // We can use Details/Summary or just sections.
-
-            // Mapping properties dynamically
             const prefix = selectedElement;
-            const contentKey = `${prefix}Content` as keyof DeckStyle;
             const fontKey = `${prefix}Font` as keyof DeckStyle;
             const colorKey = `${prefix}Color` as keyof DeckStyle;
-            const urlKey = `${prefix}Url` as keyof DeckStyle;
 
             return (
                 <div className="space-y-6 animate-in slide-in-from-right-5 duration-300">
@@ -685,39 +732,8 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                         <p className="text-xs text-muted-foreground">{config.desc}</p>
                     </div>
 
-                    {/* Content Section (if applicable) */}
-                    {(config.hasContent || config.hasUrl) && (
-                        <div className="space-y-4 pt-4 border-t border-border">
-                            <h4 className="text-xs font-bold text-muted-foreground uppercase">Content</h4>
-                            {config.hasContent && (
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-foreground/70">Text</label>
-                                    <input
-                                        type="text"
-                                        value={currentStyle[contentKey] as string || ''}
-                                        onChange={(e) => handleStyleChange({ [contentKey]: e.target.value })}
-                                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                    />
-                                </div>
-                            )}
-                            {config.hasUrl && (
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-foreground/70">Image URL</label>
-                                    <input
-                                        type="text"
-                                        value={currentStyle[urlKey] as string || ''}
-                                        onChange={(e) => handleStyleChange({ [urlKey]: e.target.value })}
-                                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                        placeholder="https://..."
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Appearance Group (Collapsible) */}
-                    <div className="space-y-4 pt-2">
-                        <div className="flex items-center justify-between cursor-pointer" onClick={() => {/* Toggle logic typically, assuming always open for now or add state if critical */ }}>
+                    <div className="space-y-4 pt-2 border-t border-border mt-4">
+                        <div className="flex items-center justify-between cursor-pointer">
                             <h4 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
                                 <Palette className="w-3 h-3" /> Appearance
                             </h4>
@@ -728,16 +744,50 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                             {(config.hasFont || config.hasColor) && (
                                 <div className="space-y-4 mb-4">
                                     {config.hasFont && (
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-semibold text-foreground/70">Font Family</label>
-                                            <select
-                                                value={currentStyle[fontKey] as string || 'sans-serif'}
-                                                onChange={(e) => handleStyleChange({ [fontKey]: e.target.value })}
-                                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                            >
-                                                {FONTS.map(f => <option key={f.value} value={f.value}>{f.name}</option>)}
-                                            </select>
-                                        </div>
+                                        <>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold text-foreground/70">Font Family</label>
+                                                <button
+                                                    onClick={() => setIsFontPickerOpen(true)}
+                                                    className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between hover:bg-muted/80 transition-colors"
+                                                >
+                                                    <span className="truncate">{currentStyle[fontKey] as string || 'sans-serif'}</span>
+                                                    <ChevronDown className="w-3 h-3 opacity-50 flex-shrink-0" />
+                                                </button>
+                                                <FontPicker
+                                                    isOpen={isFontPickerOpen}
+                                                    onClose={() => setIsFontPickerOpen(false)}
+                                                    onSelect={(font) => {
+                                                        handleStyleChange({ [fontKey]: font });
+                                                        setIsFontPickerOpen(false);
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold text-foreground/70">Font Size (px)</label>
+                                                <input
+                                                    type="number"
+                                                    value={currentStyle[`${prefix}FontSize` as keyof DeckStyle] as number || (
+                                                        ({
+                                                            title: 14,
+                                                            typeBar: 12,
+                                                            description: 12,
+                                                            flavorText: 12,
+                                                            statsBox: 14,
+                                                            collectorInfo: 8,
+                                                            cardBackTitle: 24,
+                                                            cardBackCopyright: 10,
+                                                            corner: 24,
+                                                            reversedCorner: 24
+                                                        } as Record<string, number>)[prefix] || 14
+                                                    )}
+                                                    onChange={(e) => handleStyleChange({ [`${prefix}FontSize`]: Number(e.target.value) })}
+                                                    min="8"
+                                                    max="72"
+                                                    className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                />
+                                            </div>
+                                        </>
                                     )}
                                     {config.hasColor && (
                                         <div className="space-y-2">
@@ -761,12 +811,29 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 </div>
                             )}
 
+
                             {/* Shared Style Controls (Opacity, Z-Index, Border, etc.) */}
                             <StyleControls
                                 prefix={prefix}
                                 currentStyle={currentStyle}
                                 onUpdate={handleStyleChange}
                             />
+
+                            {/* Element Visibility Toggle for Back Elements */}
+                            {selectedElement === 'cardBackCopyright' && (
+                                <div className="pt-4 border-t border-border mt-4">
+                                    <button
+                                        onClick={() => {
+                                            handleStyleChange({ showCardBackCopyright: false });
+                                            setSelectedElement(null);
+                                        }}
+                                        className="w-full py-2 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all border border-red-500/20 hover:border-red-500/40"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        Remove from Card
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -780,227 +847,249 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 pb-2 border-b border-border">
                         <Settings className="w-4 h-4 text-indigo-500" />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">Card Base Settings</h3>
+                        <h3 className="font-bold text-sm uppercase tracking-wider">{isFlipped ? 'Card Back Settings' : 'Card Base Settings'}</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground">Configure the base appearance of the card frame and background.</p>
+                    <p className="text-xs text-muted-foreground">
+                        {isFlipped ? 'Customize the appearance of the card back.' : 'Configure the base appearance of the card frame and background.'}
+                    </p>
 
                     <div className="space-y-4 pt-2">
-                        {/* Global Font & Corner Radius */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground/70">Global Font</label>
-                                <button
-                                    onClick={() => setIsFontPickerOpen(true)}
-                                    className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs text-left flex items-center justify-between"
-                                >
-                                    <span className="truncate">{currentStyle.globalFont || 'Inherit / Default'}</span>
-                                    <ChevronDown className="w-3 h-3 opacity-50" />
-                                </button>
-                                <FontPicker
-                                    isOpen={isFontPickerOpen}
-                                    onClose={() => setIsFontPickerOpen(false)}
-                                    onSelect={(font) => {
-                                        handleStyleChange({ globalFont: font });
-                                        setIsFontPickerOpen(false);
-                                    }}
-                                    currentFont={currentStyle.globalFont}
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground/70 flex justify-between">
-                                    <span>Corner Radius</span>
-                                    <span className="text-muted-foreground">{currentStyle.cornerRadius ?? 12}px</span>
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="30"
-                                    value={currentStyle.cornerRadius ?? 12}
-                                    onChange={(e) => handleStyleChange({ cornerRadius: parseInt(e.target.value) })}
-                                    className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                />
-                            </div>
-                        </div>
+                        {isFlipped ? (
+                            <div className="space-y-6">
+                                {/* Card Back Base Settings (Color & Background) */}
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-2">
+                                        <Palette className="w-3 h-3" /> Background Color
+                                    </h4>
 
-                        {/* Shadow Intensity */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-foreground/70 flex justify-between">
-                                <span>Shadow Intensity</span>
-                                <span className="text-muted-foreground">{Math.round((currentStyle.shadowIntensity ?? 0) * 100)}%</span>
-                            </label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="1"
-                                step="0.1"
-                                value={currentStyle.shadowIntensity ?? 0}
-                                onChange={(e) => handleStyleChange({ shadowIntensity: parseFloat(e.target.value) })}
-                                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                            />
-                        </div>
-
-                        {/* Texture Overlay */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground/70">Texture</label>
-                                <select
-                                    value={currentStyle.textureOverlay || 'none'}
-                                    onChange={(e) => handleStyleChange({ textureOverlay: e.target.value as any })}
-                                    className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs"
-                                >
-                                    <option value="none">None</option>
-                                    <option value="paper">Paper Grain</option>
-                                    <option value="noise">Static Noise</option>
-                                    <option value="foil">Holo Foil</option>
-                                    <option value="grunge">Grunge Vignette</option>
-                                </select>
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="color"
+                                                value={currentStyle.cardBackBackgroundColor || '#1e293b'}
+                                                onChange={(e) => handleStyleChange({ cardBackBackgroundColor: e.target.value })}
+                                                className="w-10 h-10 rounded-lg border-0 p-0 cursor-pointer overflow-hidden"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={currentStyle.cardBackBackgroundColor || '#1e293b'}
+                                                onChange={(e) => handleStyleChange({ cardBackBackgroundColor: e.target.value })}
+                                                className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm font-mono uppercase"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            {currentStyle.textureOverlay && currentStyle.textureOverlay !== 'none' && (
+                        ) : (
+                            <>
+                                {/* Global Font & Corner Radius */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-foreground/70">Global Font</label>
+                                        <button
+                                            onClick={() => setIsFontPickerOpen(true)}
+                                            className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs text-left flex items-center justify-between"
+                                        >
+                                            <span className="truncate">{currentStyle.globalFont || 'Inherit / Default'}</span>
+                                            <ChevronDown className="w-3 h-3 opacity-50" />
+                                        </button>
+                                        <FontPicker
+                                            isOpen={isFontPickerOpen}
+                                            onClose={() => setIsFontPickerOpen(false)}
+                                            onSelect={(font) => {
+                                                handleStyleChange({ globalFont: font });
+                                                setIsFontPickerOpen(false);
+                                            }}
+                                            currentFont={currentStyle.globalFont}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-foreground/70 flex justify-between">
+                                            <span>Corner Radius</span>
+                                            <span className="text-muted-foreground">{currentStyle.cornerRadius ?? 12}px</span>
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="30"
+                                            value={currentStyle.cornerRadius ?? 12}
+                                            onChange={(e) => handleStyleChange({ cornerRadius: parseInt(e.target.value) })}
+                                            className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Shadow Intensity */}
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-semibold text-foreground/70 flex justify-between">
-                                        <span>Opacity</span>
-                                        <span className="text-muted-foreground">{Math.round((currentStyle.textureOpacity ?? 0.5) * 100)}%</span>
+                                        <span>Shadow Intensity</span>
+                                        <span className="text-muted-foreground">{Math.round((currentStyle.shadowIntensity ?? 0) * 100)}%</span>
                                     </label>
                                     <input
                                         type="range"
                                         min="0"
                                         max="1"
                                         step="0.1"
-                                        value={currentStyle.textureOpacity ?? 0.5}
-                                        onChange={(e) => handleStyleChange({ textureOpacity: parseFloat(e.target.value) })}
+                                        value={currentStyle.shadowIntensity ?? 0}
+                                        onChange={(e) => handleStyleChange({ shadowIntensity: parseFloat(e.target.value) })}
                                         className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
                                     />
                                 </div>
-                            )}
-                        </div>
 
-                        {/* Print Aids */}
-                        <div className="flex gap-4 pt-2">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={currentStyle.showBleedLines || false}
-                                    onChange={(e) => handleStyleChange({ showBleedLines: e.target.checked })}
-                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <span className="text-xs font-medium text-foreground/80">Show Bleed</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={currentStyle.showSafeZone || false}
-                                    onChange={(e) => handleStyleChange({ showSafeZone: e.target.checked })}
-                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <span className="text-xs font-medium text-foreground/80">Show Safe Zone</span>
-                            </label>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground leading-tight">
-                            Use <strong>Bleed</strong> for printing margins (cut area) and <strong>Safe Zone</strong> to ensure vital content isn't chopped.
-                        </p>
-                    </div>
-
-
-                    {/* SVG/Frame Colors */}
-                    <div className="space-y-3">
-                        <label className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
-                            <PenTool className="w-3 h-3" /> Frame Styles
-                        </label>
-                        <p className="text-[10px] text-muted-foreground leading-tight">
-                            Customize the card border color, accent color (used for corners/type), and stroke width.
-                        </p>
-
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-foreground/70">Frame Color</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="color"
-                                            value={currentStyle.svgFrameColor || '#000000'}
-                                            onChange={(e) => handleStyleChange({ svgFrameColor: e.target.value })}
-                                            className="w-8 h-8 rounded border-0 p-0 cursor-pointer overflow-hidden"
-                                        />
-                                        <span className="text-xs font-mono self-center text-muted-foreground">{currentStyle.svgFrameColor || '-'}</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-foreground/70">Accent Color</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="color"
-                                            value={currentStyle.svgCornerColor || '#000000'}
-                                            onChange={(e) => handleStyleChange({ svgCornerColor: e.target.value })}
-                                            className="w-8 h-8 rounded border-0 p-0 cursor-pointer overflow-hidden"
-                                        />
-                                        <span className="text-xs font-mono self-center text-muted-foreground">{currentStyle.svgCornerColor || '-'}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground/70 flex justify-between">
-                                    <span>Stroke Width</span>
-                                    <span className="text-muted-foreground">{currentStyle.svgStrokeWidth || 2}px</span>
-                                </label>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="10"
-                                    step="0.5"
-                                    value={currentStyle.svgStrokeWidth || 2}
-                                    onChange={(e) => handleStyleChange({ svgStrokeWidth: parseFloat(e.target.value) })}
-                                    className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Background Settings */}
-                    <div className="space-y-3 pt-4 border-t border-border">
-                        <label className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
-                            <Upload className="w-3 h-3" /> Background
-                        </label>
-                        <p className="text-[10px] text-muted-foreground leading-tight">
-                            Upload a custom image to fill the entire card text/frame area (behind the text).
-                        </p>
-                        <div className="space-y-3">
-                            {currentStyle.backgroundImage ? (
-                                <div className="relative group rounded-xl overflow-hidden border border-border aspect-video">
-                                    <img src={currentStyle.backgroundImage} className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
-                                        <button
-                                            onClick={() => handleStyleChange({ backgroundImage: null })}
-                                            className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold"
+                                {/* Texture Overlay */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-foreground/70">Texture</label>
+                                        <select
+                                            value={currentStyle.textureOverlay || 'none'}
+                                            onChange={(e) => handleStyleChange({ textureOverlay: e.target.value as any })}
+                                            className="w-full bg-muted border border-border rounded px-2 py-1.5 text-xs"
                                         >
-                                            Remove
-                                        </button>
+                                            <option value="none">None</option>
+                                            <option value="paper">Paper Grain</option>
+                                            <option value="noise">Static Noise</option>
+                                            <option value="foil">Holo Foil</option>
+                                            <option value="grunge">Grunge Vignette</option>
+                                        </select>
+                                    </div>
+                                    {currentStyle.textureOverlay && currentStyle.textureOverlay !== 'none' && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-foreground/70 flex justify-between">
+                                                <span>Opacity</span>
+                                                <span className="text-muted-foreground">{Math.round((currentStyle.textureOpacity ?? 0.5) * 100)}%</span>
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="1"
+                                                step="0.1"
+                                                value={currentStyle.textureOpacity ?? 0.5}
+                                                onChange={(e) => handleStyleChange({ textureOpacity: parseFloat(e.target.value) })}
+                                                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Print Aids */}
+                                <div className="flex gap-4 pt-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={currentStyle.showBleedLines || false}
+                                            onChange={(e) => handleStyleChange({ showBleedLines: e.target.checked })}
+                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-xs font-medium text-foreground/80">Show Bleed</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={currentStyle.showSafeZone || false}
+                                            onChange={(e) => handleStyleChange({ showSafeZone: e.target.checked })}
+                                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-xs font-medium text-foreground/80">Show Safe Zone</span>
+                                    </label>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground leading-tight">
+                                    Use <strong>Bleed</strong> for printing margins (cut area) and <strong>Safe Zone</strong> to ensure vital content isn't chopped.
+                                </p>
+
+                                {/* SVG/Frame Colors */}
+                                <div className="space-y-3 pt-4 border-t border-border">
+                                    <label className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
+                                        <PenTool className="w-3 h-3" /> Frame Styles
+                                    </label>
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-foreground/70">Frame Color</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={currentStyle.svgFrameColor || '#000000'}
+                                                        onChange={(e) => handleStyleChange({ svgFrameColor: e.target.value })}
+                                                        className="w-8 h-8 rounded border-0 p-0 cursor-pointer overflow-hidden"
+                                                    />
+                                                    <span className="text-xs font-mono self-center text-muted-foreground">{currentStyle.svgFrameColor || '-'}</span>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-foreground/70">Accent Color</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={currentStyle.svgCornerColor || '#000000'}
+                                                        onChange={(e) => handleStyleChange({ svgCornerColor: e.target.value })}
+                                                        className="w-8 h-8 rounded border-0 p-0 cursor-pointer overflow-hidden"
+                                                    />
+                                                    <span className="text-xs font-mono self-center text-muted-foreground">{currentStyle.svgCornerColor || '-'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-foreground/70 flex justify-between">
+                                                <span>Stroke Width</span>
+                                                <span className="text-muted-foreground">{currentStyle.svgStrokeWidth || 2}px</span>
+                                            </label>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="10"
+                                                step="0.5"
+                                                value={currentStyle.svgStrokeWidth || 2}
+                                                onChange={(e) => handleStyleChange({ svgStrokeWidth: parseFloat(e.target.value) })}
+                                                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                            ) : (
-                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
-                                    <Upload className="w-5 h-5 text-muted-foreground mb-2" />
-                                    <span className="text-[10px] font-semibold text-muted-foreground">Upload Image</span>
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => handleStyleChange({ backgroundImage: reader.result as string });
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }}
-                                    />
-                                </label>
-                            )}
-                        </div>
+
+                                {/* Background Settings */}
+                                <div className="space-y-3 pt-4 border-t border-border">
+                                    <label className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
+                                        <Upload className="w-3 h-3" /> Background
+                                    </label>
+                                    <div className="space-y-3">
+                                        {currentStyle.backgroundImage ? (
+                                            <div className="relative group rounded-xl overflow-hidden border border-border aspect-video">
+                                                <img src={currentStyle.backgroundImage} className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
+                                                    <button
+                                                        onClick={() => handleStyleChange({ backgroundImage: null })}
+                                                        className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors">
+                                                <Upload className="w-5 h-5 text-muted-foreground mb-2" />
+                                                <span className="text-[10px] font-semibold text-muted-foreground">Upload Image</span>
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = () => handleStyleChange({ backgroundImage: reader.result as string });
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </section>
-
-            </div >
+            </div>
         );
     };
 
@@ -1032,7 +1121,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                             className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
                         >
                             {expandedGroups.templates ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                            Styles
+                            {isFlipped ? "Card Back Patterns" : "Styles"}
                         </button>
 
                         {expandedGroups.templates && (
@@ -1070,38 +1159,62 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 <div className="h-px bg-border/50 my-2 mx-2" />
 
                                 <div className="space-y-3 pl-2">
-                                    {[...TEMPLATES, ...customTemplates].map(template => (
-                                        <button
-                                            key={template.id}
-                                            onClick={() => applyTemplate(template.style)}
-                                            className={cn(
-                                                "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden",
-                                                currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor
-                                                    ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
-                                                    : "border-border bg-muted/30"
-                                            )}
-                                        >
-                                            {template.style.backgroundImage && (
-                                                <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
-                                                    <img src={template.style.backgroundImage} className="w-full h-full object-cover" />
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-1.5 relative z-10">
-                                                <span className="text-xs font-bold block truncate">{template.name}</span>
-                                                {template.isCustom && (
-                                                    <Cloud className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+                                    {isFlipped ? (
+                                        BACK_PATTERNS.map(pattern => (
+                                            <button
+                                                key={pattern.name}
+                                                onClick={() => handleStyleChange({ cardBackImage: pattern.value })}
+                                                className={cn(
+                                                    "w-full p-2 rounded-lg border text-left transition-all hover:shadow-sm flex items-center gap-3 group relative overflow-hidden",
+                                                    currentStyle.cardBackImage === pattern.value
+                                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/20"
+                                                        : "border-border bg-muted/30"
                                                 )}
-                                            </div>
-                                            <div className="flex gap-1 relative z-10">
-                                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.cornerColor }}></div>
-                                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.titleColor }}></div>
-                                                <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.descriptionColor }}></div>
-                                            </div>
-                                            {currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor && (
-                                                <Check className="absolute top-2 right-2 w-4 h-4 text-indigo-500 z-10" />
-                                            )}
-                                        </button>
-                                    ))}
+                                            >
+                                                {/* Preview Pattern */}
+                                                <div className="w-12 h-12 rounded border border-border bg-white dark:bg-black overflow-hidden relative">
+                                                    <div className="absolute inset-0 opacity-50 bg-repeat" style={{ backgroundImage: `url(${pattern.value})`, backgroundSize: 'cover' }}></div>
+                                                </div>
+                                                <span className="text-sm font-medium">{pattern.name}</span>
+                                                {currentStyle.cardBackImage === pattern.value && (
+                                                    <Check className="absolute top-2 right-2 w-3.5 h-3.5 text-indigo-500" />
+                                                )}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        [...TEMPLATES, ...customTemplates].map(template => (
+                                            <button
+                                                key={template.id}
+                                                onClick={() => applyTemplate(template.style)}
+                                                className={cn(
+                                                    "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden",
+                                                    currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor
+                                                        ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+                                                        : "border-border bg-muted/30"
+                                                )}
+                                            >
+                                                {template.style.backgroundImage && (
+                                                    <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
+                                                        <img src={template.style.backgroundImage} className="w-full h-full object-cover" />
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-1.5 relative z-10">
+                                                    <span className="text-xs font-bold block truncate">{template.name}</span>
+                                                    {template.isCustom && (
+                                                        <Cloud className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
+                                                    )}
+                                                </div>
+                                                <div className="flex gap-1 relative z-10">
+                                                    <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.cornerColor }}></div>
+                                                    <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.titleColor }}></div>
+                                                    <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.descriptionColor }}></div>
+                                                </div>
+                                                {currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.cornerColor === template.style.cornerColor && (
+                                                    <Check className="absolute top-2 right-2 w-4 h-4 text-indigo-500 z-10" />
+                                                )}
+                                            </button>
+                                        ))
+                                    )}
 
                                 </div>
                             </div>
@@ -1120,153 +1233,177 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
                         {expandedGroups.elements && (
                             <div className="space-y-2 pl-2">
-                                {currentStyle.showTitle === false && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showTitle: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Type className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Title</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
+                                {isFlipped ? (
+                                    <>
+                                        {/* Back Elements */}
+                                        {!currentStyle.showCardBackCopyright && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showCardBackCopyright: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Shield className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Copyright</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+                                        {currentStyle.showCardBackCopyright && (
+                                            <div className="text-xs text-center text-muted-foreground py-4 italic opacity-70">
+                                                All back elements added
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Front Elements */}
+                                        {currentStyle.showTitle === false && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showTitle: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Type className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Title</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {currentStyle.showDescription === false && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showDescription: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Layout className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Description</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {currentStyle.showArt === false && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showArt: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Palette className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Illustration</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {currentStyle.showCorner === false && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showCorner: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Box className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Corner</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {currentStyle.showReversedCorner === false && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showReversedCorner: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Box className="w-3 h-3 rotate-180" />
+                                                </div>
+                                                <span className="text-sm font-medium">Inverted Corner</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {!currentStyle.showTypeBar && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showTypeBar: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Type className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Type Bar</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {!currentStyle.showFlavorText && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showFlavorText: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Type className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Flavor Text</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {!currentStyle.showStatsBox && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showStatsBox: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Hash className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Stats Box</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {!currentStyle.showRarityIcon && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showRarityIcon: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Zap className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Rarity Icon</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {!currentStyle.showCollectorInfo && (
+                                            <button
+                                                onClick={() => handleStyleChange({ showCollectorInfo: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Type className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Collector Info</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
+
+                                        {(currentStyle.showTitle !== false &&
+                                            currentStyle.showDescription !== false &&
+                                            currentStyle.showArt !== false &&
+                                            currentStyle.showCorner !== false &&
+                                            currentStyle.showReversedCorner !== false &&
+                                            currentStyle.showTypeBar &&
+                                            currentStyle.showFlavorText &&
+                                            currentStyle.showStatsBox &&
+                                            currentStyle.showWatermark &&
+                                            currentStyle.showRarityIcon &&
+                                            currentStyle.showCollectorInfo) && (
+                                                <div className="text-center py-4 text-xs text-muted-foreground italic">
+                                                    All elements added to layout
+                                                </div>
+                                            )}
+                                    </>
                                 )}
-
-                                {currentStyle.showDescription === false && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showDescription: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Layout className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Description</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-                                {currentStyle.showArt === false && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showArt: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Palette className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Illustration</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-                                {currentStyle.showCorner === false && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showCorner: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Box className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Corner</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-                                {currentStyle.showReversedCorner === false && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showReversedCorner: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Box className="w-3 h-3 rotate-180" />
-                                        </div>
-                                        <span className="text-sm font-medium">Inverted Corner</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-                                {!currentStyle.showTypeBar && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showTypeBar: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Type className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Type Bar</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-                                {!currentStyle.showFlavorText && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showFlavorText: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Type className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Flavor Text</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-                                {!currentStyle.showStatsBox && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showStatsBox: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Hash className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Stats Box</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-
-
-                                {!currentStyle.showRarityIcon && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showRarityIcon: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Zap className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Rarity Icon</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-                                {!currentStyle.showCollectorInfo && (
-                                    <button
-                                        onClick={() => handleStyleChange({ showCollectorInfo: true })}
-                                        className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
-                                    >
-                                        <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
-                                            <Type className="w-3 h-3" />
-                                        </div>
-                                        <span className="text-sm font-medium">Collector Info</span>
-                                        <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
-                                    </button>
-                                )}
-
-                                {(currentStyle.showTitle !== false &&
-                                    currentStyle.showDescription !== false &&
-                                    currentStyle.showArt !== false &&
-                                    currentStyle.showCorner !== false &&
-                                    currentStyle.showReversedCorner !== false &&
-                                    currentStyle.showTypeBar &&
-                                    currentStyle.showFlavorText &&
-                                    currentStyle.showStatsBox &&
-                                    currentStyle.showWatermark &&
-                                    currentStyle.showRarityIcon &&
-                                    currentStyle.showCollectorInfo) && (
-                                        <div className="text-center py-4 text-xs text-muted-foreground italic">
-                                            All elements added to layout
-                                        </div>
-                                    )}
                             </div>
                         )}
                     </div>
@@ -1311,12 +1448,41 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                             isInteractive={!isPanMode} // Disable internal interactivity when in pan mode
                             selectedElement={selectedElement}
                             onElementUpdate={(_, updates) => handleStyleChange(updates)}
+                            isFlipped={isFlipped}
                         />
                     </div>
                 </div>
 
                 {/* Viewport Controls Toolbar */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-2 py-1.5 bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg z-50">
+                    {/* Front/Back Flip Toggle */}
+                    <div className="flex items-center border-r border-border pr-2 mr-1 gap-1">
+                        <button
+                            onClick={() => {
+                                setIsFlipped(false);
+                                setSelectedElement(null);
+                            }}
+                            className={cn(
+                                "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                                !isFlipped ? "bg-indigo-600 text-white shadow-sm" : "text-muted-foreground hover:bg-muted"
+                            )}
+                        >
+                            Front
+                        </button>
+                        <button
+                            onClick={() => {
+                                setIsFlipped(true);
+                                setSelectedElement(null);
+                            }}
+                            className={cn(
+                                "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                                isFlipped ? "bg-indigo-600 text-white shadow-sm" : "text-muted-foreground hover:bg-muted"
+                            )}
+                        >
+                            Back
+                        </button>
+                    </div>
+
                     <div className="flex items-center border-r border-border pr-2 mr-1">
                         <button
                             onClick={() => setIsPanMode(false)}

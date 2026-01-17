@@ -25,6 +25,12 @@ interface TransformWrapperProps {
     // If true, resize handles update 'scale' instead of width/height (for text scaling vs resizing)
     useScaleForResize?: boolean;
     onDelete?: () => void;
+    bounds?: {
+        minX: number;
+        maxX: number;
+        minY: number;
+        maxY: number;
+    };
 }
 
 export const TransformWrapper = ({
@@ -40,7 +46,8 @@ export const TransformWrapper = ({
     className,
     style,
     useScaleForResize = false,
-    onDelete
+    onDelete,
+    bounds
 }: TransformWrapperProps) => {
     const [isDragging, setIsDragging] = useState(false);
 
@@ -51,6 +58,7 @@ export const TransformWrapper = ({
         startY: number;
         initialValues: TransformValues;
         center: { x: number, y: number }; // Store center for rotation
+        localDimensions: { width: number, height: number };
         action?: string; // 'drag', 'rotate', 'resize-tl', etc.
     } | null>(null);
 
@@ -70,10 +78,13 @@ export const TransformWrapper = ({
 
         // Calculate center for rotation
         let cx = 0, cy = 0;
+        let lw = 0, lh = 0;
         if (elementRef.current) {
             const rect = elementRef.current.getBoundingClientRect();
             cx = rect.left + rect.width / 2;
             cy = rect.top + rect.height / 2;
+            lw = elementRef.current.offsetWidth;
+            lh = elementRef.current.offsetHeight;
         }
 
         initialDragState.current = {
@@ -81,6 +92,7 @@ export const TransformWrapper = ({
             startY: e.clientY,
             initialValues: { ...values },
             center: { x: cx, y: cy },
+            localDimensions: { width: lw, height: lh },
             action
         };
 
@@ -94,7 +106,7 @@ export const TransformWrapper = ({
     const handleGlobalMouseMove = (e: MouseEvent) => {
         if (!initialDragState.current) return;
 
-        const { startX, startY, initialValues, center, action } = initialDragState.current;
+        const { startX, startY, initialValues, center, localDimensions, action } = initialDragState.current;
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
 
@@ -106,10 +118,46 @@ export const TransformWrapper = ({
         const parentScale = 1;
 
         if (action === 'drag') {
+            let newX = initialValues.x + deltaX / parentScale;
+            let newY = initialValues.y + deltaY / parentScale;
+
+            if (bounds && localDimensions) {
+                // Calculate projected size for strict bonding
+                const rad = (initialValues.rotate || 0) * (Math.PI / 180);
+                const absCos = Math.abs(Math.cos(rad));
+                const absSin = Math.abs(Math.sin(rad));
+
+                const currentW = (localDimensions.width * (initialValues.scale || 1));
+                const currentH = (localDimensions.height * (initialValues.scale || 1));
+
+                const projW = currentW * absCos + currentH * absSin;
+                const projH = currentW * absSin + currentH * absCos;
+
+                const halfW = projW / 2;
+                const halfH = projH / 2;
+
+                const minAllowedX = bounds.minX + halfW;
+                const maxAllowedX = bounds.maxX - halfW;
+                const minAllowedY = bounds.minY + halfH;
+                const maxAllowedY = bounds.maxY - halfH;
+
+                if (minAllowedX > maxAllowedX) {
+                    newX = 0; // element wider than bounds, cente
+                } else {
+                    newX = Math.max(minAllowedX, Math.min(maxAllowedX, newX));
+                }
+
+                if (minAllowedY > maxAllowedY) {
+                    newY = 0;
+                } else {
+                    newY = Math.max(minAllowedY, Math.min(maxAllowedY, newY));
+                }
+            }
+
             onUpdate({
                 ...initialValues,
-                x: initialValues.x + deltaX / parentScale,
-                y: initialValues.y + deltaY / parentScale
+                x: newX,
+                y: newY
             });
         } else if (action === 'rotate') {
             // Calculate angle based on center to mouse vector
@@ -241,7 +289,7 @@ export const TransformWrapper = ({
                     <>
                         {/* Rotation Handle */}
                         <div
-                            className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-[#3b82f6] rounded-full shadow cursor-grab active:cursor-grabbing hover:bg-blue-50 z-50 text-[#3b82f6]"
+                            className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-[#3b82f6] rounded-full shadow cursor-grab active:cursor-grabbing hover:bg-blue-50 z-[9999] text-[#3b82f6]"
                             onMouseDown={(e) => handleMouseDown(e, 'rotate')}
                         >
                             <div style={{ transform: `rotate(${-values.rotate}deg)` }}>
@@ -256,36 +304,36 @@ export const TransformWrapper = ({
                             <>
                                 {/* TL */}
                                 <div
-                                    className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-50"
+                                    className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]"
                                     onMouseDown={(e) => handleMouseDown(e, 'resize-nw')}
                                 />
                                 {/* TR */}
                                 <div
-                                    className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nesw-resize z-50"
+                                    className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nesw-resize z-[9999]"
                                     onMouseDown={(e) => handleMouseDown(e, 'resize-ne')}
                                 />
                                 {/* BL */}
                                 <div
-                                    className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nesw-resize z-50"
+                                    className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nesw-resize z-[9999]"
                                     onMouseDown={(e) => handleMouseDown(e, 'resize-sw')}
                                 />
                                 {/* BR */}
                                 <div
-                                    className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-50"
+                                    className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]"
                                     onMouseDown={(e) => handleMouseDown(e, 'resize-se')}
                                 />
                                 {/* Edges (Optional but standard) */}
-                                <div className="absolute top-1/2 -left-1.5 w-3 h-3 -mt-1.5 bg-white border-2 border-[#3b82f6] cursor-ew-resize z-50" onMouseDown={(e) => handleMouseDown(e, 'resize-w')} />
-                                <div className="absolute top-1/2 -right-1.5 w-3 h-3 -mt-1.5 bg-white border-2 border-[#3b82f6] cursor-ew-resize z-50" onMouseDown={(e) => handleMouseDown(e, 'resize-e')} />
-                                <div className="absolute -top-1.5 left-1/2 w-3 h-3 -ml-1.5 bg-white border-2 border-[#3b82f6] cursor-ns-resize z-50" onMouseDown={(e) => handleMouseDown(e, 'resize-n')} />
-                                <div className="absolute -bottom-1.5 left-1/2 w-3 h-3 -ml-1.5 bg-white border-2 border-[#3b82f6] cursor-ns-resize z-50" onMouseDown={(e) => handleMouseDown(e, 'resize-s')} />
+                                <div className="absolute top-1/2 -left-1.5 w-3 h-3 -mt-1.5 bg-white border-2 border-[#3b82f6] cursor-ew-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-w')} />
+                                <div className="absolute top-1/2 -right-1.5 w-3 h-3 -mt-1.5 bg-white border-2 border-[#3b82f6] cursor-ew-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-e')} />
+                                <div className="absolute -top-1.5 left-1/2 w-3 h-3 -ml-1.5 bg-white border-2 border-[#3b82f6] cursor-ns-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-n')} />
+                                <div className="absolute -bottom-1.5 left-1/2 w-3 h-3 -ml-1.5 bg-white border-2 border-[#3b82f6] cursor-ns-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-s')} />
                             </>
                         )}
 
                         {/* Scale Handles (Used if resize is mapped to scale) */}
                         {useScaleForResize && (
                             <>
-                                <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-50"
+                                <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]"
                                     onMouseDown={(e) => handleMouseDown(e, 'resize-scale')}
                                 />
                             </>
@@ -294,7 +342,7 @@ export const TransformWrapper = ({
                         {/* Delete Button */}
                         {onDelete && (
                             <button
-                                className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-red-500 rounded-full shadow hover:bg-red-50 z-50 text-red-500 transition-colors"
+                                className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-red-500 rounded-full shadow hover:bg-red-50 z-[9999] text-red-500 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onDelete();

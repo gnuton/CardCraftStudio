@@ -26,8 +26,11 @@ export interface DeckStyle {
   titleColor: string;
   descriptionColor: string;
   cornerFont: string;
+  cornerFontSize?: number;
   titleFont: string;
+  titleFontSize?: number;
   descriptionFont: string;
+  descriptionFontSize?: number;
   backgroundImage: string | null;
   cornerContent: string;
 
@@ -84,17 +87,17 @@ export interface DeckStyle {
   // Type Bar
   typeBarX?: number; typeBarY?: number; typeBarWidth?: number; typeBarRotate?: number;
   typeBarBackgroundColor?: string; typeBarBorderColor?: string; typeBarBorderWidth?: number; typeBarOpacity?: number; typeBarZIndex?: number;
-  typeBarContent?: string; typeBarColor?: string; typeBarFont?: string;
+  typeBarContent?: string; typeBarColor?: string; typeBarFont?: string; typeBarFontSize?: number;
 
   // Flavor Text
   flavorTextX?: number; flavorTextY?: number; flavorTextWidth?: number; flavorTextRotate?: number;
   flavorTextBackgroundColor?: string; flavorTextBorderColor?: string; flavorTextBorderWidth?: number; flavorTextOpacity?: number; flavorTextZIndex?: number;
-  flavorTextContent?: string; flavorTextColor?: string; flavorTextFont?: string;
+  flavorTextContent?: string; flavorTextColor?: string; flavorTextFont?: string; flavorTextFontSize?: number;
 
   // Stats Box
   statsBoxX?: number; statsBoxY?: number; statsBoxWidth?: number; statsBoxHeight?: number; statsBoxRotate?: number;
   statsBoxBackgroundColor?: string; statsBoxBorderColor?: string; statsBoxBorderWidth?: number; statsBoxOpacity?: number; statsBoxZIndex?: number;
-  statsBoxContent?: string; statsBoxColor?: string; statsBoxFont?: string;
+  statsBoxContent?: string; statsBoxColor?: string; statsBoxFont?: string; statsBoxFontSize?: number;
 
   // Watermark
   watermarkX?: number; watermarkY?: number; watermarkWidth?: number; watermarkHeight?: number; watermarkRotate?: number;
@@ -106,7 +109,7 @@ export interface DeckStyle {
 
   // Collector Info
   collectorInfoX?: number; collectorInfoY?: number; collectorInfoWidth?: number; collectorInfoRotate?: number;
-  collectorInfoZIndex?: number; collectorInfoContent?: string; collectorInfoColor?: string; collectorInfoFont?: string;
+  collectorInfoZIndex?: number; collectorInfoContent?: string; collectorInfoColor?: string; collectorInfoFont?: string; collectorInfoFontSize?: number;
 
   // Corner Extended Styles
   showCorner: boolean;
@@ -135,6 +138,7 @@ export interface DeckStyle {
   reversedCornerBorderWidth?: number;
   reversedCornerOpacity?: number;
   reversedCornerZIndex?: number;
+  reversedCornerFontSize?: number;
 
   // Game Logic
   gameHp: string;
@@ -153,6 +157,35 @@ export interface DeckStyle {
   globalFont?: string;
   showBleedLines?: boolean;
   showSafeZone?: boolean;
+
+  // Card Back Styles
+  cardBackImage?: string | null;
+  cardBackBackgroundColor?: string;
+  cardBackTitleContent?: string;
+  cardBackTitleFont?: string;
+  cardBackTitleFontSize?: number;
+  cardBackTitleColor?: string;
+  showCardBackTitle?: boolean;
+  cardBackTitleX?: number;
+  cardBackTitleY?: number;
+  cardBackTitleRotate?: number;
+  cardBackTitleScale?: number;
+  cardBackTitleWidth?: number;
+  cardBackTitleZIndex?: number;
+
+  // Copyright Element (Back Only)
+  showCardBackCopyright?: boolean;
+  cardBackCopyrightContent?: string;
+  cardBackCopyrightFont?: string;
+  cardBackCopyrightFontSize?: number;
+  cardBackCopyrightColor?: string;
+  cardBackCopyrightX?: number;
+  cardBackCopyrightY?: number;
+  cardBackCopyrightRotate?: number;
+  cardBackCopyrightScale?: number;
+  cardBackCopyrightWidth?: number;
+  cardBackCopyrightZIndex?: number;
+
   id?: string;
   isLocked?: boolean;
 }
@@ -256,7 +289,32 @@ const defaultDeckStyle: DeckStyle = {
   gameSuit: '♥',
   svgFrameColor: '#000000',
   svgCornerColor: '#000000',
-  svgStrokeWidth: 2
+  svgStrokeWidth: 2,
+
+  // Card Back Defaults
+  cardBackImage: null,
+  cardBackBackgroundColor: '#312e81', // indigo-900
+  cardBackTitleContent: 'GAME TITLE',
+  cardBackTitleFont: 'serif',
+  cardBackTitleColor: '#ffffff',
+  showCardBackTitle: true,
+  cardBackTitleX: 0,
+  cardBackTitleY: 0,
+  cardBackTitleRotate: 0,
+  cardBackTitleScale: 1.5,
+  cardBackTitleWidth: 250,
+  cardBackTitleZIndex: 30,
+
+  showCardBackCopyright: true,
+  cardBackCopyrightContent: '© 2024 CardCraft Studio',
+  cardBackCopyrightFont: 'sans-serif',
+  cardBackCopyrightColor: '#ffffff',
+  cardBackCopyrightX: 0,
+  cardBackCopyrightY: 180,
+  cardBackCopyrightRotate: 0,
+  cardBackCopyrightScale: 0.8,
+  cardBackCopyrightWidth: 200,
+  cardBackCopyrightZIndex: 30
 };
 
 function App() {
