@@ -71,18 +71,19 @@ export const DeckPrintLayout = React.forwardRef<HTMLDivElement, DeckPrintLayoutP
 
                             {/* Cards Layer */}
                             {pageCards.map((card, i) => (
-                                <div key={i} className="relative z-10" style={{ width: '63.5mm', height: '88.9mm' }}>
-                                    <Card
-                                        {...card}
-                                        deckStyle={deckStyle}
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            border: '1px solid #000000',
-                                            fontSize: '10px' // Scale down text for print size
-                                        }}
-                                        className="shadow-none rounded-none" // Remove rounded corners for easier cutting
-                                    />
+                                <div key={i} className="relative z-10 overflow-hidden" style={{ width: '63.5mm', height: '88.9mm' }}>
+                                    <div style={{
+                                        transform: 'scale(0.64)',
+                                        transformOrigin: 'top left',
+                                        width: '375px',
+                                        height: '525px'
+                                    }}>
+                                        <Card
+                                            {...card}
+                                            deckStyle={deckStyle}
+                                            className="shadow-none rounded-none" // Remove rounded corners for easier cutting
+                                        />
+                                    </div>
                                 </div>
                             ))}
                         </div>

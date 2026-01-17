@@ -28,11 +28,17 @@ describe('App Component SVG Export', () => {
         const createDeckPlaceholder = screen.getByText('Create New Deck');
         fireEvent.click(createDeckPlaceholder);
 
+        // Handle New Deck Dialog
+        const nameInput = await screen.findByLabelText(/Deck Name/i);
+        fireEvent.change(nameInput, { target: { value: 'Test Deck' } });
+        const createDeckBtn = screen.getByRole('button', { name: /Create Deck/i });
+        fireEvent.click(createDeckBtn);
+
         // Navigate: Deck Studio -> Editor (click the Create New Card placeholder)
         const createCardPlaceholder = await screen.findByText('Create New Card');
         fireEvent.click(createCardPlaceholder);
 
-        const exportBtn = await screen.findByRole('button', { name: /Export SVG/i });
+        const exportBtn = await screen.findByRole('button', { name: /Download SVG/i });
         expect(exportBtn).toBeInTheDocument();
 
         fireEvent.click(exportBtn);

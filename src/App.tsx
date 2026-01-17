@@ -9,6 +9,7 @@ import { DeckLibrary, type Deck } from './components/DeckLibrary';
 import { SyncErrorDialog } from './components/SyncErrorDialog';
 import { SyncPromptDialog } from './components/SyncPromptDialog';
 import { SyncConflictDialog } from './components/SyncConflictDialog';
+import { NewDeckDialog } from './components/NewDeckDialog';
 import { ToastContainer, type ToastType } from './components/Toast';
 import { driveService } from './services/googleDrive';
 import { calculateHash } from './utils/hash';
@@ -609,6 +610,7 @@ function App() {
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const [view, setView] = useState<'library' | 'deck' | 'editor' | 'style'>('library');
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
+  const [isNewDeckDialogOpen, setIsNewDeckDialogOpen] = useState(false);
 
   // Persistence
   useEffect(() => {
@@ -669,9 +671,13 @@ function App() {
 
   // Deck Management Helpers
   const handleCreateDeck = () => {
+    setIsNewDeckDialogOpen(true);
+  };
+
+  const finalizeCreateDeck = (name: string) => {
     const newDeck: Deck = {
       id: crypto.randomUUID(),
-      name: 'New Deck',
+      name: name,
       cards: [],
       style: { ...defaultDeckStyle },
       updatedAt: Date.now()
@@ -679,6 +685,8 @@ function App() {
     setDecks(prev => [...prev, newDeck]);
     setActiveDeckId(newDeck.id);
     setView('deck');
+    setIsNewDeckDialogOpen(false);
+    addToast(`Created deck "${name}"`, 'success');
   };
 
   const handleDeleteDeck = (id: string) => {
@@ -703,10 +711,7 @@ function App() {
   const handleUpdateProjectName = (name: string) => updateActiveDeck({ name });
   const handleUpdateDeckStyle = (style: DeckStyle) => updateActiveDeck({ style });
 
-  const handleAddCard = () => {
-    setActiveCardIndex(null);
-    setView('editor');
-  };
+
 
   const handleEditCard = (index: number) => {
     setActiveCardIndex(index);
@@ -742,33 +747,64 @@ function App() {
     updateActiveDeck({ cards: newCards });
   };
 
-  const handleSaveCard = async (updatedCard: CardConfig) => {
-    if (!activeDeck) return;
-
-    // Process images before saving to storage
-    const cardWithRefs = { ...updatedCard };
-    cardWithRefs.centerImage = await imageService.processImage(updatedCard.centerImage);
-    cardWithRefs.topLeftImage = await imageService.processImage(updatedCard.topLeftImage);
-    cardWithRefs.bottomRightImage = await imageService.processImage(updatedCard.bottomRightImage);
-
-    const newCards = [...activeDeck.cards];
-    if (activeCardIndex !== null) {
-      // Update existing
-      newCards[activeCardIndex] = cardWithRefs;
-    } else {
-      // Add new
-      newCards.push(cardWithRefs);
-    }
-
-    updateActiveDeck({ cards: newCards });
-    setView('deck');
-    setActiveCardIndex(null);
-  };
-
   const handleCancelEditor = () => {
     setView('deck');
     setActiveCardIndex(null);
   };
+
+  const handleAutoSaveCard = (card: CardConfig) => {
+    if (!activeDeck) return;
+
+    // Use a functional update to ensure we don't have race conditions with rapid updates
+    setDecks(prevDecks => {
+      return prevDecks.map(d => {
+        if (d.id !== activeDeckId) return d;
+
+        const newCards = [...d.cards];
+        // If we are editing an existing card
+        if (activeCardIndex !== null) {
+          newCards[activeCardIndex] = card;
+        } else {
+          // If this is a new card, we technically shouldn't be here repeatedly without an index.
+          // Ideally, we created the card *before* or we set the index immediately.
+          // But for safety, if we really are "new", we push.
+          // HOWEVER, this is dangerous for auto-save loops.
+          // FIX: When "Add Card" is clicked, we should create a card immediately and open it.
+          // But for now, let's just handle it safe: check if the card with this ID exists?
+          // Or rely on the fact that once we push, we MUST set activeCardIndex.
+          // But we can't set activeCardIndex in this reducer.
+          // So, standard state update:
+          return d; // Delegate to side-effect? No.
+        }
+        return { ...d, cards: newCards, updatedAt: Date.now() };
+      });
+    });
+  };
+
+  // Improved Add Card Flow: Create immediately then open
+  const handleAddCard = () => {
+    if (!activeDeck) return;
+    const newCard: CardConfig = {
+      id: crypto.randomUUID(),
+      title: 'New Card',
+      description: 'Card description...',
+      topLeftContent: '',
+      bottomRightContent: '',
+      topLeftImage: null,
+      bottomRightImage: null,
+      centerImage: null,
+      borderColor: '#000000',
+      borderWidth: 8
+    };
+    const newCards = [...activeDeck.cards, newCard];
+    updateActiveDeck({ cards: newCards });
+    setActiveCardIndex(newCards.length - 1);
+    setView('editor');
+  };
+
+  // ... (keep other handlers)
+
+  // Update CardStudio usage below
 
   const handleBackToLibrary = () => {
     setActiveDeckId(null);
@@ -875,6 +911,12 @@ function App() {
                 onSelectDeck={handleSelectDeck}
                 onDeleteDeck={handleDeleteDeck}
               />
+              <NewDeckDialog
+                isOpen={isNewDeckDialogOpen}
+                onClose={() => setIsNewDeckDialogOpen(false)}
+                onCreate={finalizeCreateDeck}
+              />
+
               <SyncErrorDialog
                 isOpen={isErrorDialogOpen}
                 onClose={() => setIsErrorDialogOpen(false)}
@@ -940,8 +982,8 @@ function App() {
                 key={editorKey}
                 initialCard={activeCardIndex !== null ? activeDeck.cards[activeCardIndex] : undefined}
                 deckStyle={activeDeck.style}
-                onSave={handleSaveCard}
-                onCancel={handleCancelEditor}
+                onUpdate={handleAutoSaveCard}
+                onDone={handleCancelEditor}
               />
             </motion.div>
           )}

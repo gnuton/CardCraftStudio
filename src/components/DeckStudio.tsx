@@ -365,11 +365,11 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                             {deck.map((card, index) => (
                                 <div key={card.id || index} className="group relative bg-card rounded-xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow">
                                     <div className="aspect-[2.5/3.5] bg-muted relative overflow-hidden">
-                                        <div className="absolute inset-0 flex items-center justify-center transform scale-[0.8] origin-center pointer-events-none">
-                                            <Card {...card} deckStyle={deckStyle} />
+                                        <div className="absolute inset-0 pointer-events-none">
+                                            <Card {...card} deckStyle={deckStyle} style={{ width: '100%', height: '100%' }} />
                                         </div>
                                         {/* Overlay Actions */}
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
+                                        <div className="absolute inset-0 z-50 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
                                             <button
                                                 onClick={() => onEditCard(index)}
                                                 className="p-2 bg-background border border-border text-foreground rounded-full shadow-lg hover:text-indigo-600 transition-colors"

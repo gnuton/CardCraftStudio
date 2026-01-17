@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Card } from './Card';
-import { Controls } from './Controls';
 import { toSvg } from 'html-to-image';
-import { Loader2, Save, Undo, Redo } from 'lucide-react';
+import { Save, Undo, Redo, Download, ArrowLeft, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2 } from 'lucide-react';
 import type { DeckStyle } from '../App';
+import { imageService } from '../services/imageService';
 import { cn } from '../utils/cn';
 
 export interface CardConfig {
@@ -12,8 +12,8 @@ export interface CardConfig {
     borderWidth: number;
     topLeftContent: string;
     bottomRightContent: string;
-    topLeftImage: string | null;  // New: image for top-left corner
-    bottomRightImage: string | null;  // New: image for bottom-right corner
+    topLeftImage: string | null;
+    bottomRightImage: string | null;
     centerImage: string | null;
     title: string;
     description: string;
@@ -27,23 +27,22 @@ export interface CardConfig {
 interface CardStudioProps {
     initialCard?: CardConfig;
     deckStyle: DeckStyle;
-    onSave: (card: CardConfig) => void;
-    onCancel: () => void;
+    onUpdate: (card: CardConfig) => void;
+    onDone: () => void;
 }
 
-// @ts-expect-error - onCancel is part of the interface but navigation is now handled by global nav bar
-export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStudioProps) => {
+export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStudioProps) => {
     const [config, setConfig] = useState<CardConfig>(initialCard || {
         id: crypto.randomUUID(),
-        borderColor: '#000000',
-        borderWidth: 8,
+        borderColor: deckStyle.borderColor || '#000000',
+        borderWidth: deckStyle.borderWidth || 8,
         topLeftContent: 'A',
         bottomRightContent: 'A',
         topLeftImage: null,
         bottomRightImage: null,
         centerImage: null,
-        title: 'Card Title',
-        description: 'This is a description of the card ability or effect.',
+        title: 'New Card',
+        description: 'Card description...',
         typeBarContent: 'Type - Subtype',
         flavorTextContent: 'Flavor text...',
         statsBoxContent: '1 / 1',
@@ -58,6 +57,12 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedElement, setSelectedElement] = useState<string | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
+    const [status, setStatus] = useState<string | null>(null);
+
+    const showStatus = (msg: string) => {
+        setStatus(msg);
+        setTimeout(() => setStatus(null), 2000);
+    };
 
     const pushToHistory = () => {
         setHistory(prev => ({
@@ -70,13 +75,7 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
         const newConfig = { ...config, [key]: value };
         pushToHistory();
         setConfig(newConfig);
-    };
-
-    const [status, setStatus] = useState<string | null>(null);
-
-    const showStatus = (msg: string) => {
-        setStatus(msg);
-        setTimeout(() => setStatus(null), 2000);
+        onUpdate(newConfig);
     };
 
     const undo = () => {
@@ -88,6 +87,7 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
             future: [config, ...history.future]
         });
         setConfig(previous);
+        onUpdate(previous);
         showStatus('Undo');
     };
 
@@ -100,6 +100,7 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
             future: newFuture
         });
         setConfig(next);
+        onUpdate(next);
         showStatus('Redo');
     };
 
@@ -117,57 +118,52 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [config, history]);
-
-
+    }, [config, history, undo, redo]); // Added undo/redo to deps, ensure they are stable or this effect re-binds often. 
 
     const handleGenerateSvg = async () => {
         if (!cardRef.current) return;
-
         try {
             setIsGenerating(true);
-            const dataUrl = await toSvg(cardRef.current, {
-                cacheBust: true,
-                backgroundColor: '#ffffff',
-            });
+            const dataUrl = await toSvg(cardRef.current, { cacheBust: true, pixelRatio: 3 });
             const link = document.createElement('a');
-            link.download = `card-${config.title.replace(/\s+/g, '-').toLowerCase()}.svg`;
+            link.download = `${config.title.replace(/\s+/g, '_')}.svg`;
             link.href = dataUrl;
             link.click();
-        } catch (error) {
-            console.error('SVG Generation failed', error);
-            alert('Failed to generate SVG');
-        } finally {
+            showStatus('Exported SVG');
+            setIsGenerating(false);
+        } catch (err) {
+            console.error(err);
             setIsGenerating(false);
         }
     };
 
-    const [zoom, setZoom] = useState(2);
-    // Pan state
+    // Zoom & Pan Logic
+    const [zoom, setZoom] = useState(1.1);
     const [viewPan, setViewPan] = useState({ x: 0, y: 0 });
+    const [isPanMode, setIsPanMode] = useState(false);
     const [isDraggingPan, setIsDraggingPan] = useState(false);
     const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
 
     const handleWheel = (e: React.WheelEvent) => {
-        // e.preventDefault(); // React's synthetic event wrapper might warn about this if passive, but let's try.
-        // Actually, we usually want to stop propagation/default if we are consuming the scroll.
+        // Zoom without modifiers (or with Ctrl if preferred, but matching StyleEditor which is wheel directly)
+        // StyleEditor uses pure wheel for zoom. CardStudio used Ctrl+Wheel.
+        // Let's enable pure wheel if isPanMode is NOT set? Or always?
+        // User asked for "like style editor".
+        // StyleEditor:
+        // const handleWheel = (e: React.WheelEvent) => {
+        //    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        //    setViewScale(prev => Math.min(Math.max(0.5, prev + delta), 3));
+        // };
 
-        // Simple zoom without modifiers
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        setZoom(prev => Math.min(Math.max(0.5, prev + delta), 3));
-    };
-
-    const zoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3));
-    const zoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
-    const resetZoom = () => {
-        setZoom(1);
-        setViewPan({ x: 0, y: 0 });
+        // Let's modify to standard wheel zoom
+        if (e.ctrlKey || true) { // Always zoom on wheel for now to match StyleEditor behavior pattern generally
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            setZoom(prev => Math.min(Math.max(0.5, prev + delta), 4));
+        }
     };
 
     const handlePanMouseDown = (e: React.MouseEvent) => {
-        // Allow pan on Middle Click (1) or Right Click (2)
-        if (e.button !== 1 && e.button !== 2) return;
-
+        if (!isPanMode && e.button !== 1 && !e.altKey && e.buttons !== 4) return;
         e.preventDefault();
         setIsDraggingPan(true);
         setStartPanPoint({ x: e.clientX - viewPan.x, y: e.clientY - viewPan.y });
@@ -175,158 +171,158 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
 
     const handlePanMouseMove = (e: React.MouseEvent) => {
         if (!isDraggingPan) return;
-        e.preventDefault();
         setViewPan({
             x: e.clientX - startPanPoint.x,
             y: e.clientY - startPanPoint.y
         });
     };
 
-    const handlePanMouseUp = () => setIsDraggingPan(false);
+    const handleZoomIn = () => setZoom(z => Math.min(z + 0.1, 4));
+    const handleZoomOut = () => setZoom(z => Math.max(z - 0.1, 0.5));
+    const handleResetView = () => {
+        setZoom(1.1);
+        setViewPan({ x: 0, y: 0 });
+    };
 
     return (
-        <div className="flex h-[calc(100vh-7.5rem)] bg-background overflow-hidden font-sans transition-colors duration-300">
-            {/* Sidebar Controls */}
-            <div className="w-[400px] flex-shrink-0 h-full shadow-xl z-10 flex flex-col bg-card border-r border-border">
-                <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
-                    <div className="flex flex-col">
-                        <h2 className="text-lg font-semibold text-foreground">Card Editor</h2>
-                        <div className="flex items-center gap-1 mt-1">
-                            <button
-                                onClick={undo}
-                                disabled={history.past.length === 0}
-                                className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                title="Undo (Ctrl+Z)"
-                            >
-                                <Undo size={16} />
-                            </button>
-                            <button
-                                onClick={redo}
-                                disabled={history.future.length === 0}
-                                className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                title="Redo (Ctrl+Shift+Z)"
-                            >
-                                <Redo size={16} />
-                            </button>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => onSave(config)}
-                        className="flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-medium rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm"
-                    >
-                        <Save className="w-4 h-4 mr-2" />
-                        Save Card
+        <div className="flex flex-col h-[calc(100vh-80px)] bg-background">
+            {/* Toolbar Header */}
+            <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4 shadow-sm z-20">
+                <div className="flex items-center gap-4">
+                    <button onClick={onDone} className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                        <ArrowLeft size={18} />
+                        <span className="font-medium">Back</span>
                     </button>
+                    <div className="h-6 w-px bg-border" />
+                    <div className="flex items-center gap-1">
+                        <button onClick={undo} disabled={history.past.length === 0} className="p-2 hover:bg-muted rounded-md disabled:opacity-30 transition-colors" title="Undo">
+                            <Undo size={18} />
+                        </button>
+                        <button onClick={redo} disabled={history.future.length === 0} className="p-2 hover:bg-muted rounded-md disabled:opacity-30 transition-colors" title="Redo">
+                            <Redo size={18} />
+                        </button>
+                    </div>
                 </div>
-                <div className="flex-1 overflow-hidden">
-                    <Controls
-                        config={config}
-                        onChange={handleConfigChange}
-                        onGenerateSvg={handleGenerateSvg}
-                        isGenerating={isGenerating}
-                        deckStyle={deckStyle}
-                        selectedElement={selectedElement}
-                        onClearSelection={() => setSelectedElement(null)}
-                    />
+
+                <div className="font-semibold text-foreground hidden md:block">
+                    {config.title || 'Untitled Card'}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <button onClick={handleGenerateSvg} disabled={isGenerating} className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground" title="Download SVG">
+                        <Download size={20} />
+                    </button>
+                    <button onClick={onDone} className="ml-2 px-4 py-1.5 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 transition-colors">
+                        Done
+                    </button>
                 </div>
             </div>
 
-            {/* Main Preview Area */}
+            {/* Canvas Area */}
             <div
                 className={cn(
-                    "flex-1 h-full flex items-center justify-center p-10 bg-muted/20 relative select-none",
-                    isDraggingPan ? "cursor-grabbing" : "cursor-[zoom-in]"
+                    "flex-1 relative overflow-hidden bg-muted/20 flex items-center justify-center select-none",
+                    (isDraggingPan || isPanMode) ? "cursor-grab active:cursor-grabbing" : "cursor-default"
                 )}
                 onWheel={handleWheel}
-                onContextMenu={(e) => e.preventDefault()}
                 onMouseDown={handlePanMouseDown}
                 onMouseMove={handlePanMouseMove}
-                onMouseUp={handlePanMouseUp}
-                onMouseLeave={handlePanMouseUp}
-                onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'copy';
-                }}
+                onMouseUp={() => setIsDraggingPan(false)}
+                onMouseLeave={() => setIsDraggingPan(false)}
+                onContextMenu={(e) => e.preventDefault()}
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
                 onDrop={(e) => {
                     e.preventDefault();
                     const file = e.dataTransfer.files[0];
                     if (file && file.type.startsWith('image/')) {
                         const reader = new FileReader();
-                        reader.onload = () => {
-                            handleConfigChange('centerImage', reader.result as string);
+                        reader.onload = async () => {
+                            try {
+                                const processed = await imageService.processImage(reader.result as string);
+                                handleConfigChange('centerImage', processed);
+                            } catch (error) {
+                                console.error("Image processing failed", error);
+                                // Fallback to raw if processing fails (though risky for storage)
+                                handleConfigChange('centerImage', reader.result as string);
+                            }
                         };
                         reader.readAsDataURL(file);
                     }
                 }}
             >
-                <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none"></div>
+                {/* Grid Pattern */}
+                <div className="absolute inset-0 bg-[radial-gradient(#88888820_1px,transparent_1px)] [background-size:20px_20px]" />
 
-                {/* Zoom Controls Overlay */}
-                <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-border p-2 rounded-xl shadow-lg z-20">
-                    {status && (
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-bounce whitespace-nowrap">
-                            {status}
-                        </div>
-                    )}
-                    <button
-                        onClick={zoomOut}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                        title="Zoom Out"
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                {/* Status Toast */}
+                {status && (
+                    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-foreground/80 text-background px-4 py-1.5 rounded-full text-sm font-medium animate-in fade-in slide-in-from-top-4">
+                        {status}
+                    </div>
+                )}
+
+                {/* Card Container */}
+                <div
+                    className={cn("relative transition-transform duration-100 ease-out will-change-transform shadow-2xl rounded-[16px]", (isPanMode || isDraggingPan) && "pointer-events-none")}
+                    style={{ transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${zoom})` }}
+                >
+                    <Card
+                        ref={cardRef}
+                        {...config}
+                        deckStyle={deckStyle}
+                        isInteractive={!isPanMode} // Disable editing when panning
+                        onContentChange={handleConfigChange}
+                        selectedElement={selectedElement}
+                        onSelectElement={(el) => !isPanMode && setSelectedElement(el)}
+                    />
+                </div>
+
+                {/* Floating Viewport Controls */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-2 py-1.5 bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg z-50">
+                    <div className="flex items-center border-r border-border pr-2 mr-1">
+                        <button
+                            onClick={() => setIsPanMode(false)}
+                            className={cn(
+                                "p-2 rounded-full transition-all",
+                                !isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
+                            title="Select Mode"
+                        >
+                            <MousePointer2 className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => setIsPanMode(true)}
+                            className={cn(
+                                "p-2 rounded-full transition-all",
+                                isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
+                            title="Pan Mode"
+                        >
+                            <Hand className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <button onClick={handleZoomOut} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+                        <ZoomOut className="w-4 h-4" />
                     </button>
-                    <button
-                        onClick={resetZoom}
-                        className="px-3 py-1 text-xs font-bold hover:bg-muted rounded-lg transition-colors min-w-[60px] text-center"
-                        title="Reset Zoom"
-                    >
+                    <span className="text-xs font-mono font-medium min-w-[3ch] text-center">
                         {Math.round(zoom * 100)}%
+                    </span>
+                    <button onClick={handleZoomIn} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+                        <ZoomIn className="w-4 h-4" />
                     </button>
-                    <button
-                        onClick={zoomIn}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-                        title="Zoom In"
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+
+                    <div className="w-px h-4 bg-border mx-1" />
+
+                    <button onClick={handleResetView} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors" title="Reset View">
+                        <RotateCcw className="w-3 h-3" />
                     </button>
                 </div>
 
-                <div className="flex flex-col items-center gap-6 z-0">
-                    <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Preview (Poker Size)</div>
-                    <div
-                        className={cn(
-                            "transition-transform duration-200 ease-out shadow-2xl rounded-[16px] will-change-transform",
-                            isDraggingPan && "pointer-events-none"
-                        )}
-                        style={{
-                            transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${zoom})`
-                        }}
-                    >
-                        <Card
-                            {...config}
-                            deckStyle={deckStyle}
-                            ref={cardRef}
-                            isInteractive={true}
-                            onContentChange={handleConfigChange}
-                            selectedElement={selectedElement}
-                            onSelectElement={setSelectedElement}
-                        />
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-4 italic">
-                        Tip: Scroll to zoom • Right-click to pan
-                    </div>
+                {/* Instructions Hint */}
+                <div className="absolute bottom-6 right-6 text-xs text-muted-foreground bg-background/50 backdrop-blur px-3 py-1.5 rounded text-center pointer-events-none">
+                    Double-click text to edit • Drag & drop images
                 </div>
             </div>
-
-
-
-
-            {isGenerating && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center flex-col gap-4 text-white">
-                    <Loader2 className="w-10 h-10 animate-spin" />
-                    <p className="font-medium">Generating Export...</p>
-                </div>
-            )}
         </div>
     );
-}
+};
