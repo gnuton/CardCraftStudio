@@ -613,6 +613,7 @@ function App() {
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [isNewDeckDialogOpen, setIsNewDeckDialogOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
+  const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
 
   // Persistence
   useEffect(() => {
@@ -692,11 +693,20 @@ function App() {
   };
 
   const handleDeleteDeck = (id: string) => {
-    setDecks(prev => prev.filter(d => d.id !== id));
-    if (activeDeckId === id) {
-      setActiveDeckId(null);
-      setView('library');
+    setDeckToDelete(id);
+  };
+
+  const confirmDeleteDeck = () => {
+    if (deckToDelete) {
+      const id = deckToDelete;
+      setDecks(prev => prev.filter(d => d.id !== id));
+      if (activeDeckId === id) {
+        setActiveDeckId(null);
+        setView('library');
+      }
+      addToast('Deck deleted', 'success');
     }
+    setDeckToDelete(null);
   };
 
   const handleSelectDeck = (id: string) => {
@@ -1025,6 +1035,16 @@ function App() {
           &copy; 2026 Antonio 'GNUton' Aloisio. Released under GPL-3.0.
         </p>
       </footer>
+
+      <ConfirmationDialog
+        isOpen={deckToDelete !== null}
+        title="Delete Deck"
+        message="Are you sure you want to delete this deck? All cards within it will be permanently lost."
+        onConfirm={confirmDeleteDeck}
+        onCancel={() => setDeckToDelete(null)}
+        confirmLabel="Delete Deck"
+        isDestructive={true}
+      />
 
       <ConfirmationDialog
         isOpen={cardToDelete !== null}

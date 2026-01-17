@@ -53,4 +53,47 @@ describe('App Component SVG Export', () => {
         // expect(htmlToImage.toSvg).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ backgroundColor: '#ffffff' }));
     });
 
+
+
+    it('shows confirmation dialog when deleting a deck', async () => {
+        render(<App />);
+
+        // 1. Create Deck
+        const createDeckPlaceholder = screen.getByText('Create New Deck');
+        fireEvent.click(createDeckPlaceholder);
+        const nameInput = await screen.findByLabelText(/Deck Name/i);
+        fireEvent.change(nameInput, { target: { value: 'Deck To Delete' } });
+        const createDeckBtn = screen.getByRole('button', { name: /Create Deck/i });
+        fireEvent.click(createDeckBtn);
+
+        // 2. Go back to Library
+        const logo = await screen.findByTitle('CardCraft Studio');
+        fireEvent.click(logo);
+
+        // 3. Find Delete Deck button (Trash icon)
+        // It's in the deck card.
+        await waitFor(() => {
+            expect(screen.getByText('Deck To Delete')).toBeInTheDocument();
+        });
+
+        // The bucket button has title "Delete Deck"
+        const deleteBtn = screen.getByTitle('Delete Deck');
+        fireEvent.click(deleteBtn);
+
+        // 4. Verify Dialog
+        // "Are you sure you want to delete this deck? All cards within it will be permanently lost."
+        expect(await screen.findByText(/Are you sure you want to delete this deck?/)).toBeInTheDocument();
+
+        // 5. Click Confirm
+        // 5. Click Confirm
+        const elements = await screen.findAllByText('Delete Deck');
+        const confirmBtn = elements.find(el => el.tagName === 'BUTTON');
+        if (!confirmBtn) throw new Error("Button not found");
+        fireEvent.click(confirmBtn);
+
+        // 6. Verify Deck Gone
+        await waitFor(() => {
+            expect(screen.queryByText('Deck To Delete')).not.toBeInTheDocument();
+        });
+    });
 });

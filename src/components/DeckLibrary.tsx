@@ -94,9 +94,7 @@ export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck }:
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (window.confirm(`Are you sure you want to delete "${deck.name}"?`)) {
-                                                onDeleteDeck(deck.id);
-                                            }
+                                            onDeleteDeck(deck.id);
                                         }}
                                         className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors z-20 relative"
                                         title="Delete Deck"
