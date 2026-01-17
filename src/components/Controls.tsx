@@ -37,6 +37,19 @@ export const Controls: React.FC<ControlsProps> = ({
     onClearSelection
 }) => {
 
+
+    React.useEffect(() => {
+        if (selectedElement) {
+            const sectionName = elementSectionMap[selectedElement];
+            if (sectionName) {
+                const element = document.getElementById(`section-${sectionName}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+    }, [selectedElement]);
+
     const handleImageUpload = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -108,7 +121,7 @@ export const Controls: React.FC<ControlsProps> = ({
 
                 {/* Content Settings */}
                 {deckStyle.showCorner && (
-                    <div className={`space-y-3 ${getHighlightClasses('corner')}`}>
+                    <div id="section-corner" className={`space-y-3 ${getHighlightClasses('corner')}`}>
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Corner Content</label>
                         <div className="space-y-4">
                             {config.topLeftImage ? (
@@ -164,7 +177,7 @@ export const Controls: React.FC<ControlsProps> = ({
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Card Content</label>
                         <div className="space-y-4">
                             {deckStyle.showTitle && (
-                                <div className={getHighlightClasses('title')}>
+                                <div id="section-title" className={getHighlightClasses('title')}>
                                     <label className="text-xs text-muted-foreground mb-1 block">Title</label>
                                     <input
                                         type="text"
@@ -176,7 +189,7 @@ export const Controls: React.FC<ControlsProps> = ({
                                 </div>
                             )}
                             {deckStyle.showDescription && (
-                                <div className={getHighlightClasses('description')}>
+                                <div id="section-description" className={getHighlightClasses('description')}>
                                     <label className="text-xs text-muted-foreground mb-1 block">Description</label>
                                     <RichTextEditor
                                         value={config.description}
@@ -185,7 +198,7 @@ export const Controls: React.FC<ControlsProps> = ({
                                 </div>
                             )}
                             {deckStyle.showTypeBar && (
-                                <div className={getHighlightClasses('typeBar')}>
+                                <div id="section-typeBar" className={getHighlightClasses('typeBar')}>
                                     <label className="text-xs text-muted-foreground mb-1 block">Type Bar</label>
                                     <input
                                         type="text"
@@ -197,7 +210,7 @@ export const Controls: React.FC<ControlsProps> = ({
                                 </div>
                             )}
                             {deckStyle.showFlavorText && (
-                                <div className={getHighlightClasses('flavorText')}>
+                                <div id="section-flavorText" className={getHighlightClasses('flavorText')}>
                                     <label className="text-xs text-muted-foreground mb-1 block">Flavor Text</label>
                                     <textarea
                                         value={config['flavorTextContent'] || ''}
@@ -210,7 +223,7 @@ export const Controls: React.FC<ControlsProps> = ({
                             {(deckStyle.showStatsBox || deckStyle.showCollectorInfo) && (
                                 <div className="grid grid-cols-2 gap-4">
                                     {deckStyle.showStatsBox && (
-                                        <div className={getHighlightClasses('statsBox')}>
+                                        <div id="section-statsBox" className={getHighlightClasses('statsBox')}>
                                             <label className="text-xs text-muted-foreground mb-1 block">Stats</label>
                                             <input
                                                 type="text"
@@ -222,7 +235,7 @@ export const Controls: React.FC<ControlsProps> = ({
                                         </div>
                                     )}
                                     {deckStyle.showCollectorInfo && (
-                                        <div className={getHighlightClasses('collectorInfo')}>
+                                        <div id="section-collectorInfo" className={getHighlightClasses('collectorInfo')}>
                                             <label className="text-xs text-muted-foreground mb-1 block">Collector Info</label>
                                             <input
                                                 type="text"
@@ -241,7 +254,7 @@ export const Controls: React.FC<ControlsProps> = ({
 
                 {/* Image Upload */}
                 {deckStyle.showArt && (
-                    <div className={`space-y-3 ${getHighlightClasses('art')}`}>
+                    <div id="section-art" className={`space-y-3 ${getHighlightClasses('art')}`}>
                         <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Illustration</label>
                         <div className="space-y-3">
                             {config.centerImage ? (

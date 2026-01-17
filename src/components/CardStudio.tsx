@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card } from './Card';
 import { Controls } from './Controls';
 import { toSvg } from 'html-to-image';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Undo, Redo } from 'lucide-react';
 import type { DeckStyle } from '../App';
 import { cn } from '../utils/cn';
 
@@ -50,13 +50,74 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
         collectorInfoContent: 'Artist | 001/100'
     });
 
+    const [history, setHistory] = useState<{ past: CardConfig[], future: CardConfig[] }>({
+        past: [],
+        future: []
+    });
+
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedElement, setSelectedElement] = useState<string | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
 
-    const handleConfigChange = (key: string, value: any) => {
-        setConfig(prev => ({ ...prev, [key]: value }));
+    const pushToHistory = () => {
+        setHistory(prev => ({
+            past: [...prev.past.slice(-29), config], // Keep last 30 states
+            future: []
+        }));
     };
+
+    const handleConfigChange = (key: string, value: any) => {
+        const newConfig = { ...config, [key]: value };
+        pushToHistory();
+        setConfig(newConfig);
+    };
+
+    const [status, setStatus] = useState<string | null>(null);
+
+    const showStatus = (msg: string) => {
+        setStatus(msg);
+        setTimeout(() => setStatus(null), 2000);
+    };
+
+    const undo = () => {
+        if (history.past.length === 0) return;
+        const newPast = [...history.past];
+        const previous = newPast.pop()!;
+        setHistory({
+            past: newPast,
+            future: [config, ...history.future]
+        });
+        setConfig(previous);
+        showStatus('Undo');
+    };
+
+    const redo = () => {
+        if (history.future.length === 0) return;
+        const newFuture = [...history.future];
+        const next = newFuture.shift()!;
+        setHistory({
+            past: [...history.past, config],
+            future: newFuture
+        });
+        setConfig(next);
+        showStatus('Redo');
+    };
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                if (e.shiftKey) redo();
+                else undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                redo();
+            } else if (e.key === 'Escape') {
+                setSelectedElement(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [config, history]);
 
 
 
@@ -128,7 +189,27 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
             {/* Sidebar Controls */}
             <div className="w-[400px] flex-shrink-0 h-full shadow-xl z-10 flex flex-col bg-card border-r border-border">
                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
-                    <h2 className="text-lg font-semibold text-foreground">Card Editor</h2>
+                    <div className="flex flex-col">
+                        <h2 className="text-lg font-semibold text-foreground">Card Editor</h2>
+                        <div className="flex items-center gap-1 mt-1">
+                            <button
+                                onClick={undo}
+                                disabled={history.past.length === 0}
+                                className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                title="Undo (Ctrl+Z)"
+                            >
+                                <Undo size={16} />
+                            </button>
+                            <button
+                                onClick={redo}
+                                disabled={history.future.length === 0}
+                                className="p-1.5 hover:bg-muted rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                title="Redo (Ctrl+Shift+Z)"
+                            >
+                                <Redo size={16} />
+                            </button>
+                        </div>
+                    </div>
                     <button
                         onClick={() => onSave(config)}
                         className="flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-medium rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors shadow-sm"
@@ -162,11 +243,31 @@ export const CardStudio = ({ initialCard, deckStyle, onSave, onCancel }: CardStu
                 onMouseMove={handlePanMouseMove}
                 onMouseUp={handlePanMouseUp}
                 onMouseLeave={handlePanMouseUp}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'copy';
+                }}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            handleConfigChange('centerImage', reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }}
             >
                 <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none"></div>
 
                 {/* Zoom Controls Overlay */}
                 <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-border p-2 rounded-xl shadow-lg z-20">
+                    {status && (
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-bounce whitespace-nowrap">
+                            {status}
+                        </div>
+                    )}
                     <button
                         onClick={zoomOut}
                         className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"

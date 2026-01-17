@@ -3,6 +3,7 @@ import { cn } from '../utils/cn';
 import type { DeckStyle } from '../App';
 import { ResolvedImage } from './ResolvedImage';
 import { TransformWrapper } from './TransformWrapper';
+import { RichTextEditor } from './RichTextEditor';
 import { getGoogleFontUrl } from '../utils/fonts';
 
 interface CardProps {
@@ -527,8 +528,30 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                         fontSize: `${deckStyle?.descriptionFontSize || 12}px`,
                                         minHeight: '60px',
                                     }}
-                                    dangerouslySetInnerHTML={{ __html: description }}
-                                />
+                                >
+                                    {editingElement === 'description' ? (
+                                        <div className="w-full h-full bg-background/40 backdrop-blur-[2px] rounded p-1 ring-1 ring-indigo-500/50" onKeyDown={(e) => e.stopPropagation()}>
+                                            <RichTextEditor
+                                                value={description ?? ''}
+                                                onChange={(val) => onContentChange?.('description', val)}
+                                            />
+                                            <div className="flex justify-end gap-2 mt-2">
+                                                <button
+                                                    onClick={() => setEditingElement(null)}
+                                                    className="px-3 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded hover:bg-indigo-700 transition-colors shadow-sm"
+                                                >
+                                                    Done
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            dangerouslySetInnerHTML={{ __html: description || (isInteractive ? '<span class="opacity-50 italic">Double-click to edit rules...</span>' : '') }}
+                                            onDoubleClick={(e) => { e.stopPropagation(); if (isInteractive) setEditingElement('description'); }}
+                                            className="cursor-text w-full h-full"
+                                        />
+                                    )}
+                                </div>
                             </div>,
                             {
                                 xKey: 'descriptionX', yKey: 'descriptionY', wKey: 'descriptionWidth', rKey: 'descriptionRotate', sKey: 'descriptionScale',
@@ -842,7 +865,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
         );
     }
 );
