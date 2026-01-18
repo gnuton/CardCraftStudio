@@ -55,10 +55,14 @@ A modern web application for designing and printing custom playing cards with ri
 git clone <repository-url>
 cd cardcraftstudio
 
-# Install dependencies
+# Install dependencies for all apps
 npm install
 
 # Start development server
+# For Frontend only
+npm run dev:web
+
+# For Full Stack (Front + Back)
 npm run dev
 ```
 
@@ -94,7 +98,7 @@ To inject the Client ID into your hosted GitHub Pages site:
 6.  The next deployment will automatically include the ID.
 
 #### 3. Local Development
-For local use, create a `.env.local` file in the root directory:
+For local use, create a `.env.local` file in the `apps/web` directory:
 ```env
 VITE_GOOGLE_CLIENT_ID=your-client-id-here
 ```
@@ -125,24 +129,22 @@ VITE_GOOGLE_CLIENT_ID=your-client-id-here
 ## Project Structure
 
 ```
-src/
-├── components/
-│   ├── Card.tsx              # Card display component
-│   ├── CardStudio.tsx        # Individual card editor
-│   ├── DeckLibrary.tsx       # Main library management
-│   ├── DeckStudio.tsx        # Deck management view
-│   ├── SyncConflictDialog.tsx # Visual conflict resolution
-│   ├── Toast.tsx             # Notification system
-│   └── ResolvedImage.tsx     # Lazy-loading image handler
-├── services/
-│   ├── googleDrive.ts        # Google Drive API integration
-│   ├── db.ts                 # Dexie/IndexedDB configuration
-│   └── imageService.ts       # Atomic image lifecycle manager
-├── utils/
-│   ├── hash.ts               # SHA-256 content hashing
-│   └── cn.ts                 # Tailwind class merger
-├── App.tsx                   # Main application
-└── main.tsx                  # Entry point
+/
+├── apps/
+│   ├── web/                  # Frontend Application (@cardcraft/web)
+│   │   ├── src/
+│   │   │   ├── components/   # React components
+│   │   │   ├── services/     # Drive & Image services
+│   │   │   └── App.tsx
+│   │   ├── public/
+│   │   └── package.json
+│   │
+│   └── backend/              # Backend Application (@cardcraft/backend)
+│       ├── src/
+│       └── package.json
+│
+├── package.json              # Root workspace config
+└── .github/workflows/        # CI/CD pipelines
 ```
 
 ## Technology Stack

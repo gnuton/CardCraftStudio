@@ -32,17 +32,17 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test -- --run
+        run: npm run test --workspace=@cardcraft/web -- --run
 
       - name: Build Velvet app
-        run: npm run build
+        run: npm run build --workspace=@cardcraft/web
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: apps/web/dist
 
   deploy:
     needs: build

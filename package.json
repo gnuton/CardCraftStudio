@@ -1,61 +1,15 @@
 {
-  "name": "cardcraftstudio",
+  "name": "cardcraft-monorepo",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "prepare": "husky"
-  },
-  "dependencies": {
-    "@tiptap/pm": "^3.15.3",
-    "@tiptap/react": "^3.15.3",
-    "@tiptap/starter-kit": "^3.15.3",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "dexie": "^4.2.1",
-    "framer-motion": "^12.26.0",
-    "html-to-image": "^1.11.13",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^4.0.0",
-    "jszip": "^3.10.1",
-    "lucide-react": "^0.562.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "tailwind-merge": "^3.4.0"
+    "dev:web": "npm run dev --workspace=@cardcraft/web",
+    "build:web": "npm run build --workspace=@cardcraft/web",
+    "test": "npm run test --workspaces"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@tailwindcss/typography": "^0.5.19",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.1",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/gapi": "^0.0.47",
-    "@types/gapi.client.drive": "^3.0.15",
-    "@types/google.accounts": "^0.0.18",
-    "@types/jszip": "^3.4.1",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/coverage-v8": "^4.0.17",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "happy-dom": "^20.1.0",
-    "husky": "^9.1.7",
-    "jsdom": "^27.4.0",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "typescript": "~5.9.3",
-    "typescript-eslint": "^8.46.4",
-    "vite": "^5.4.21",
-    "vitest": "^4.0.17"
+    "husky": "^9.0.0"
   }
 }
