@@ -171,11 +171,18 @@ describe('Cloud Sync Behavior', () => {
         localStorage.setItem('cardcraftstudio-decks', JSON.stringify([]));
 
         // Mock Drive: Remote file still exists
-        (driveService.listFiles as any).mockResolvedValue([
-            { id: 'file-del-1', name: 'deck-deleted-1.json' },
-            { id: 'file-keep-1', name: 'deck-keep-1.json' }
-        ]);
-        (driveService.getFileContent as any).mockResolvedValue(JSON.stringify({ id: 'keep-1', name: 'Keep Deck' }));
+        (driveService.listFiles as any)
+            .mockResolvedValueOnce([
+                { id: 'file-del-1', name: 'deck-deleted-1.json' },
+                { id: 'file-keep-1', name: 'deck-keep-1.json' }
+            ])
+            .mockResolvedValue([
+                { id: 'file-keep-1', name: 'deck-keep-1.json' }
+            ]);
+
+        (driveService.getFileContent as any).mockResolvedValue(
+            JSON.stringify({ id: 'keep-1', name: 'Keep Deck', cards: [] })
+        );
         (driveService as any).deleteFile = vi.fn().mockResolvedValue(undefined);
 
         render(<App />);
