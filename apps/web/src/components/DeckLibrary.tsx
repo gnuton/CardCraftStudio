@@ -63,8 +63,8 @@ export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck }:
                                         <div className="w-20 h-28 bg-background border border-border rounded shadow-sm transform -rotate-6 translate-x-[-15px] translate-y-2"></div>
                                         <div className="w-20 h-28 bg-background border border-border rounded shadow-sm transform rotate-6 translate-x-[15px] translate-y-2 absolute"></div>
                                         <div className="w-20 h-28 bg-background border border-border rounded shadow-md transform rotate-0 z-10 absolute flex flex-col items-center justify-center p-2 text-center">
-                                            <span className="text-[10px] font-bold text-foreground truncate w-full">{deck.cards[0].title}</span>
-                                            {deck.cards[0].centerImage && (
+                                            <span className="text-[10px] font-bold text-foreground truncate w-full">{deck.cards[0]?.title}</span>
+                                            {deck.cards[0]?.centerImage && (
                                                 <img src={deck.cards[0].centerImage} className="w-full h-12 object-cover mt-1 rounded-sm opacity-80" />
                                             )}
                                         </div>
