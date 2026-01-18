@@ -87,14 +87,21 @@ export class GoogleDriveService {
 
             // Override callback to capture resolution
             (this.tokenClient as any).callback = (resp: any) => {
-                if (resp.error) reject(resp);
-                this.accessToken = resp.access_token;
-                // IMPORTANT: Pass the token to gapi.client
-                gapi.client.setToken({ access_token: resp.access_token });
-                resolve(resp.access_token);
+                if (resp.error) {
+                    reject(resp);
+                } else {
+                    this.accessToken = resp.access_token;
+                    // Store token only if present
+                    if (this.accessToken) {
+                        localStorage.setItem('gdrive_access_token', this.accessToken);
+                    }
+                    // IMPORTANT: Pass the token to gapi.client
+                    gapi.client.setToken({ access_token: resp.access_token });
+                    resolve(resp.access_token);
+                }
             };
 
-            // Request token
+            // Request token with explicit consent (fallback when silent fails)
             this.tokenClient.requestAccessToken({ prompt: 'consent' });
         });
     }
@@ -112,16 +119,41 @@ export class GoogleDriveService {
                     reject(resp);
                 } else {
                     this.accessToken = resp.access_token;
+                    // Store token only if present
+                    if (this.accessToken) {
+                        localStorage.setItem('gdrive_access_token', this.accessToken);
+                    }
                     gapi.client.setToken({ access_token: resp.access_token });
                     resolve(resp.access_token);
                 }
             };
 
-            // Request token silently
+            // Request token silently (no UI)
             this.tokenClient.requestAccessToken({ prompt: 'none' });
         });
     }
 
+    /**
+     * Ensure the user is signed in. Tries silent sign‑in first; if it fails, falls back to explicit consent.
+     */
+    async ensureSignedIn(): Promise<string> {
+        // Try to reuse token from previous session
+        const stored = localStorage.getItem('gdrive_access_token');
+        if (stored) {
+            this.accessToken = stored;
+            // Only set token if we have a valid string
+            if (stored) {
+                gapi.client.setToken({ access_token: stored });
+            }
+            return stored;
+        }
+        try {
+            return await this.trySilentSignIn();
+        } catch (_) {
+            // Silent sign‑in failed, request explicit consent
+            return await this.signIn();
+        }
+    }
     get isSignedIn(): boolean {
         return !!this.accessToken;
     }

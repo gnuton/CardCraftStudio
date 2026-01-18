@@ -387,7 +387,8 @@ function App() {
       driveService.init({ clientId: CLIENT_ID })
         .then(async () => {
           try {
-            await driveService.trySilentSignIn();
+            // Try to reuse stored token or silent sign-in, fallback to explicit consent if needed
+            await driveService.ensureSignedIn();
             setIsAuthenticated(true);
           } catch (e) {
             setIsAuthenticated(false);
