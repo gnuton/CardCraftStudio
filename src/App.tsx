@@ -191,6 +191,11 @@ export interface DeckStyle {
 
   id?: string;
   isLocked?: boolean;
+
+  // Global Card Styling (Default for new cards)
+  borderColor?: string;
+  borderWidth?: number;
+  backgroundColor?: string;
 }
 
 const defaultDeckStyle: DeckStyle = {
@@ -317,7 +322,12 @@ const defaultDeckStyle: DeckStyle = {
   cardBackCopyrightRotate: 0,
   cardBackCopyrightScale: 0.8,
   cardBackCopyrightWidth: 200,
-  cardBackCopyrightZIndex: 30
+  cardBackCopyrightZIndex: 30,
+
+  // Global Defaults
+  borderColor: '#000000',
+  borderWidth: 12,
+  backgroundColor: '#ffffff'
 };
 
 function App() {

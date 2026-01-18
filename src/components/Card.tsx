@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '../utils/cn';
 import type { DeckStyle } from '../App';
 import { ResolvedImage } from './ResolvedImage';
@@ -27,6 +27,7 @@ interface CardProps {
     selectedElement?: string | null;
     onContentChange?: (key: string, value: string) => void;
     onSelectElement?: (element: string | null) => void;
+    onElementUpdate?: (element: string | null, updates: Partial<DeckStyle>) => void;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -47,9 +48,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             style,
             id,
             deckStyle,
-            onElementClick,
             isInteractive = false,
-            isFlipped = false,
             selectedElement,
             onContentChange,
             onSelectElement

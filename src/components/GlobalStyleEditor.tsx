@@ -436,7 +436,8 @@ const TEMPLATES: Template[] = [
 export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack }: GlobalStyleEditorProps) => {
     const [currentStyle, setCurrentStyle] = useState<DeckStyle>(deckStyle);
     const [isFontPickerOpen, setIsFontPickerOpen] = useState(false);
-    const [selectedElement, setSelectedElement] = useState<'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo' | 'cardBackTitle' | 'cardBackCopyright' | null>(null);
+    type SelectableElement = 'background' | 'corner' | 'title' | 'art' | 'description' | 'reversedCorner' | 'typeBar' | 'flavorText' | 'statsBox' | 'watermark' | 'rarityIcon' | 'collectorInfo' | 'cardBackTitle' | 'cardBackCopyright' | null;
+    const [selectedElement, setSelectedElement] = useState<SelectableElement>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
@@ -1422,11 +1423,11 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                             {...previewCard}
                             deckStyle={currentStyle}
                             onElementClick={(el) => {
-                                if (!isPanMode) setSelectedElement(el);
+                                if (!isPanMode) setSelectedElement(el as SelectableElement);
                             }}
                             isInteractive={!isPanMode} // Disable internal interactivity when in pan mode
                             selectedElement={selectedElement}
-                            onElementUpdate={(_, updates) => handleStyleChange(updates)}
+                            onElementUpdate={(_: any, updates: Partial<DeckStyle>) => handleStyleChange(updates)}
                             isFlipped={isFlipped}
                         />
                     </div>
