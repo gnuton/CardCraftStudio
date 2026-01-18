@@ -6,7 +6,8 @@
     "type": "module",
     "scripts": {
         "dev": "node --watch src/index.ts",
-        "build": "echo 'No build step yet'"
+        "build": "echo 'No build step yet'",
+        "test": "echo 'No tests yet'"
     },
     "dependencies": {},
     "devDependencies": {

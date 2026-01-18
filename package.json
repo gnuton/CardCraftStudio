@@ -7,6 +7,7 @@
   "scripts": {
     "dev:web": "npm run dev --workspace=@cardcraft/web",
     "build:web": "npm run build --workspace=@cardcraft/web",
+    "build": "npm run build --workspaces",
     "test": "npm run test --workspaces"
   },
   "devDependencies": {
