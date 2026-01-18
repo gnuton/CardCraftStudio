@@ -33,6 +33,7 @@ interface TransformWrapperProps {
     };
     disableDrag?: boolean;
     hideControls?: boolean;
+    parentScale?: number;
 }
 
 export const TransformWrapper = ({
@@ -51,7 +52,8 @@ export const TransformWrapper = ({
     onDelete,
     bounds,
     disableDrag = false,
-    hideControls = false
+    hideControls = false,
+    parentScale = 1
 }: TransformWrapperProps) => {
     const [isDragging, setIsDragging] = useState(false);
 
@@ -114,6 +116,46 @@ export const TransformWrapper = ({
         document.addEventListener('mouseup', handleGlobalMouseUp);
     };
 
+    const getConstrainedValues = (vals: TransformValues, localDims: { width: number, height: number } | null): TransformValues => {
+        if (!bounds || !localDims) return vals;
+
+        // Calculate projected size for strict bonding
+        const rad = (vals.rotate || 0) * (Math.PI / 180);
+        const absCos = Math.abs(Math.cos(rad));
+        const absSin = Math.abs(Math.sin(rad));
+
+        const currentW = (vals.width * (vals.scale || 1));
+        // Use vals.height if defined, otherwise fall back to original local height
+        const currentH = ((vals.height !== undefined ? vals.height : localDims.height) * (vals.scale || 1));
+
+        const projW = currentW * absCos + currentH * absSin;
+        const projH = currentW * absSin + currentH * absCos;
+
+        const halfW = projW / 2;
+        const halfH = projH / 2;
+
+        let { x, y } = vals;
+
+        const minAllowedX = bounds.minX + halfW;
+        const maxAllowedX = bounds.maxX - halfW;
+        const minAllowedY = bounds.minY + halfH;
+        const maxAllowedY = bounds.maxY - halfH;
+
+        if (minAllowedX > maxAllowedX) {
+            x = (bounds.minX + bounds.maxX) / 2;
+        } else {
+            x = Math.max(minAllowedX, Math.min(maxAllowedX, x));
+        }
+
+        if (minAllowedY > maxAllowedY) {
+            y = (bounds.minY + bounds.maxY) / 2;
+        } else {
+            y = Math.max(minAllowedY, Math.min(maxAllowedY, y));
+        }
+
+        return { ...vals, x, y };
+    };
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
         if (!initialDragState.current) return;
 
@@ -121,55 +163,16 @@ export const TransformWrapper = ({
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
 
-        // Current scale of the canvas/parent - hardcoded for now or detected?
-        // Card is typically shown scaled in Global editor.
-        // We might need to receive a `parentScale` prop to adjust deltas matching the cursor speed.
-        // For now, assuming 1:1 or close enough, or user adjusts.
-        // IMPROVEMENT: Add parentScale prop
-        const parentScale = 1;
 
         if (action === 'drag') {
-            let newX = initialValues.x + deltaX / parentScale;
-            let newY = initialValues.y + deltaY / parentScale;
+            const newX = initialValues.x + deltaX / parentScale;
+            const newY = initialValues.y + deltaY / parentScale;
 
-            if (bounds && localDimensions) {
-                // Calculate projected size for strict bonding
-                const rad = (initialValues.rotate || 0) * (Math.PI / 180);
-                const absCos = Math.abs(Math.cos(rad));
-                const absSin = Math.abs(Math.sin(rad));
-
-                const currentW = (localDimensions.width * (initialValues.scale || 1));
-                const currentH = (localDimensions.height * (initialValues.scale || 1));
-
-                const projW = currentW * absCos + currentH * absSin;
-                const projH = currentW * absSin + currentH * absCos;
-
-                const halfW = projW / 2;
-                const halfH = projH / 2;
-
-                const minAllowedX = bounds.minX + halfW;
-                const maxAllowedX = bounds.maxX - halfW;
-                const minAllowedY = bounds.minY + halfH;
-                const maxAllowedY = bounds.maxY - halfH;
-
-                if (minAllowedX > maxAllowedX) {
-                    newX = 0; // element wider than bounds, cente
-                } else {
-                    newX = Math.max(minAllowedX, Math.min(maxAllowedX, newX));
-                }
-
-                if (minAllowedY > maxAllowedY) {
-                    newY = 0;
-                } else {
-                    newY = Math.max(minAllowedY, Math.min(maxAllowedY, newY));
-                }
-            }
-
-            onUpdate({
+            onUpdate(getConstrainedValues({
                 ...initialValues,
                 x: newX,
                 y: newY
-            });
+            }, localDimensions));
         } else if (action === 'rotate') {
             // Calculate angle based on center to mouse vector
             // This ensures rotation follows the mouse naturally at any orientation
@@ -179,10 +182,10 @@ export const TransformWrapper = ({
             const deltaRad = currentAngle - startAngle;
             const deltaDeg = deltaRad * (180 / Math.PI);
 
-            onUpdate({
+            onUpdate(getConstrainedValues({
                 ...initialValues,
                 rotate: initialValues.rotate + deltaDeg
-            });
+            }, localDimensions));
         } else if (action?.startsWith('resize')) {
             // Resize logic
             // Need to rotate delta vector into local space
@@ -206,10 +209,10 @@ export const TransformWrapper = ({
                     const changes = Math.min(localDx, localDy);
                     newScale = Math.max(0.1, initialValues.scale! - (changes / 100));
                 }
-                onUpdate({
+                onUpdate(getConstrainedValues({
                     ...initialValues,
                     scale: newScale
-                });
+                }, localDimensions));
                 return;
             }
 
@@ -235,13 +238,11 @@ export const TransformWrapper = ({
                 // For now, keep it simple
             }
 
-            onUpdate({
+            onUpdate(getConstrainedValues({
                 ...initialValues,
                 width: Math.max(minWidth, newWidth),
                 height: newHeight !== undefined ? Math.max(minHeight, newHeight) : undefined,
-                // We're not updating x/y here because we assumed center-anchored resize 
-                // which doesn't move the center point.
-            });
+            }, localDimensions));
         }
     };
 

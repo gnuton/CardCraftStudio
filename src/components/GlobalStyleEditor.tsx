@@ -1216,8 +1216,22 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 {isFlipped ? (
                                     <>
                                         {/* Back Elements */}
+                                        {!currentStyle.showCardBackTitle && (
+                                            <button
+                                                data-testid="restore-card-back-title"
+                                                onClick={() => handleStyleChange({ showCardBackTitle: true })}
+                                                className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
+                                            >
+                                                <div className="w-6 h-6 rounded bg-muted group-hover:bg-white flex items-center justify-center">
+                                                    <Type className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-sm font-medium">Card Back Title</span>
+                                                <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
+                                            </button>
+                                        )}
                                         {!currentStyle.showCardBackCopyright && (
                                             <button
+                                                data-testid="restore-card-back-copyright"
                                                 onClick={() => handleStyleChange({ showCardBackCopyright: true })}
                                                 className="w-full p-2 rounded-lg border border-dashed border-border hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-muted-foreground hover:text-indigo-600 transition-all flex items-center gap-2 group"
                                             >
@@ -1228,7 +1242,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                                 <Plus className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100" />
                                             </button>
                                         )}
-                                        {currentStyle.showCardBackCopyright && (
+                                        {currentStyle.showCardBackCopyright && currentStyle.showCardBackTitle && (
                                             <div className="text-xs text-center text-muted-foreground py-4 italic opacity-70">
                                                 All back elements added
                                             </div>
@@ -1367,6 +1381,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                             </button>
                                         )}
 
+
                                         {(currentStyle.showTitle !== false &&
                                             currentStyle.showDescription !== false &&
                                             currentStyle.showArt !== false &&
@@ -1376,6 +1391,8 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                             currentStyle.showFlavorText &&
                                             currentStyle.showStatsBox &&
                                             currentStyle.showWatermark &&
+                                            currentStyle.showRarityIcon &&
+                                            currentStyle.showCollectorInfo &&
                                             currentStyle.showRarityIcon &&
                                             currentStyle.showCollectorInfo) && (
                                                 <div className="text-center py-4 text-xs text-muted-foreground italic">
@@ -1418,17 +1435,19 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                         transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${viewScale})`
                     }}
                 >
-                    <div className={cn("shadow-2xl rounded-xl", (isPanMode || isDraggingPan) && "pointer-events-none")}>
+                    <div data-testid="card-preview" className={cn("shadow-2xl rounded-xl", (isPanMode || isDraggingPan) && "pointer-events-none")}>
                         <Card
                             {...previewCard}
                             deckStyle={currentStyle}
-                            onElementClick={(el) => {
+                            onSelectElement={(el) => {
                                 if (!isPanMode) setSelectedElement(el as SelectableElement);
                             }}
                             isInteractive={!isPanMode} // Disable internal interactivity when in pan mode
                             selectedElement={selectedElement}
                             onElementUpdate={(_: any, updates: Partial<DeckStyle>) => handleStyleChange(updates)}
                             isFlipped={isFlipped}
+                            allowTextEditing={false}
+                            parentScale={viewScale}
                         />
                     </div>
                 </div>
@@ -1451,7 +1470,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                         </button>
                         <button
                             onClick={() => {
-                                setIsFlipped(true);
+                                setIsFlipped(!isFlipped);
                                 setSelectedElement(null);
                             }}
                             className={cn(
