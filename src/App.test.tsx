@@ -96,4 +96,43 @@ describe('App Component SVG Export', () => {
             expect(screen.queryByText('Deck To Delete')).not.toBeInTheDocument();
         });
     });
+    it('shows confirmation dialog when deleting a card', async () => {
+        render(<App />);
+
+        // 1. Create Deck
+        const createDeckPlaceholder = screen.getByText('Create New Deck');
+        fireEvent.click(createDeckPlaceholder);
+        const nameInput = await screen.findByLabelText(/Deck Name/i);
+        fireEvent.change(nameInput, { target: { value: 'Card Test Deck' } });
+        const createDeckBtn = screen.getByRole('button', { name: /Create Deck/i });
+        fireEvent.click(createDeckBtn);
+
+        // 2. Add a Card
+        const createCardPlaceholder = await screen.findByText('Create New Card');
+        fireEvent.click(createCardPlaceholder);
+
+        // 3. Go back to Deck Studio (by clicking Done in Card Studio)
+        const doneBtn = await screen.findByRole('button', { name: /Done/i });
+        fireEvent.click(doneBtn);
+
+        // 4. Find Delete Card button (Trash icon)
+        // It's in the card overlay. In test it might be hidden until hover, but fireEvent.click should work if it's in the DOM.
+        const deleteBtn = await screen.findByTitle('Delete Card');
+        fireEvent.click(deleteBtn);
+
+        // 5. Verify Dialog
+        expect(await screen.findByText(/Are you sure you want to delete this card?/)).toBeInTheDocument();
+
+        // 6. Click Confirm (The button text is "Delete" based on App.tsx)
+        const elements = await screen.findAllByText('Delete');
+        const confirmBtn = elements.find(el => el.tagName === 'BUTTON');
+        if (!confirmBtn) throw new Error("Delete Button not found");
+        fireEvent.click(confirmBtn);
+
+        // 7. Verify Card Gone (The card title "New Card" should be gone)
+        // Note: The "Create New Card" placeholder remains.
+        await waitFor(() => {
+            expect(screen.queryByText('New Card')).not.toBeInTheDocument();
+        });
+    });
 });
