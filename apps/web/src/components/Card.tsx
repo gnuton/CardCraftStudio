@@ -120,8 +120,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     onBlur: () => setEditingElement(null),
                     onKeyDown: (e: React.KeyboardEvent) => e.stopPropagation(),
                     autoFocus: true,
-                    className: "w-full h-full bg-white/90 dark:bg-black/80 text-black dark:text-white rounded p-1 outline-none ring-2 ring-indigo-500",
-                    style: { ...styleProps, backgroundColor: undefined } // Let the input bg handle transparency
+                    className: "w-full h-full bg-transparent p-1 outline-none ring-2 ring-indigo-500 rounded",
+                    style: { ...styleProps, backgroundColor: undefined }
                 };
 
                 if (multiline) {
@@ -300,9 +300,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 <div
                                     className={cn(
                                         "z-40 flex flex-col items-center justify-center min-w-[32px]",
-                                        !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2"
+                                        ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2"
                                     )}
-                                    style={!allowTextEditing && !isInteractive ? {
+                                    style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                         transform: `translate(calc(-50% + ${deckStyle?.cornerX || 0}px), calc(-50% + ${deckStyle?.cornerY || 0}px)) rotate(${deckStyle?.cornerRotate || 0}deg)`,
                                         width: deckStyle?.cornerWidth || 40,
                                         height: deckStyle?.cornerHeight || 40,
@@ -327,9 +327,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 <div
                                     className={cn(
                                         "z-40 flex flex-col items-center justify-center min-w-[32px] rotate-180",
-                                        !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2"
+                                        ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2"
                                     )}
-                                    style={!allowTextEditing && !isInteractive ? {
+                                    style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                         transform: `translate(calc(-50% + ${deckStyle?.reversedCornerX || 0}px), calc(-50% + ${deckStyle?.reversedCornerY || 0}px)) rotate(${deckStyle?.reversedCornerRotate || 0}deg)`,
                                         width: deckStyle?.reversedCornerWidth || 40,
                                         height: deckStyle?.reversedCornerHeight || 40,
@@ -355,9 +355,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 <div
                                     className={cn(
                                         "z-30 bg-white border-2 border-black px-3 py-1 rounded-lg shadow-lg",
-                                        !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2"
+                                        ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2"
                                     )}
-                                    style={!allowTextEditing && !isInteractive ? {
+                                    style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                         backgroundColor: deckStyle?.statsBoxBackgroundColor || '#ffffff',
                                         borderColor: deckStyle?.statsBoxBorderColor || '#000000',
                                         transform: `translate(calc(-50% + ${deckStyle?.statsBoxX || 0}px), calc(-50% + ${deckStyle?.statsBoxY || 0}px)) rotate(${deckStyle?.statsBoxRotate || 0}deg)`,
@@ -386,10 +386,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                     <div
                                         className={cn(
                                             "z-20",
-                                            !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2",
+                                            ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2",
                                             allowTextEditing && "mb-2 pl-8 pr-2"
                                         )}
-                                        style={!allowTextEditing && !isInteractive ? {
+                                        style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                             transform: `translate(calc(-50% + ${deckStyle?.titleX || 0}px), calc(-50% + ${deckStyle?.titleY || 0}px)) rotate(${deckStyle?.titleRotate || 0}deg) scale(${deckStyle?.titleScale || 1})`,
                                             width: deckStyle?.titleWidth || 200,
                                         } : (!allowTextEditing ? { width: '100%', height: '100%' } : undefined)}
@@ -413,10 +413,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                     <div
                                         className={cn(
                                             "relative bg-slate-100 border border-slate-300 rounded overflow-hidden group mb-2 shadow-inner z-10",
-                                            !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2",
+                                            ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2",
                                             selectedElement === 'art' && isInteractive && allowTextEditing && "ring-2 ring-indigo-500/50"
                                         )}
-                                        style={!allowTextEditing && !isInteractive ? {
+                                        style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                             transform: `translate(calc(-50% + ${deckStyle?.artX || 0}px), calc(-50% + ${deckStyle?.artY || 0}px)) rotate(${deckStyle?.artRotate || 0}deg)`,
                                             width: deckStyle?.artWidth || 264,
                                             height: deckStyle?.artHeight || 164,
@@ -442,9 +442,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                     <div
                                         className={cn(
                                             "z-20",
-                                            !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2"
+                                            ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2"
                                         )}
-                                        style={!allowTextEditing && !isInteractive ? {
+                                        style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                             transform: `translate(calc(-50% + ${deckStyle?.typeBarX || 0}px), calc(-50% + ${deckStyle?.typeBarY || 0}px)) rotate(${deckStyle?.typeBarRotate || 0}deg)`,
                                             width: deckStyle?.typeBarWidth || 200,
                                         } : (!allowTextEditing ? { width: '100%', height: '100%' } : undefined)}
@@ -475,10 +475,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                             className={cn(
                                                 "relative text-left z-10",
                                                 allowTextEditing && "flex-1 min-h-[50px]",
-                                                !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2",
+                                                ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2",
                                                 selectedElement === 'description' && isInteractive && allowTextEditing && "ring-2 ring-indigo-500/50 rounded"
                                             )}
-                                            style={!allowTextEditing && !isInteractive ? {
+                                            style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                                 transform: `translate(calc(-50% + ${deckStyle?.descriptionX || 0}px), calc(-50% + ${deckStyle?.descriptionY || 0}px)) rotate(${deckStyle?.descriptionRotate || 0}deg) scale(${deckStyle?.descriptionScale || 1})`,
                                                 width: deckStyle?.descriptionWidth || 250,
                                             } : (!allowTextEditing ? { width: '100%', height: '100%' } : undefined)}
@@ -491,15 +491,23 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                             }}
                                         >
                                             {editingElement === 'description' && allowTextEditing ? (
-                                                <div className="absolute inset-0 bg-white/95 z-50 rounded p-1 ring-2 ring-indigo-500 shadow-lg text-left overflow-auto" onKeyDown={(e) => e.stopPropagation()}>
+                                                <div className="absolute inset-0 z-50 rounded p-1 ring-2 ring-indigo-500 text-left overflow-auto bg-white/5 backdrop-blur-sm" onKeyDown={(e) => e.stopPropagation()}>
                                                     <RichTextEditor
                                                         value={description ?? ''}
                                                         onChange={(val) => onContentChange?.('description', val)}
+                                                        style={{
+                                                            color: deckStyle?.descriptionColor || '#000000',
+                                                            '--tw-prose-body': deckStyle?.descriptionColor || '#000000',
+                                                            '--tw-prose-bold': deckStyle?.descriptionColor || '#000000', // Ensure bold text matches
+                                                            fontFamily: deckStyle?.descriptionFont || 'sans-serif',
+                                                            fontSize: `${deckStyle?.descriptionFontSize || 13}px`,
+                                                            lineHeight: '1.4'
+                                                        } as React.CSSProperties}
                                                     />
-                                                    <div className="flex justify-end mt-1 sticky bottom-0 bg-white/90 p-1">
+                                                    <div className="flex justify-end mt-1 sticky bottom-0 p-1 pointer-events-none">
                                                         <button
                                                             onMouseDown={(e) => { e.preventDefault(); setEditingElement(null); }}
-                                                            className="text-[10px] bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700"
+                                                            className="text-[10px] bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-700 pointer-events-auto"
                                                         >
                                                             Done
                                                         </button>
@@ -526,9 +534,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                         <div
                                             className={cn(
                                                 "z-20",
-                                                !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2"
+                                                ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2"
                                             )}
-                                            style={!allowTextEditing && !isInteractive ? {
+                                            style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                                 transform: `translate(calc(-50% + ${deckStyle?.flavorTextX || 0}px), calc(-50% + ${deckStyle?.flavorTextY || 0}px)) rotate(${deckStyle?.flavorTextRotate || 0}deg)`,
                                                 width: deckStyle?.flavorTextWidth || 220,
                                             } : (!allowTextEditing ? { width: '100%', height: '100%' } : undefined)}
@@ -553,9 +561,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                     <div
                                         className={cn(
                                             "z-20",
-                                            !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2"
+                                            ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2"
                                         )}
-                                        style={!allowTextEditing && !isInteractive ? {
+                                        style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                             transform: `translate(calc(-50% + ${deckStyle?.collectorInfoX || 0}px), calc(-50% + ${deckStyle?.collectorInfoY || 0}px)) rotate(${deckStyle?.collectorInfoRotate || 0}deg)`,
                                             width: deckStyle?.collectorInfoWidth || 250,
                                         } : (!allowTextEditing ? { width: '100%', height: '100%' } : undefined)}
@@ -606,9 +614,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 <div
                                     className={cn(
                                         "z-30",
-                                        !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2"
+                                        ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2"
                                     )}
-                                    style={!allowTextEditing && !isInteractive ? {
+                                    style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                         color: deckStyle?.cardBackTitleColor || '#ffffff',
                                         fontFamily: deckStyle?.cardBackTitleFont || 'serif',
                                         fontSize: `${deckStyle?.cardBackTitleFontSize || 24}px`,
@@ -626,9 +634,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 <div
                                     className={cn(
                                         "opacity-70 text-[10px]",
-                                        !allowTextEditing && !isInteractive && "absolute top-1/2 left-1/2"
+                                        ((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') && "absolute top-1/2 left-1/2"
                                     )}
-                                    style={!allowTextEditing && !isInteractive ? {
+                                    style={((!allowTextEditing && !isInteractive) || deckStyle?.layoutMode === 'absolute') ? {
                                         color: deckStyle?.cardBackCopyrightColor || '#ffffff',
                                         fontFamily: deckStyle?.cardBackCopyrightFont || 'sans-serif',
                                         transform: `translate(calc(-50% + ${deckStyle?.cardBackCopyrightX || 0}px), calc(-50% + ${deckStyle?.cardBackCopyrightY || 0}px)) rotate(${deckStyle?.cardBackCopyrightRotate || 0}deg) scale(${deckStyle?.cardBackCopyrightScale || 1})`,

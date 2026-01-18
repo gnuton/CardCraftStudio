@@ -5,9 +5,11 @@ import { Bold, Italic, List, ListOrdered, Strikethrough } from 'lucide-react'
 interface RichTextEditorProps {
     value: string;
     onChange: (value: string) => void;
+    style?: React.CSSProperties;
+    className?: string;
 }
 
-export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
+export const RichTextEditor = ({ value, onChange, style, className }: RichTextEditorProps) => {
     const editor = useEditor({
         extensions: [StarterKit],
         content: value,
@@ -16,7 +18,8 @@ export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
         },
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert prose-sm max-w-none focus:outline-none min-h-[80px] p-2 text-foreground'
+                class: 'prose dark:prose-invert prose-sm max-w-none focus:outline-none min-h-[80px] p-2',
+                style: style as any // Apply styles to the content editable area
             }
         }
     })
@@ -26,8 +29,8 @@ export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
     }
 
     return (
-        <div className="border border-input rounded-lg overflow-hidden bg-card transition-colors">
-            <div className="flex items-center gap-1 p-1 border-b border-input bg-muted/50">
+        <div className={`flex flex-col gap-1 ${className}`}>
+            <div className="flex items-center gap-1 p-1 bg-muted/90 rounded-t-lg backdrop-blur-sm sticky top-0 z-50">
                 <button
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     disabled={!editor.can().chain().focus().toggleBold().run()}
@@ -68,7 +71,7 @@ export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
                     <ListOrdered className="w-4 h-4" />
                 </button>
             </div>
-            <EditorContent editor={editor} className="bg-card" />
+            <EditorContent editor={editor} className="" />
         </div>
     )
 }
