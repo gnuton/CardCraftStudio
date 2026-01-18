@@ -370,6 +370,16 @@ function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const DELETED_DECKS_KEY = 'cardcraftstudio-deleted-deck-ids';
+  const [pendingDeletions, setPendingDeletions] = useState<string[]>(() => {
+    const saved = localStorage.getItem(DELETED_DECKS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(DELETED_DECKS_KEY, JSON.stringify(pendingDeletions));
+  }, [pendingDeletions]);
+
   // Init Drive Service & Session Check
   useEffect(() => {
     const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
@@ -413,12 +423,39 @@ function App() {
       // 1. Get list of files from Drive
       const remoteFiles = await driveService.listFiles();
 
+      // 1.5 Process Pending Deletions FIRST
+      if (pendingDeletions.length > 0) {
+        const remainingDeletions = [...pendingDeletions];
+
+        for (const deletedId of pendingDeletions) {
+          const fileToDelete = remoteFiles.find((f: any) => f.name === `deck-${deletedId}.json`);
+          if (fileToDelete) {
+            try {
+              await driveService.deleteFile(fileToDelete.id);
+              // Also delete any images associated? Maybe later.
+            } catch (e) {
+              console.error("Failed to delete remote file", e);
+            }
+          }
+          // Remove from local pending list regardless of success (if it didn't exist, we considered it done)
+          const index = remainingDeletions.indexOf(deletedId);
+          if (index > -1) remainingDeletions.splice(index, 1);
+        }
+        setPendingDeletions(remainingDeletions);
+
+        // Refresh file list after deletions
+        // (Optimization: we could just filter the local array, but let's be safe)
+      }
+
+      // Refresh list to ensure we don't sync deleted files
+      const currentRemoteFiles = await driveService.listFiles();
+
       // Determine work list (either full list or remainder if resuming after conflict)
       const decksToProcess = resumeDecks || decks;
 
       for (let i = 0; i < decksToProcess.length; i++) {
         const localDeck = decksToProcess[i];
-        const remoteFile = remoteFiles.find((f: any) => f.name === `deck-${localDeck.id}.json`);
+        const remoteFile = currentRemoteFiles.find((f: any) => f.name === `deck-${localDeck.id}.json`);
         const localContent = JSON.stringify(localDeck);
 
         // SYNC IMAGES FIRST
@@ -462,7 +499,7 @@ function App() {
 
       // 2. Download NEW decks from cloud (files we don't have locally)
       if (!resumeDecks) {
-        const newRemoteFiles = remoteFiles.filter((f: any) =>
+        const newRemoteFiles = currentRemoteFiles.filter((f: any) =>
           f.name.startsWith('deck-') &&
           f.name.endsWith('.json') &&
           !decks.find(d => `deck-${d.id}.json` === f.name)
@@ -710,6 +747,10 @@ function App() {
     if (deckToDelete) {
       const id = deckToDelete;
       setDecks(prev => prev.filter(d => d.id !== id));
+
+      // Add to pending deletions for sync
+      setPendingDeletions(prev => [...prev, id]);
+
       if (activeDeckId === id) {
         setActiveDeckId(null);
         setView('library');

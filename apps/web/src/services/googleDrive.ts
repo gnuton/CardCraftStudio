@@ -232,6 +232,9 @@ export class GoogleDriveService {
     /**
      * Download file as Blob (for images)
      */
+    /**
+     * Download file as Blob (for images)
+     */
     async getFileBlob(fileId: string): Promise<Blob> {
         const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
             headers: {
@@ -240,6 +243,15 @@ export class GoogleDriveService {
         });
         if (!response.ok) await this.handleApiError(response);
         return await response.blob();
+    }
+
+    /**
+     * Delete a file by ID
+     */
+    async deleteFile(fileId: string): Promise<void> {
+        await gapi.client.drive.files.delete({
+            fileId: fileId,
+        });
     }
 
     /**
