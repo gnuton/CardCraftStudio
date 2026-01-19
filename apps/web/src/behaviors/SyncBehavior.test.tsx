@@ -111,7 +111,7 @@ describe('Cloud Sync Behavior', () => {
         render(<App />);
         await waitForLoadingToFinish();
 
-        await screen.findByText(/My Decks/i);
+        await screen.findByText(/Decks Library/i);
         const syncBtn = screen.getByTitle(/Sync with Google Drive/i);
         fireEvent.click(syncBtn);
 

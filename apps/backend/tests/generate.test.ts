@@ -20,6 +20,7 @@ describe('Image Generation API', () => {
     it('should return 400 if prompt is missing', async () => {
         const response = await request(app)
             .post('/api/images/generate')
+            .set('X-Premium-User', 'true')
             .send({});
 
         expect(response.status).toBe(400);
@@ -32,6 +33,7 @@ describe('Image Generation API', () => {
 
         const response = await request(app)
             .post('/api/images/generate')
+            .set('X-Premium-User', 'true')
             .send({ prompt: 'a dragon', style: 'fantasy' });
 
         expect(response.status).toBe(200);
@@ -47,6 +49,7 @@ describe('Image Generation API', () => {
 
         const response = await request(app)
             .post('/api/images/generate')
+            .set('X-Premium-User', 'true')
             .send({ prompt: 'crash test' });
 
         expect(response.status).toBe(500);

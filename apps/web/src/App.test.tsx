@@ -149,7 +149,7 @@ describe('App Component', () => {
             render(<App />);
 
             // Ensure we are on Library screen
-            expect(screen.getByText('My Decks')).toBeInTheDocument();
+            expect(screen.getByText('Decks Library')).toBeInTheDocument();
 
             // Find file input
             const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;

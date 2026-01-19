@@ -50,7 +50,7 @@ describe('DeckLibrary', () => {
 
         expect(screen.getByText('Test Deck 1')).toBeInTheDocument();
         expect(screen.getByText('Test Deck 2')).toBeInTheDocument();
-        expect(screen.getByText('My Decks')).toBeInTheDocument();
+        expect(screen.getByText('Decks Library')).toBeInTheDocument();
     });
 
     it('renders combined Create and Import card', () => {
