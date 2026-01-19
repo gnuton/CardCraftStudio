@@ -306,6 +306,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                         {...config}
                         deckStyle={deckStyle}
                         isInteractive={!isPanMode} // Disable editing when panning
+                        isLayoutEditable={false} // Disable layout handles in content editor
                         onContentChange={handleConfigChange}
                         selectedElement={selectedElement}
 

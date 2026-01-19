@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { RotateCw, Trash2 } from 'lucide-react';
 
 interface TransformValues {
     x: number;
     y: number;
     width: number;
-    height?: number; // Optional for text elements
+    height?: number;
     rotate: number;
     scale?: number;
 }
@@ -22,7 +22,6 @@ interface TransformWrapperProps {
     children: React.ReactNode;
     className?: string;
     style?: React.CSSProperties;
-    // If true, resize handles update 'scale' instead of width/height (for text scaling vs resizing)
     useScaleForResize?: boolean;
     onDelete?: () => void;
     bounds?: {
@@ -42,7 +41,6 @@ export const TransformWrapper = ({
     values,
     onUpdate,
     onSelect,
-    lockAspectRatio = false,
     minWidth = 20,
     minHeight = 20,
     children,
@@ -57,21 +55,130 @@ export const TransformWrapper = ({
 }: TransformWrapperProps) => {
     const [isDragging, setIsDragging] = useState(false);
 
+    // Force re-render trigger for visual updates during drag
+    const [, forceRender] = useState(0);
+
     const elementRef = useRef<HTMLDivElement>(null);
-    // Refs to store initial values during interactions to avoid closure staleness issues
-    const initialDragState = useRef<{
+
+    // Store all values in refs to avoid stale closures
+    const boundsRef = useRef(bounds);
+    const parentScaleRef = useRef(parentScale);
+    const minWidthRef = useRef(minWidth);
+    const minHeightRef = useRef(minHeight);
+    const useScaleForResizeRef = useRef(useScaleForResize);
+    const onUpdateRef = useRef(onUpdate);
+    const valuesRef = useRef(values);
+
+    // Local transform stored in REF (not state) for zero-latency updates
+    const localTransformRef = useRef<TransformValues | null>(null);
+
+    useEffect(() => { boundsRef.current = bounds; }, [bounds]);
+    useEffect(() => { parentScaleRef.current = parentScale; }, [parentScale]);
+    useEffect(() => { minWidthRef.current = minWidth; minHeightRef.current = minHeight; }, [minWidth, minHeight]);
+    useEffect(() => { useScaleForResizeRef.current = useScaleForResize; }, [useScaleForResize]);
+    useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
+    useEffect(() => { valuesRef.current = values; }, [values]);
+
+    // Drag state stored in ref
+    const dragStateRef = useRef<{
         startX: number;
         startY: number;
         initialValues: TransformValues;
-        center: { x: number, y: number }; // Store center for rotation
-        localDimensions: { width: number, height: number };
-        action?: string; // 'drag', 'rotate', 'resize-tl', etc.
+        center: { x: number, y: number };
+        action: string;
     } | null>(null);
 
-    const handleMouseDown = (e: React.MouseEvent, action: string) => {
-        if (!isActive) return;
+    const getConstrainedPosition = useCallback((x: number, y: number): { x: number, y: number } => {
+        const b = boundsRef.current;
+        if (!b) return { x, y };
+        return {
+            x: Math.max(b.minX, Math.min(b.maxX, x)),
+            y: Math.max(b.minY, Math.min(b.maxY, y))
+        };
+    }, []);
 
-        // Allow text selection/editing when drag is disabled
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        const state = dragStateRef.current;
+        if (!state) return;
+
+        const { startX, startY, initialValues, center, action } = state;
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        const scale = parentScaleRef.current;
+
+        let newValues: TransformValues;
+
+        if (action === 'drag') {
+            const newPos = getConstrainedPosition(
+                initialValues.x + deltaX / scale,
+                initialValues.y + deltaY / scale
+            );
+            newValues = { ...initialValues, x: newPos.x, y: newPos.y };
+        } else if (action === 'rotate') {
+            const startAngle = Math.atan2(startY - center.y, startX - center.x);
+            const currentAngle = Math.atan2(e.clientY - center.y, e.clientX - center.x);
+            const deltaDeg = (currentAngle - startAngle) * (180 / Math.PI);
+            newValues = { ...initialValues, rotate: initialValues.rotate + deltaDeg };
+        } else if (action.startsWith('resize')) {
+            const rad = -initialValues.rotate * (Math.PI / 180);
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            const localDx = (deltaX * cos - deltaY * sin) / scale;
+            const localDy = (deltaX * sin + deltaY * cos) / scale;
+
+            if (useScaleForResizeRef.current) {
+                const changes = action.includes('right') || action.includes('bottom')
+                    ? Math.max(localDx, localDy)
+                    : Math.min(localDx, localDy);
+                const scaleChange = action.includes('right') || action.includes('bottom') ? 1 : -1;
+                const newScale = Math.max(0.1, initialValues.scale! + (scaleChange * changes / 100));
+                newValues = { ...initialValues, scale: newScale };
+            } else {
+                let w = initialValues.width;
+                let h = initialValues.height;
+                if (action.includes('e')) w += localDx * 2;
+                if (action.includes('w')) w -= localDx * 2;
+                if (action.includes('s') && h !== undefined) h += localDy * 2;
+                if (action.includes('n') && h !== undefined) h -= localDy * 2;
+                newValues = {
+                    ...initialValues,
+                    width: Math.max(minWidthRef.current, w),
+                    height: h !== undefined ? Math.max(minHeightRef.current, h) : undefined
+                };
+            }
+        } else {
+            return;
+        }
+
+        // Update ref immediately (no React overhead)
+        localTransformRef.current = newValues;
+        // Trigger minimal re-render for visual update
+        forceRender(n => n + 1);
+    }, [getConstrainedPosition]);
+
+    // Store handlers in refs for stable cleanup
+    const handleMouseMoveRef = useRef(handleMouseMove);
+    useEffect(() => { handleMouseMoveRef.current = handleMouseMove; }, [handleMouseMove]);
+
+    const handleMouseUp = useCallback(() => {
+        // Commit final values to parent
+        if (localTransformRef.current) {
+            onUpdateRef.current(localTransformRef.current);
+        }
+
+        localTransformRef.current = null;
+        dragStateRef.current = null;
+        setIsDragging(false);
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', handleMouseMoveRef.current);
+        document.removeEventListener('mouseup', handleMouseUpRef.current);
+    }, []);
+
+    const handleMouseUpRef = useRef(handleMouseUp);
+    useEffect(() => { handleMouseUpRef.current = handleMouseUp; }, [handleMouseUp]);
+
+    const handleMouseDown = useCallback((e: React.MouseEvent, action: string) => {
+        if (!isActive) return;
         if (action === 'drag' && disableDrag) {
             e.stopPropagation();
             return;
@@ -80,189 +187,48 @@ export const TransformWrapper = ({
         e.stopPropagation();
         e.preventDefault();
 
-        // If clicking the body and not selected, select it first
         if (!isSelected && action === 'drag') {
             onSelect();
-            // Don't start dragging immediately on select to avoid jumps?
-            // Standard UX allows click-drag to select-move.
         }
+        if (action === 'drag' && !isSelected) return;
 
-        if (action === 'drag' && !isSelected) return; // Should be handled by parent click, but just in case
-
-        // Calculate center for rotation
+        // Get element center for rotation
         let cx = 0, cy = 0;
-        let lw = 0, lh = 0;
         if (elementRef.current) {
             const rect = elementRef.current.getBoundingClientRect();
             cx = rect.left + rect.width / 2;
             cy = rect.top + rect.height / 2;
-            lw = elementRef.current.offsetWidth;
-            lh = elementRef.current.offsetHeight;
         }
 
-        initialDragState.current = {
+        const currentValues = valuesRef.current;
+
+        // Store initial state
+        dragStateRef.current = {
             startX: e.clientX,
             startY: e.clientY,
-            initialValues: { ...values },
+            initialValues: { ...currentValues },
             center: { x: cx, y: cy },
-            localDimensions: { width: lw, height: lh },
             action
         };
 
+        // Initialize local transform
+        localTransformRef.current = { ...currentValues };
         if (action === 'drag') setIsDragging(true);
 
-        // Add global listeners
-        document.addEventListener('mousemove', handleGlobalMouseMove);
-        document.addEventListener('mouseup', handleGlobalMouseUp);
-    };
-
-    const getConstrainedValues = (vals: TransformValues, localDims: { width: number, height: number } | null): TransformValues => {
-        if (!bounds || !localDims) return vals;
-
-        // Calculate projected size for strict bonding
-        const rad = (vals.rotate || 0) * (Math.PI / 180);
-        const absCos = Math.abs(Math.cos(rad));
-        const absSin = Math.abs(Math.sin(rad));
-
-        const currentW = (vals.width * (vals.scale || 1));
-        // Use vals.height if defined, otherwise fall back to original local height
-        const currentH = ((vals.height !== undefined ? vals.height : localDims.height) * (vals.scale || 1));
-
-        const projW = currentW * absCos + currentH * absSin;
-        const projH = currentW * absSin + currentH * absCos;
-
-        const halfW = projW / 2;
-        const halfH = projH / 2;
-
-        let { x, y } = vals;
-
-        const minAllowedX = bounds.minX + halfW;
-        const maxAllowedX = bounds.maxX - halfW;
-        const minAllowedY = bounds.minY + halfH;
-        const maxAllowedY = bounds.maxY - halfH;
-
-        if (minAllowedX > maxAllowedX) {
-            x = (bounds.minX + bounds.maxX) / 2;
-        } else {
-            x = Math.max(minAllowedX, Math.min(maxAllowedX, x));
-        }
-
-        if (minAllowedY > maxAllowedY) {
-            y = (bounds.minY + bounds.maxY) / 2;
-        } else {
-            y = Math.max(minAllowedY, Math.min(maxAllowedY, y));
-        }
-
-        return { ...vals, x, y };
-    };
-
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-        if (!initialDragState.current) return;
-
-        const { startX, startY, initialValues, center, localDimensions, action } = initialDragState.current;
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
-
-
-        if (action === 'drag') {
-            const newX = initialValues.x + deltaX / parentScale;
-            const newY = initialValues.y + deltaY / parentScale;
-
-            onUpdate(getConstrainedValues({
-                ...initialValues,
-                x: newX,
-                y: newY
-            }, localDimensions));
-        } else if (action === 'rotate') {
-            // Calculate angle based on center to mouse vector
-            // This ensures rotation follows the mouse naturally at any orientation
-            const startAngle = Math.atan2(startY - center.y, startX - center.x);
-            const currentAngle = Math.atan2(e.clientY - center.y, e.clientX - center.x);
-
-            const deltaRad = currentAngle - startAngle;
-            const deltaDeg = deltaRad * (180 / Math.PI);
-
-            onUpdate(getConstrainedValues({
-                ...initialValues,
-                rotate: initialValues.rotate + deltaDeg
-            }, localDimensions));
-        } else if (action?.startsWith('resize')) {
-            // Resize logic
-            // Need to rotate delta vector into local space
-            const rad = -initialValues.rotate * (Math.PI / 180);
-            const cos = Math.cos(rad);
-            const sin = Math.sin(rad);
-
-            const localDx = (deltaX * cos - deltaY * sin) / parentScale;
-            const localDy = (deltaX * sin + deltaY * cos) / parentScale;
-
-            let newWidth = initialValues.width;
-            let newHeight = initialValues.height;
-            let newScale = initialValues.scale || 1;
-
-            if (useScaleForResize) {
-                // Simplified scaling: dragging right/down increases scale
-                if (action.includes('right') || action.includes('bottom')) {
-                    const changes = Math.max(localDx, localDy);
-                    newScale = Math.max(0.1, initialValues.scale! + (changes / 100)); // arbitrary divisor
-                } else {
-                    const changes = Math.min(localDx, localDy);
-                    newScale = Math.max(0.1, initialValues.scale! - (changes / 100));
-                }
-                onUpdate(getConstrainedValues({
-                    ...initialValues,
-                    scale: newScale
-                }, localDimensions));
-                return;
-            }
-
-            // Standard N/E/S/W resize logic (center anchored? no, opposite corner anchored)
-            // But CSS layout is centered: translate(-50%, -50%).
-            // So x/y are CENTER coordinates.
-            // If width increases by 10, center shifts by 5 (rotated).
-
-            // It's vastly easier to just support symmetrical resize from center for this use case
-            // because of the translate(-50%, -50%) CSS commonly used in this project.
-            // Otherwise we have to do complex matrix math to shift center to keep opposite edge fixed.
-
-            // Let's implement symmetrical resize (Alt-like behavior) for simplicity + center-origin CSS.
-            // "You scale by stretching the squares" -> changing width/height from center.
-
-            if (action.includes('e')) newWidth += localDx * 2; // *2 because center anchored
-            if (action.includes('w')) newWidth -= localDx * 2;
-            if (action.includes('s') && newHeight !== undefined) newHeight += localDy * 2;
-            if (action.includes('n') && newHeight !== undefined) newHeight -= localDy * 2;
-
-            if (lockAspectRatio && newHeight !== undefined) {
-                // Adjust based on dominant axis or logic
-                // For now, keep it simple
-            }
-
-            onUpdate(getConstrainedValues({
-                ...initialValues,
-                width: Math.max(minWidth, newWidth),
-                height: newHeight !== undefined ? Math.max(minHeight, newHeight) : undefined,
-            }, localDimensions));
-        }
-    };
-
-    const handleGlobalMouseUp = () => {
-        setIsDragging(false);
-        initialDragState.current = null;
-        document.removeEventListener('mousemove', handleGlobalMouseMove);
-        document.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
+        document.addEventListener('mousemove', handleMouseMoveRef.current);
+        document.addEventListener('mouseup', handleMouseUpRef.current);
+    }, [isActive, isSelected, disableDrag, onSelect]);
 
     // Cleanup
     useEffect(() => {
         return () => {
-            document.removeEventListener('mousemove', handleGlobalMouseMove);
-            document.removeEventListener('mouseup', handleGlobalMouseUp);
+            document.removeEventListener('mousemove', handleMouseMoveRef.current);
+            document.removeEventListener('mouseup', handleMouseUpRef.current);
         };
     }, []);
 
-    // const cursorStyle = isRotating ? 'cursor-grabbing' : isDragging ? 'cursor-move' : 'cursor-pointer'; // Moved to inline for simplicity or use if needed
-
+    // Use local ref values during drag, otherwise props
+    const displayValues = localTransformRef.current || values;
     const { zIndex, ...restStyle } = style || {};
 
     return (
@@ -271,7 +237,8 @@ export const TransformWrapper = ({
             style={{
                 top: '50%',
                 left: '50%',
-                width: 0, height: 0,
+                width: 0,
+                height: 0,
                 overflow: 'visible',
                 zIndex: isSelected ? 100 : (zIndex ?? 'auto')
             }}
@@ -283,20 +250,18 @@ export const TransformWrapper = ({
                 className="relative"
                 style={{
                     ...restStyle,
-                    width: values.width,
-                    height: values.height ?? 'auto', // Handle undefined height
+                    width: displayValues.width,
+                    height: displayValues.height ?? 'auto',
                     cursor: isActive ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                    // The transform is key:
-                    transform: `translate(calc(-50% + ${values.x}px), calc(-50% + ${values.y}px)) rotate(${values.rotate}deg) scale(${values.scale || 1})`,
-                    // Outline when selected
+                    transform: `translate(calc(-50% + ${displayValues.x}px), calc(-50% + ${displayValues.y}px)) rotate(${displayValues.rotate}deg) scale(${displayValues.scale || 1})`,
                     boxShadow: isSelected ? '0 0 0 2px #3b82f6' : 'none',
                     userSelect: 'none',
-                    touchAction: 'none'
+                    touchAction: 'none',
+                    willChange: localTransformRef.current ? 'transform' : 'auto',
                 }}
             >
                 {children}
 
-                {/* Overlays/Controls */}
                 {isSelected && isActive && !hideControls && (
                     <>
                         {/* Rotation Handle */}
@@ -304,37 +269,19 @@ export const TransformWrapper = ({
                             className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-[#3b82f6] rounded-full shadow cursor-grab active:cursor-grabbing hover:bg-blue-50 z-[9999] text-[#3b82f6]"
                             onMouseDown={(e) => handleMouseDown(e, 'rotate')}
                         >
-                            <div style={{ transform: `rotate(${-values.rotate}deg)` }}>
+                            <div style={{ transform: `rotate(${-displayValues.rotate}deg)` }}>
                                 <RotateCw size={16} />
                             </div>
-                            {/* Connector Line */}
                             <div className="absolute top-full left-1/2 w-px h-4 bg-[#3b82f6] -translate-x-1/2 pointer-events-none" />
                         </div>
 
-                        {/* Resize Handles - 4 Corners */}
+                        {/* Resize Handles */}
                         {!useScaleForResize && (
                             <>
-                                {/* TL */}
-                                <div
-                                    className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]"
-                                    onMouseDown={(e) => handleMouseDown(e, 'resize-nw')}
-                                />
-                                {/* TR */}
-                                <div
-                                    className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nesw-resize z-[9999]"
-                                    onMouseDown={(e) => handleMouseDown(e, 'resize-ne')}
-                                />
-                                {/* BL */}
-                                <div
-                                    className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nesw-resize z-[9999]"
-                                    onMouseDown={(e) => handleMouseDown(e, 'resize-sw')}
-                                />
-                                {/* BR */}
-                                <div
-                                    className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]"
-                                    onMouseDown={(e) => handleMouseDown(e, 'resize-se')}
-                                />
-                                {/* Edges (Optional but standard) */}
+                                <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-nw')} />
+                                <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nesw-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-ne')} />
+                                <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nesw-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-sw')} />
+                                <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-se')} />
                                 <div className="absolute top-1/2 -left-1.5 w-3 h-3 -mt-1.5 bg-white border-2 border-[#3b82f6] cursor-ew-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-w')} />
                                 <div className="absolute top-1/2 -right-1.5 w-3 h-3 -mt-1.5 bg-white border-2 border-[#3b82f6] cursor-ew-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-e')} />
                                 <div className="absolute -top-1.5 left-1/2 w-3 h-3 -ml-1.5 bg-white border-2 border-[#3b82f6] cursor-ns-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-n')} />
@@ -342,26 +289,19 @@ export const TransformWrapper = ({
                             </>
                         )}
 
-                        {/* Scale Handles (Used if resize is mapped to scale) */}
+                        {/* Scale Handle */}
                         {useScaleForResize && (
-                            <>
-                                <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]"
-                                    onMouseDown={(e) => handleMouseDown(e, 'resize-scale')}
-                                />
-                            </>
+                            <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-scale')} />
                         )}
 
                         {/* Delete Button */}
                         {onDelete && (
                             <button
                                 className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-red-500 rounded-full shadow hover:bg-red-50 z-[9999] text-red-500 transition-colors"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDelete();
-                                }}
+                                onClick={(e) => { e.stopPropagation(); onDelete(); }}
                                 title="Delete element"
                             >
-                                <div style={{ transform: `rotate(${-values.rotate}deg)` }}>
+                                <div style={{ transform: `rotate(${-displayValues.rotate}deg)` }}>
                                     <Trash2 size={16} />
                                 </div>
                                 <div className="absolute bottom-full left-1/2 w-px h-2 bg-red-400 -translate-x-1/2 pointer-events-none" />

@@ -243,7 +243,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                                     <div className="aspect-[2.5/3.5] bg-muted relative overflow-hidden">
                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                             <div style={{ width: '375px', height: '525px', transform: 'scale(0.5)', transformOrigin: 'center' }}>
-                                                <Card {...card} deckStyle={deckStyle} />
+                                                <Card {...card} deckStyle={deckStyle} renderMode="front" />
                                             </div>
                                         </div>
                                         {/* Overlay Actions */}

@@ -57,13 +57,13 @@ describe('Element Constraints Enforcement', () => {
         const bounds = JSON.parse(boundsAttr || '{}');
 
         // Card size is 375x525. Center is (0,0).
-        // Max bounds must be strictly half width/height to keep center inside card
-        // 375 / 2 = 187.5
-        // 525 / 2 = 262.5
-        expect(bounds.minX).toBe(-187.5);
-        expect(bounds.maxX).toBe(187.5);
-        expect(bounds.minY).toBe(-262.5);
-        expect(bounds.maxY).toBe(262.5);
+        // Max bounds are half width/height minus margin (20px) to keep element inside card
+        // 375 / 2 = 187.5, minus 20 = 167.5
+        // 525 / 2 = 262.5, minus 20 = 242.5
+        expect(bounds.minX).toBe(-167.5);
+        expect(bounds.maxX).toBe(167.5);
+        expect(bounds.minY).toBe(-242.5);
+        expect(bounds.maxY).toBe(242.5);
     });
 
     // Test 2: Removal of Inverted Corner

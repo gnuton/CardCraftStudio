@@ -22,16 +22,21 @@ interface CardProps {
 
     // Interaction
     isInteractive?: boolean;
+    isLayoutEditable?: boolean; // New prop to control layout handles
     isFlipped?: boolean;
     selectedElement?: string | null;
     onContentChange?: (key: string, value: string) => void;
     onSelectElement?: (element: string | null) => void;
     onElementUpdate?: (element: string | null, updates: any) => void;
+    onDeleteElement?: (elementId: string) => void;
     allowTextEditing?: boolean;
     parentScale?: number;
 
     // Legacy props support (optional, can be ignored if we fully migrate)
     // But maintaining signature prevents immediate breaks in parent, though we ignore them
+    // Legacy props support (optional, can be ignored if we fully migrate)
+    // But maintaining signature prevents immediate breaks in parent, though we ignore them
+    renderMode?: '3d' | 'front' | 'back';
     [key: string]: any;
 }
 
@@ -46,13 +51,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             style,
             id,
             isInteractive = false,
+            isLayoutEditable = true,
             isFlipped = false,
             selectedElement,
             onContentChange,
             onSelectElement,
             onElementUpdate,
+            onDeleteElement,
             allowTextEditing = true,
             parentScale = 1,
+            renderMode = '3d',
         },
         ref
     ) => {
@@ -220,61 +228,112 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 );
             }
 
-            // Interactive Editor Mode
-            // Note: TransformWrapper expects "values" object matching the state
+            // Interactive Editor Mode - TransformWrapper handles all positioning
+            // We use a simple container here since TransformWrapper manages its own transforms
+            const interactiveWrapperStyle: React.CSSProperties = {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none', // Allow clicks to pass through except on elements
+                zIndex: isSelected ? 100 : element.zIndex, // Bring selected elements to front
+            };
+
+            // Calculate bounds to prevent elements from escaping the card
+            const cardHalfWidth = 187.5; // 375 / 2
+            const cardHalfHeight = 262.5; // 525 / 2
+
+            // Bounds should keep the element center within the card
+            // Allow some margin so elements can be partially outside
+            const margin = 20; // pixels of element that must stay inside
+            const effectiveBounds = {
+                minX: -cardHalfWidth + margin,
+                maxX: cardHalfWidth - margin,
+                minY: -cardHalfHeight + margin,
+                maxY: cardHalfHeight - margin,
+            };
+
             return (
-                <div key={element.id} style={wrapperStyle}> {/* Parent wrapper handles initial position for React logic, but TransformWrapper handles updates */}
-                    {/* Actually TransformWrapper in this codebase seems to handle the transform internally?
-                       Let's check TransformWrapper implementation via memory or previous View. 
-                       It renders children. It takes 'values'. It calls 'onUpdate'.
-                       It renders a container.
-                   */}
-                    <div className="w-full h-full"> {/* Inner content */}
-                        <TransformWrapper
-                            isActive={isInteractive && isSelected}
-                            isSelected={isSelected}
-                            values={{
-                                x: element.x,
-                                y: element.y,
-                                width: element.width,
-                                height: element.height,
-                                rotate: element.rotate,
-                                scale: element.scale
-                            }}
-                            useScaleForResize={true} // Defaulting to scale for simplicity
-                            onSelect={() => onSelectElement?.(element.id)}
-                            onUpdate={(newVals) => {
-                                onElementUpdate?.(element.id, {
-                                    x: newVals.x,
-                                    y: newVals.y,
-                                    width: newVals.width,
-                                    height: newVals.height,
-                                    rotate: newVals.rotate,
-                                    scale: newVals.scale,
-                                });
-                            }}
-                            onDelete={() => {
-                                // Delete element? Or just hide?
-                                // User said "remove predefined types". User can delete elements in Style Editor.
-                                // In Card Editor, we usually don't delete elements from the structure.
-                                // But maybe we can hide content?
-                                // For now, no delete in Card Editor unless it's content deletion.
-                            }}
-                            parentScale={parentScale}
-                            // Bounds need to match the card size relative to center
-                            bounds={{
-                                minX: -187.5, maxX: 187.5,
-                                minY: -262.5, maxY: 262.5
-                            }}
-                        >
-                            {renderElementContent(element)}
-                        </TransformWrapper>
-                    </div>
+                <div key={element.id} style={interactiveWrapperStyle}>
+                    <TransformWrapper
+                        isActive={isInteractive && isSelected}
+                        isSelected={isSelected}
+                        values={{
+                            x: element.x,
+                            y: element.y,
+                            width: element.width,
+                            height: element.height,
+                            rotate: element.rotate,
+                            scale: element.scale
+                        }}
+                        useScaleForResize={true} // Defaulting to scale for simplicity
+                        onSelect={() => onSelectElement?.(element.id)}
+                        onUpdate={(newVals) => {
+                            onElementUpdate?.(element.id, {
+                                x: newVals.x,
+                                y: newVals.y,
+                                width: newVals.width,
+                                height: newVals.height,
+                                rotate: newVals.rotate,
+                                scale: newVals.scale,
+                            });
+                        }}
+                        onDelete={() => {
+                            onDeleteElement?.(element.id);
+                        }}
+                        parentScale={parentScale}
+                        bounds={effectiveBounds}
+                        disableDrag={!isLayoutEditable}
+                        hideControls={!isLayoutEditable}
+                        style={{ pointerEvents: 'auto' }} // Enable pointer events on the actual element
+                    >
+                        {renderElementContent(element)}
+                    </TransformWrapper>
                 </div>
             );
         };
 
         const elements = deckStyle?.elements || [];
+
+        const FrontFaceContent = () => (
+            <div
+                className="w-full h-full relative"
+                style={{
+                    borderColor: borderColor || deckStyle?.borderColor || '#000000',
+                    borderWidth: `${borderWidth ?? deckStyle?.borderWidth ?? 12}px`,
+                    borderStyle: 'solid',
+                    backgroundColor: deckStyle?.backgroundColor || '#ffffff',
+                    backgroundImage: resolveBgImage(deckStyle?.backgroundImage),
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    fontFamily: deckStyle?.globalFont || 'Inter, sans-serif',
+                    borderRadius: '18px',
+                }}
+            >
+                {/* Render FRONT elements */}
+                {elements.filter((e: CardElement) => e.side === 'front').map(renderTransformableElement)}
+            </div>
+        );
+
+        if (renderMode === 'front') {
+            return (
+                <div
+                    ref={ref}
+                    id={id}
+                    className={cn("relative", className)}
+                    style={{
+                        width: '375px',
+                        height: '525px',
+                        ...style
+                    }}
+                >
+                    <div className={cn("w-full h-full bg-white rounded-[18px] shadow-sm flex flex-col font-sans select-none", isInteractive ? "overflow-visible" : "overflow-hidden")}>
+                        <FrontFaceContent />
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div
@@ -307,26 +366,9 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                             zIndex: isFlipped ? 0 : 1,
                             pointerEvents: isFlipped ? 'none' : 'auto'
                         }}
-                        className="w-full h-full bg-white rounded-[18px] overflow-hidden shadow-sm flex flex-col font-sans select-none"
+                        className={cn("w-full h-full bg-white rounded-[18px] shadow-sm flex flex-col font-sans select-none", isInteractive ? "overflow-visible" : "overflow-hidden")}
                     >
-                        <div
-                            className="w-full h-full relative"
-                            style={{
-                                borderColor: borderColor || deckStyle?.borderColor || '#000000',
-                                borderWidth: `${borderWidth ?? deckStyle?.borderWidth ?? 12}px`,
-                                borderStyle: 'solid',
-                                backgroundColor: deckStyle?.backgroundColor || '#ffffff',
-                                backgroundImage: resolveBgImage(deckStyle?.backgroundImage),
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                fontFamily: deckStyle?.globalFont || 'Inter, sans-serif',
-                            }}
-                        >
-                            {/* Render FRONT elements */}
-                            {elements.filter((e: CardElement) => e.side === 'front').map(renderTransformableElement)}
-
-                            {/* Card Back fallback for when flipped? No, this is Front div. */}
-                        </div>
+                        <FrontFaceContent />
                     </div>
 
                     {/* Back Side */}
@@ -341,7 +383,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         }}
                     >
                         <div
-                            className="w-full h-full bg-white rounded-[18px] overflow-hidden shadow-sm relative"
+                            className={cn("w-full h-full bg-white rounded-[18px] shadow-sm relative", isInteractive ? "overflow-visible" : "overflow-hidden")}
                             style={{
                                 backgroundColor: deckStyle?.cardBackBackgroundColor || '#312e81',
                                 backgroundImage: deckStyle?.cardBackImage ? resolveBgImage(deckStyle.cardBackImage) : undefined,
@@ -349,7 +391,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                 backgroundPosition: 'center',
                                 borderColor: borderColor || deckStyle?.borderColor || '#000000',
                                 borderWidth: `${borderWidth ?? deckStyle?.borderWidth ?? 12}px`,
-                                borderStyle: 'solid'
+                                borderStyle: 'solid',
+                                borderRadius: '18px'
                             }}
                         >
                             {/* Render BACK elements */}

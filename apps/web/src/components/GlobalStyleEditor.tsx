@@ -1025,7 +1025,6 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
                             {expandedGroups.templates && (
                                 <div className="space-y-4 pl-0">
-                                    {/* Current Editing Style - Always visible at top when expanded */}
                                     <div className="mb-4 p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm relative overflow-hidden group">
                                         <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
                                         <div className="flex flex-col gap-2 pl-2">
@@ -1035,9 +1034,13 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                                     Current Style
                                                 </span>
                                                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-200/50 text-indigo-700 dark:bg-indigo-800/50 dark:text-indigo-300">
-                                                    Editing
+                                                    Local Setting
                                                 </span>
                                             </div>
+
+                                            <p className="text-[10px] text-muted-foreground leading-tight">
+                                                Changes are applied only to this deck. To reuse this style later, save it as a template.
+                                            </p>
 
                                             <div className="flex gap-1 mt-1">
                                                 <div className="w-3 h-3 rounded-full border border-border/50 shadow-sm" style={{ backgroundColor: currentStyle.backgroundColor }}></div>
@@ -1056,7 +1059,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
                                     <div className="h-px bg-border/50 my-2 mx-2" />
 
-                                    <div className="space-y-3 pl-2">
+                                    <div className="space-y-3 pl-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-1">
                                         {[...TEMPLATES, ...customTemplates]
                                             .filter(t => !t.side || t.side === 'both' || (isFlipped ? t.side === 'back' : t.side === 'front'))
                                             .map(template => (
@@ -1064,7 +1067,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                                     key={template.id}
                                                     onClick={() => applyTemplate(template)}
                                                     className={cn(
-                                                        "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden",
+                                                        "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden flex-shrink-0",
                                                         (isFlipped ? currentStyle.cardBackImage === template.style.cardBackImage && currentStyle.cardBackBackgroundColor === template.style.cardBackBackgroundColor
                                                             : currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.backgroundColor === template.style.backgroundColor)
                                                             ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
@@ -1191,6 +1194,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 isInteractive={!isPanMode} // Disable internal interactivity when in pan mode
                                 selectedElement={selectedElement}
                                 onElementUpdate={(id: string, updates: Partial<CardElement>) => handleUpdateElement(id, updates)}
+                                onDeleteElement={handleDeleteElement}
                                 isFlipped={isFlipped}
                                 allowTextEditing={false}
                                 parentScale={viewScale}

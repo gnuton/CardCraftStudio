@@ -142,6 +142,31 @@ describe('GlobalStyleEditor', () => {
         // Check that inspector shows "Properties" header when element is selected
         expect(screen.getByText('Properties')).toBeInTheDocument();
     });
+
+    it('adds new text elements with default name', () => {
+        const mockOnUpdateStyle = vi.fn();
+        render(
+            <GlobalStyleEditor
+                deckStyle={mockDeckStyle}
+                sampleCard={mockSampleCard as any}
+                onUpdateStyle={mockOnUpdateStyle}
+                onBack={() => { }}
+            />
+        );
+
+        // Find Add Text button
+        const addTextBtn = screen.getByTitle('Add Text');
+
+        // Click once
+        fireEvent.click(addTextBtn);
+
+        // Expect update with "New Text" (default from createDefaultElement)
+        expect(mockOnUpdateStyle).toHaveBeenLastCalledWith(expect.objectContaining({
+            elements: expect.arrayContaining([
+                expect.objectContaining({ name: 'New Text' })
+            ])
+        }));
+    });
 });
 
 // Need to import vi for the last test
