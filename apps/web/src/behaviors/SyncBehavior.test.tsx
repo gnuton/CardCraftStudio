@@ -26,6 +26,7 @@ vi.mock('../services/googleDrive', () => ({
         listFiles: vi.fn(),
         getFileContent: vi.fn(),
         deleteFile: vi.fn(),
+        ensureSignedIn: vi.fn(),
     }
 }));
 
@@ -38,7 +39,8 @@ describe('Cloud Sync Behavior', () => {
 
         (driveService.init as any).mockResolvedValue(undefined);
         (driveService.listFiles as any).mockResolvedValue([]);
-        (driveService.trySilentSignIn as any).mockResolvedValue('fake-token');
+        // Mock ensureSignedIn to succeed by default (auto-login scenario)
+        (driveService.ensureSignedIn as any).mockResolvedValue(undefined);
         (driveService as any).accessToken = 'fake-token';
     });
 
@@ -54,7 +56,7 @@ describe('Cloud Sync Behavior', () => {
 
         await waitFor(() => {
             expect(driveService.init).toHaveBeenCalled();
-            expect(driveService.trySilentSignIn).toHaveBeenCalled();
+            expect(driveService.ensureSignedIn).toHaveBeenCalled();
         });
 
         await waitForLoadingToFinish();
@@ -66,7 +68,7 @@ describe('Cloud Sync Behavior', () => {
 
     it('Scenario 2: Shows prompt if previously enabled but silent sign-in fails (Session Lost)', async () => {
         localStorage.setItem('cardcraftstudio-sync-enabled', 'true');
-        (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Session expired'));
+        (driveService.ensureSignedIn as any).mockRejectedValue(new Error('Session expired'));
         (driveService as any).accessToken = null;
 
         render(<App />);
@@ -78,7 +80,7 @@ describe('Cloud Sync Behavior', () => {
 
     it('Scenario 3: Shows prompt for New User (first session)', async () => {
         localStorage.removeItem('cardcraftstudio-sync-enabled');
-        (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Not signed in'));
+        (driveService.ensureSignedIn as any).mockRejectedValue(new Error('Not signed in'));
         (driveService as any).accessToken = null;
 
         render(<App />);
@@ -90,7 +92,7 @@ describe('Cloud Sync Behavior', () => {
     it('Scenario 4: Does NOT prompt if prompt was already dismissed in this session', async () => {
         localStorage.removeItem('cardcraftstudio-sync-enabled');
         sessionStorage.setItem('cardcraftstudio-sync-prompt-shown', 'true');
-        (driveService.trySilentSignIn as any).mockRejectedValue(new Error('Not signed in'));
+        (driveService.ensureSignedIn as any).mockRejectedValue(new Error('Not signed in'));
         (driveService as any).accessToken = null;
 
         render(<App />);

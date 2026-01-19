@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
-import { Plus, Trash2, Edit, Copy, Settings, X, Download, Loader2, Upload, Archive, Palette } from 'lucide-react';
+import { Plus, Trash2, Edit, Copy, Settings, X, Download, Loader2, Archive, Palette } from 'lucide-react';
 import { DeckPrintLayout } from './DeckPrintLayout';
 import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
-import JSZip from 'jszip';
 import type { DeckStyle } from '../App';
+import { exportDeckToZip } from '../utils/deckIO';
 
 interface DeckStudioProps {
     deck: CardConfig[];
@@ -26,7 +26,6 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
     const [tempName, setTempName] = useState(projectName);
     const [isGenerating, setIsGenerating] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleSaveSettings = () => {
         onUpdateProjectName(tempName);
@@ -35,125 +34,10 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
 
     const handleExportDeck = async () => {
         try {
-            const zip = new JSZip();
-
-            // Prepare deck data with image references
-            const deckData = {
-                deckName: projectName,
-                version: '1.0',
-                cards: [] as any[]
-            };
-
-            // Process each card
-            for (let i = 0; i < deck.length; i++) {
-                const card = deck[i];
-                const cardData = { ...card };
-
-                // If card has an image, extract it
-                if (card.centerImage) {
-                    const imageFileName = `card-${card.id}.${card.centerImage.startsWith('data:image/png') ? 'png' : 'jpg'}`;
-
-                    // Convert data URL to blob
-                    const response = await fetch(card.centerImage);
-                    const blob = await response.blob();
-
-                    // Add image to ZIP
-                    zip.folder('images')!.file(imageFileName, blob);
-
-                    // Update card reference to relative path
-                    cardData.centerImage = `images/${imageFileName}`;
-                }
-
-                deckData.cards.push(cardData);
-            }
-
-            // Add deck.json to ZIP
-            zip.file('deck.json', JSON.stringify(deckData, null, 2));
-
-            // Generate and download ZIP
-            const blob = await zip.generateAsync({ type: 'blob' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${projectName.replace(/\s+/g, '-').toLowerCase()}.zip`;
-            a.click();
-            URL.revokeObjectURL(url);
+            await exportDeckToZip(deck, deckStyle, projectName);
         } catch (error) {
             console.error('Export failed:', error);
             alert('Failed to export deck');
-        }
-    };
-
-    const handleImportDeck = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        try {
-            const zip = new JSZip();
-            const zipData = await zip.loadAsync(file);
-
-            // Read deck.json
-            const deckJsonFile = zipData.file('deck.json');
-            if (!deckJsonFile) {
-                alert('Invalid deck file: missing deck.json');
-                return;
-            }
-
-            const deckJsonText = await deckJsonFile.async('text');
-            const deckData = JSON.parse(deckJsonText);
-
-            // Restore images
-            const restoredCards: CardConfig[] = [];
-            for (const cardData of deckData.cards) {
-                const card = { ...cardData };
-
-                // If card references an image, restore it
-                if (card.centerImage && card.centerImage.startsWith('images/')) {
-                    const imageFile = zipData.file(card.centerImage);
-                    if (imageFile) {
-                        const blob = await imageFile.async('blob');
-                        const dataUrl = await new Promise<string>((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result as string);
-                            reader.readAsDataURL(blob);
-                        });
-                        card.centerImage = dataUrl;
-                    }
-                }
-
-                restoredCards.push(card);
-            }
-
-            // Update deck name
-            onUpdateProjectName(deckData.deckName);
-            setTempName(deckData.deckName);
-
-            // Clear existing deck and add imported cards
-            // We need to delete all existing cards first
-            for (let i = deck.length - 1; i >= 0; i--) {
-                onDeleteCard(i);
-            }
-
-            // Add imported cards
-            restoredCards.forEach(() => onAddCard());
-
-            // Update each card with imported data
-            // We need to wait a bit for the cards to be added
-            setTimeout(() => {
-                restoredCards.forEach((card, index) => {
-                    onUpdateCard(index, card);
-                });
-            }, 100);
-
-            alert(`Successfully imported "${deckData.deckName}" with ${restoredCards.length} cards`);
-        } catch (error) {
-            console.error('Import failed:', error);
-            alert('Failed to import deck. Please ensure the file is a valid deck export.');
-        } finally {
-            // Reset file input
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
         }
     };
 
@@ -262,7 +146,7 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                                 title="Global Deck Styles"
                             >
                                 <Palette className="w-5 h-5 mr-2 text-indigo-500" />
-                                Deck Styles
+                                Edit Style
                             </button>
                             <button
                                 onClick={handleExportDeck}
@@ -272,14 +156,6 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                             >
                                 <Archive className="w-5 h-5 mr-2" />
                                 Export Deck
-                            </button>
-                            <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center px-4 py-2 bg-card border border-border text-foreground font-medium rounded-lg hover:bg-accent transition-colors shadow-sm"
-                                title="Import deck from ZIP"
-                            >
-                                <Upload className="w-5 h-5 mr-2" />
-                                Import Deck
                             </button>
                             <button
                                 onClick={handleGenerateDeckPdf}
@@ -365,8 +241,10 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                             {deck.map((card, index) => (
                                 <div key={card.id || index} className="group relative bg-card rounded-xl shadow-sm border border-border overflow-hidden hover:shadow-md transition-shadow">
                                     <div className="aspect-[2.5/3.5] bg-muted relative overflow-hidden">
-                                        <div className="absolute inset-0 pointer-events-none">
-                                            <Card {...card} deckStyle={deckStyle} style={{ width: '100%', height: '100%' }} />
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div style={{ width: '375px', height: '525px', transform: 'scale(0.5)', transformOrigin: 'center' }}>
+                                                <Card {...card} deckStyle={deckStyle} />
+                                            </div>
                                         </div>
                                         {/* Overlay Actions */}
                                         <div className="absolute inset-0 z-50 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
@@ -395,8 +273,8 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
                                     </div>
                                     <div className="p-3 border-t border-border flex items-center justify-between gap-3">
                                         <div className="min-w-0 flex-1">
-                                            <h3 className="font-medium text-foreground truncate">{card.title || 'Untitled Card'}</h3>
-                                            <p className="text-xs text-muted-foreground truncate mt-0.5">{card.description ? 'Has description' : 'No description'}</p>
+                                            <h3 className="font-medium text-foreground truncate">{card.name || 'Untitled Card'}</h3>
+                                            <p className="text-xs text-muted-foreground truncate mt-0.5">{card.data?.description ? 'Has description' : 'No description'}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <label className="text-xs text-muted-foreground font-medium">Qty</label>
@@ -421,15 +299,6 @@ export const DeckStudio = ({ deck, projectName, deckStyle, onAddCard, onEditCard
 
             {/* Hidden Print Layout */}
             <DeckPrintLayout pages={pages} deckStyle={deckStyle} ref={printRef} />
-
-            {/* Hidden File Input for Import */}
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept=".zip"
-                onChange={handleImportDeck}
-                style={{ display: 'none' }}
-            />
 
             {isGenerating && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center flex-col gap-4 text-white">

@@ -57,6 +57,9 @@ vi.mock('./DeckPrintLayout', () => ({
 }));
 
 const mockDeckStyle = {
+    borderColor: '#000000',
+    borderWidth: 12,
+    backgroundColor: '#ffffff',
     cornerColor: '#000000',
     titleColor: '#000000',
     descriptionColor: '#000000',
@@ -88,12 +91,6 @@ const mockDeckStyle = {
     cornerRotate: 0,
     cornerWidth: 40,
     cornerHeight: 40,
-    showReversedCorner: true,
-    reversedCornerX: 125,
-    reversedCornerY: 185,
-    reversedCornerRotate: 180,
-    reversedCornerWidth: 40,
-    reversedCornerHeight: 40,
     // Game Logic
     gameHp: '10',
     gameMana: '10',
@@ -101,22 +98,22 @@ const mockDeckStyle = {
     // SVG Styling
     svgFrameColor: '#000000',
     svgCornerColor: '#000000',
-    svgStrokeWidth: 2
+    svgStrokeWidth: 2,
+    elements: []
 };
 
 describe('DeckStudio PDF Export', () => {
     const mockDeck: CardConfig[] = [
         {
             id: '1',
-            title: 'Card 1',
-            description: '<p>Desc 1</p>',
+            name: 'Card 1',
+            data: {
+                description: '<p>Desc 1</p>',
+                art: '',
+                corner: 'A'
+            },
             borderColor: '#000',
             borderWidth: 1,
-            centerImage: null,
-            topLeftContent: 'A',
-            bottomRightContent: 'A',
-            topLeftImage: null,
-            bottomRightImage: null,
             count: 2
         }
     ];
@@ -149,13 +146,14 @@ describe('DeckStudio PDF Export', () => {
                             version: '1.0',
                             cards: [{
                                 id: '1',
-                                title: 'Imported Card',
-                                description: '<p>Imported</p>',
+                                name: 'Imported Card',
+                                data: {
+                                    description: '<p>Imported</p>',
+                                    art: 'images/card-1.png',
+                                    corner: 'A'
+                                },
                                 borderColor: '#000',
                                 borderWidth: 1,
-                                centerImage: 'images/card-1.png',
-                                topLeftContent: 'A',
-                                bottomRightContent: 'A',
                                 count: 1
                             }]
                         }))
@@ -279,15 +277,15 @@ describe('DeckStudio Import/Export', () => {
     const mockDeck: CardConfig[] = [
         {
             id: '1',
-            title: 'Card 1',
-            description: '<p>Desc 1</p>',
+            name: 'Card 1',
+            data: {
+                description: '<p>Desc 1</p>',
+                art: 'data:image/png;base64,mockdata',
+                corner: 'A',
+                reversedCorner: 'A'
+            },
             borderColor: '#000',
             borderWidth: 1,
-            centerImage: 'data:image/png;base64,mockdata',
-            topLeftContent: 'A',
-            bottomRightContent: 'A',
-            topLeftImage: 'data:image/png;base64,mockdata',
-            bottomRightImage: 'data:image/png;base64,mockdata',
             count: 1
         }
     ];
@@ -316,7 +314,7 @@ describe('DeckStudio Import/Export', () => {
         });
     });
 
-    it('has export and import buttons', () => {
+    it('has export button', () => {
         render(
             <DeckStudio
                 deck={mockDeck}
@@ -333,7 +331,7 @@ describe('DeckStudio Import/Export', () => {
         );
 
         expect(screen.getByText(/Export Deck/i)).toBeInTheDocument();
-        expect(screen.getByText(/Import Deck/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Import Deck/i)).not.toBeInTheDocument();
     });
 
     it('exports deck as ZIP with images', async () => {
@@ -385,52 +383,7 @@ describe('DeckStudio Import/Export', () => {
         expect(exportBtn).toBeDisabled();
     });
 
-    it('imports deck from ZIP file', async () => {
-        const mockOnUpdateProjectName = vi.fn();
-        const mockOnDeleteCard = vi.fn();
-        const mockOnAddCard = vi.fn();
-        const mockOnUpdateCard = vi.fn();
 
-        render(
-            <DeckStudio
-                deck={[]}
-                projectName="Test Deck"
-                deckStyle={mockDeckStyle}
-                onAddCard={mockOnAddCard}
-                onEditCard={() => { }}
-                onDeleteCard={mockOnDeleteCard}
-                onUpdateProjectName={mockOnUpdateProjectName}
-                onUpdateCard={mockOnUpdateCard}
-                onDuplicateCard={() => { }}
-                onOpenStyleEditor={() => { }}
-            />
-        );
-
-        // Find the hidden file input
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        expect(fileInput).toBeInTheDocument();
-
-        // Create a mock file
-        const mockFile = new File(['mock zip data'], 'test-deck.zip', { type: 'application/zip' });
-
-        // Trigger file input change
-        await act(async () => {
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
-            });
-            fireEvent.change(fileInput);
-            await new Promise(resolve => setTimeout(resolve, 200));
-        });
-
-        // Verify import logic was triggered
-        await waitFor(() => {
-            expect(mockZipLoadAsync).toHaveBeenCalledWith(mockFile);
-        });
-
-        // Verify deck name was updated
-        expect(mockOnUpdateProjectName).toHaveBeenCalledWith('Imported Deck');
-    });
 });
 
 describe('DeckStudio Create Card Placeholder', () => {
@@ -487,15 +440,15 @@ describe('DeckStudio Create Card Placeholder', () => {
         const mockDeck: CardConfig[] = [
             {
                 id: '1',
-                title: 'Test Card',
-                description: '<p>Test</p>',
+                name: 'Test Card',
+                data: {
+                    description: '<p>Test</p>',
+                    art: '',
+                    corner: 'A',
+                    reversedCorner: 'A'
+                },
                 borderColor: '#000',
                 borderWidth: 1,
-                centerImage: null,
-                topLeftContent: 'A',
-                bottomRightContent: 'A',
-                topLeftImage: null,
-                bottomRightImage: null,
                 count: 1
             }
         ];
@@ -570,15 +523,15 @@ describe('Overlay Actions Visibility', () => {
     const mockDeck: CardConfig[] = [
         {
             id: '1',
-            title: 'Card 1',
-            description: '<p>Desc 1</p>',
+            name: 'Card 1',
+            data: {
+                description: '<p>Desc 1</p>',
+                art: '',
+                corner: 'A',
+                reversedCorner: 'A'
+            },
             borderColor: '#000',
             borderWidth: 1,
-            centerImage: null,
-            topLeftContent: 'A',
-            bottomRightContent: 'A',
-            topLeftImage: null,
-            bottomRightImage: null,
             count: 1
         }
     ];

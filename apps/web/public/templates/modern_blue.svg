@@ -1,14 +1,48 @@
-<svg width="300" height="420" viewBox="0 0 300 420" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="300" height="420" fill="#F8FAFC"/>
-  <rect x="10" y="10" width="280" height="400" rx="10" stroke="#E2E8F0" stroke-width="2"/>
-  
-  <!-- Layout Markers -->
-  <rect id="layout-title" x="30" y="30" width="240" height="40" fill="transparent" />
-  <rect id="layout-center-image" x="40" y="90" width="220" height="150" fill="transparent" />
-  <rect id="layout-description" x="30" y="260" width="240" height="100" fill="transparent" />
-  <circle id="layout-top-left" cx="25" cy="25" r="15" fill="transparent" />
-  <circle id="layout-bottom-right" cx="275" cy="395" r="15" fill="transparent" />
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E293B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#38BDF8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#818CF8;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glass">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1"/>
+    </filter>
+  </defs>
 
-  <path d="M0 0L60 0L0 60Z" fill="#6366F1" fill-opacity="0.8"/>
-  <path d="M300 420L240 420L300 360Z" fill="#6366F1" fill-opacity="0.8"/>
+  <!-- Dark Background -->
+  <rect width="300" height="420" rx="16" fill="url(#blueGrad)"/>
+  
+  <!-- Subtle Grid -->
+  <path d="M0 40H300 M0 80H300 M0 120H300 M0 160H300 M0 200H300 M0 240H300 M0 280H300 M0 320H300 M0 360H300 M0 400H300" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1"/>
+  <path d="M40 0V420 M80 0V420 M120 0V420 M160 0V420 M200 0V420 M240 0V420 M280 0V420" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1"/>
+
+  <!-- Top Accent -->
+  <path d="M0 0 H100 L120 20 H0 Z" fill="url(#accentGrad)"/>
+  
+  <!-- Title -->
+  <rect x="20" y="30" width="260" height="50" rx="4" fill="#FFFFFF" fill-opacity="0.05" stroke="url(#accentGrad)" stroke-width="1"/>
+  <rect id="layout-title" x="30" y="35" width="240" height="40" fill="transparent" />
+
+  <!-- Image Holder -->
+  <rect x="15" y="95" width="270" height="180" rx="8" fill="#000000" fill-opacity="0.2" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="1"/>
+  <rect id="layout-center-image" x="20" y="100" width="260" height="170" rx="4" fill="transparent" />
+
+  <!-- Side accents -->
+  <rect x="5" y="100" width="2" height="170" fill="url(#accentGrad)"/>
+  <rect x="293" y="100" width="2" height="170" fill="url(#accentGrad)"/>
+
+  <!-- Text Box -->
+  <rect x="20" y="290" width="260" height="100" rx="8" fill="#FFFFFF" fill-opacity="0.05" stroke="#FFFFFF" stroke-opacity="0.1"/>
+  <rect id="layout-description" x="30" y="300" width="240" height="80" fill="transparent" />
+
+  <!-- Decorative circles for data -->
+  <circle id="layout-top-left" cx="25" cy="25" r="12" fill="#FFFFFF" fill-opacity="0.1" stroke="url(#accentGrad)"/>
+  <circle id="layout-bottom-right" cx="275" cy="395" r="14" fill="#FFFFFF" fill-opacity="0.1" stroke="url(#accentGrad)"/>
+  
+  <!-- Modern detail -->
+  <path d="M260 420 L300 420 L300 380 Z" fill="url(#accentGrad)" opacity="0.6"/>
 </svg>

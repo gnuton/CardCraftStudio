@@ -1,4 +1,10 @@
 import type { DeckStyle } from '../App';
+import { imageService } from './imageService';
+
+// ... (interfaces existing) ...
+
+// ... inside class ...
+
 
 export interface MarkerLayout {
     x: number;
@@ -8,16 +14,17 @@ export interface MarkerLayout {
     offsetX: number;
     offsetY: number;
     rotation: number;
+    scale: number;
+    opacity: number;
+    fontSize?: number;
+    fontFamily?: string;
+    fill?: string;
+    stroke?: string;
+    strokeWidth?: number;
 }
 
 export interface ExtractedLayout {
-    title?: MarkerLayout;
-    description?: MarkerLayout;
-    topLeft?: MarkerLayout;
-    bottomRight?: MarkerLayout;
-    centerImage?: MarkerLayout;
-    showCorner: boolean;
-    showReversedCorner: boolean;
+    elements: Record<string, MarkerLayout>;
 }
 
 class TemplateService {
@@ -38,23 +45,23 @@ class TemplateService {
             const parser = new DOMParser();
             const doc = parser.parseFromString(svgText, 'image/svg+xml');
 
-            const extract = (id: string) => {
-                const el = doc.getElementById(id);
-                if (!el) return undefined;
+            const cardWidth = 300;
+            const cardHeight = 420;
+            const centerX = cardWidth / 2;
+            const centerY = cardHeight / 2;
 
-                const marker = { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
+            const elements: Record<string, MarkerLayout> = {};
 
-                // Parse rotation from transform attribute
-                const transform = el.getAttribute('transform');
-                if (transform) {
-                    const rotateMatch = transform.match(/rotate\(([^)]+)\)/);
-                    if (rotateMatch) {
-                        const parts = rotateMatch[1].trim().split(/[ ,]+/);
-                        marker.rotation = parseFloat(parts[0]) || 0;
-                    }
-                }
+            // Function to extract properties from an element
+            const extractProps = (el: Element): MarkerLayout | undefined => {
+                const marker: MarkerLayout = {
+                    x: 0, y: 0, width: 0, height: 0,
+                    rotation: 0, scale: 1, opacity: 1,
+                    offsetX: 0, offsetY: 0
+                };
 
-                if (el.tagName === 'rect') {
+                // Parse Geometry
+                if (el.tagName === 'rect' || el.tagName === 'image') {
                     marker.x = parseFloat(el.getAttribute('x') || '0');
                     marker.y = parseFloat(el.getAttribute('y') || '0');
                     marker.width = parseFloat(el.getAttribute('width') || '0');
@@ -67,34 +74,104 @@ class TemplateService {
                     marker.y = cy - r;
                     marker.width = r * 2;
                     marker.height = r * 2;
-                } else {
-                    return undefined;
+                } else if (el.tagName === 'g' || el.tagName === 'text') {
+                    // For groups and text, we might need bounding box, but without rendering it's hard.
+                    // We rely on x/y attributes if present, or explicit data attributes potentially.
+                    // Fallback to 0 or try to parse 'transform' translate
+                    marker.x = parseFloat(el.getAttribute('x') || '0');
+                    marker.y = parseFloat(el.getAttribute('y') || '0');
+                    // Width/Height are tricky for text/groups without rendering. 
+                    // Users should preferably use rects as placeholders/layout guides.
+                    // Or we accept data-width/data-height
+                    marker.width = parseFloat(el.getAttribute('data-width') || '0');
+                    marker.height = parseFloat(el.getAttribute('data-height') || '0');
                 }
 
-                const cardWidth = 300;
-                const cardHeight = 420;
-                const centerX = cardWidth / 2;
-                const centerY = cardHeight / 2;
+                // Parse Transforms
+                const transform = el.getAttribute('transform');
+                if (transform) {
+                    // Rotate
+                    const rotateMatch = transform.match(/rotate\(([^)]+)\)/);
+                    if (rotateMatch) {
+                        const parts = rotateMatch[1].trim().split(/[ ,]+/);
+                        marker.rotation = parseFloat(parts[0]) || 0;
+                    }
 
-                return {
-                    ...marker,
-                    offsetX: marker.x + marker.width / 2 - centerX,
-                    offsetY: marker.y + marker.height / 2 - centerY
-                };
+                    // Scale
+                    const scaleMatch = transform.match(/scale\(([^)]+)\)/);
+                    if (scaleMatch) {
+                        const parts = scaleMatch[1].trim().split(/[ ,]+/);
+                        marker.scale = parseFloat(parts[0]) || 1;
+                    }
+                }
+
+                // Parse Style / Attributes
+                const style = el.getAttribute('style') || '';
+                const styleMap: Record<string, string> = {};
+                style.split(';').forEach(rule => {
+                    const [key, val] = rule.split(':');
+                    if (key && val) styleMap[key.trim()] = val.trim();
+                });
+
+                const opacityAttr = el.getAttribute('opacity') || styleMap['opacity'];
+                marker.opacity = opacityAttr ? parseFloat(opacityAttr) : 1;
+
+                const fill = el.getAttribute('fill') || styleMap['fill'];
+                if (fill) marker.fill = fill;
+
+                const stroke = el.getAttribute('stroke') || styleMap['stroke'];
+                if (stroke) marker.stroke = stroke;
+
+                const strokeWidth = el.getAttribute('stroke-width') || styleMap['stroke-width'];
+                if (strokeWidth) marker.strokeWidth = parseFloat(strokeWidth);
+
+                const fontSize = el.getAttribute('font-size') || styleMap['font-size'];
+                if (fontSize) marker.fontSize = parseFloat(fontSize);
+
+                const fontFamily = el.getAttribute('font-family') || styleMap['font-family'];
+                if (fontFamily) marker.fontFamily = fontFamily.replace(/['"]/g, '');
+
+                // Center Relative Offset Calculation
+                marker.offsetX = marker.x + marker.width / 2 - centerX;
+                marker.offsetY = marker.y + marker.height / 2 - centerY;
+
+                return marker;
             };
 
-            const layoutTopLeft = extract('layout-top-left');
-            const layoutBottomRight = extract('layout-bottom-right');
+            // Recursively walk or just querySelectorAll
+            // querySelectorAll is safer for finding all elements with data-ref
+            const refElements = doc.querySelectorAll('[data-ref]');
+            refElements.forEach(el => {
+                const ref = el.getAttribute('data-ref');
+                if (ref) {
+                    const props = extractProps(el);
+                    if (props) elements[ref] = props;
+                }
+            });
+
+            // Fallback: Check ID-based legacy markers if not found via data-ref
+            const legacyMap: Record<string, string> = {
+                'title': 'layout-title',
+                'description': 'layout-description',
+                'art': 'layout-center-image',
+                'corner': 'layout-top-left',
+                'reversedCorner': 'layout-bottom-right'
+            };
+
+            Object.entries(legacyMap).forEach(([key, id]) => {
+                if (!elements[key]) {
+                    const el = doc.getElementById(id);
+                    if (el) {
+                        const props = extractProps(el);
+                        if (props) elements[key] = props;
+                    }
+                }
+            });
 
             return {
-                title: extract('layout-title'),
-                description: extract('layout-description'),
-                topLeft: layoutTopLeft,
-                bottomRight: layoutBottomRight,
-                centerImage: extract('layout-center-image'),
-                showCorner: !!layoutTopLeft,
-                showReversedCorner: !!layoutBottomRight
+                elements
             };
+
         } catch (error) {
             console.error('Error parsing SVG content:', error);
             return null;
@@ -104,22 +181,44 @@ class TemplateService {
     async generateSvgWithLayout(svgUrl: string | null, style: DeckStyle): Promise<string> {
         let svgDoc: Document;
 
-        if (svgUrl && svgUrl.toLowerCase().endsWith('.svg')) {
+        const emptySvg = `<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="420" fill="white"/></svg>`;
+        const parser = new DOMParser();
+
+        let resolvedUrl = svgUrl;
+
+        if (svgUrl && svgUrl.startsWith('ref:')) {
+            resolvedUrl = await imageService.resolveImage(svgUrl);
+        }
+
+        if (resolvedUrl && (resolvedUrl.toLowerCase().endsWith('.svg') || resolvedUrl.startsWith('data:image/svg+xml'))) {
             try {
-                const response = await fetch(svgUrl);
+                const response = await fetch(resolvedUrl);
                 const svgText = await response.text();
-                const parser = new DOMParser();
                 svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
             } catch (e) {
                 console.error("Failed to fetch base SVG, creating empty one", e);
-                const emptySvg = `<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="420" fill="white"/></svg>`;
-                const parser = new DOMParser();
                 svgDoc = parser.parseFromString(emptySvg, 'image/svg+xml');
             }
         } else {
-            const emptySvg = `<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="420" fill="white"/></svg>`;
-            const parser = new DOMParser();
             svgDoc = parser.parseFromString(emptySvg, 'image/svg+xml');
+
+            // If we have a background image that isn't an SVG layout, add it as a background image element
+            if (resolvedUrl) {
+                const bgImage = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'image');
+                bgImage.setAttribute('x', '0');
+                bgImage.setAttribute('y', '0');
+                bgImage.setAttribute('width', '300');
+                bgImage.setAttribute('height', '420');
+                bgImage.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+                bgImage.setAttribute('href', resolvedUrl);
+
+                // Insert as first child to be background
+                if (svgDoc.documentElement.firstChild) {
+                    svgDoc.documentElement.insertBefore(bgImage, svgDoc.documentElement.firstChild);
+                } else {
+                    svgDoc.documentElement.appendChild(bgImage);
+                }
+            }
         }
 
         const cardWidth = 300;
@@ -127,54 +226,97 @@ class TemplateService {
         const centerX = cardWidth / 2;
         const centerY = cardHeight / 2;
 
-        const updateMarker = (id: string, offsetX: number, offsetY: number, width: number, height: number, rotation: number) => {
-            let el: SVGElement | null = svgDoc.getElementById(id) as SVGElement | null;
+        const updateElement = (refName: string, legacyId: string, props: {
+            x?: number; y?: number; width?: number; height?: number;
+            rotate?: number; scale?: number; opacity?: number;
+            color?: string; fontSize?: number; fontFamily?: string;
+        }) => {
+            // Find by data-ref first, then ID
+            let el = svgDoc.querySelector(`[data-ref="${refName}"]`);
+            if (!el && legacyId) el = svgDoc.getElementById(legacyId);
+
+            // If not found, create rectangle if we have geometry? 
+            // For now, if it's missing in template, we might skip or create a placeholder.
+            // Existing logic created placeholders for rects.
             if (!el) {
-                const newEl = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                newEl.setAttribute('id', id);
-                newEl.setAttribute('fill', 'transparent');
-                svgDoc.documentElement.appendChild(newEl);
-                el = newEl;
+                // Only create if we have essential geometry
+                if (props.width && props.height) {
+                    el = svgDoc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    if (legacyId) el.setAttribute('id', legacyId);
+                    el.setAttribute('data-ref', refName);
+                    el.setAttribute('fill', 'transparent');
+                    svgDoc.documentElement.appendChild(el);
+                } else {
+                    return;
+                }
             }
 
-            const x = offsetX + centerX - width / 2;
-            const y = offsetY + centerY - height / 2;
-
             if (el) {
-                el.setAttribute('x', x.toString());
-                el.setAttribute('y', y.toString());
-                el.setAttribute('width', width.toString());
-                el.setAttribute('height', height.toString());
+                // Apply Geometry
+                // Convert center-relative offsets back to SVG coordinates
+                if (props.x !== undefined && props.y !== undefined && props.width !== undefined && props.height !== undefined) {
+                    const x = props.x + centerX - props.width / 2;
+                    const y = props.y + centerY - props.height / 2;
 
-                if (rotation !== 0) {
-                    el.setAttribute('transform', `rotate(${rotation}, ${x + width / 2}, ${y + height / 2})`);
-                } else {
-                    el.removeAttribute('transform');
+                    el.setAttribute('x', x.toString());
+                    el.setAttribute('y', y.toString());
+                    el.setAttribute('width', props.width.toString());
+                    el.setAttribute('height', props.height.toString());
+
+                    // Apply Transform (Rotate & Scale)
+                    const parts: string[] = [];
+                    if (props.rotate && props.rotate !== 0) {
+                        parts.push(`rotate(${props.rotate}, ${x + props.width / 2}, ${y + props.height / 2})`);
+                    }
+                    if (props.scale && props.scale !== 1) {
+                        // Scale around center
+                        // SVG scale is typically from origin 0,0 unless using translate mess.
+                        // Easier: translate to center, scale, translate back.
+                        // But for simple single elements, `transform-origin` style is better or `scale(s)` with careful placement.
+                        // However, SVG 1.1 `scale(kx,ky)` scales Everything including x,y.
+                        // Proper way: translate(cx, cy) scale(s) translate(-cx, -cy)
+                        const cx = x + props.width / 2;
+                        const cy = y + props.height / 2;
+                        parts.push(`translate(${cx}, ${cy}) scale(${props.scale}) translate(${-cx}, ${-cy})`);
+                    }
+
+                    if (parts.length > 0) {
+                        el.setAttribute('transform', parts.join(' '));
+                    } else {
+                        el.removeAttribute('transform');
+                    }
                 }
+
+                // Apply Styles
+                if (props.opacity !== undefined) el.setAttribute('opacity', props.opacity.toString());
+                if (props.color) el.setAttribute('fill', props.color);
+                if (props.fontSize) el.setAttribute('font-size', props.fontSize.toString());
+                if (props.fontFamily) el.setAttribute('font-family', props.fontFamily);
             }
         };
 
-        updateMarker('layout-title', style.titleX, style.titleY, style.titleWidth, 40, style.titleRotate);
-        updateMarker('layout-description', style.descriptionX, style.descriptionY, style.descriptionWidth, 100, style.descriptionRotate);
-        updateMarker('layout-center-image', style.artX, style.artY, style.artWidth, style.artHeight, 0);
+        // Map DeckStyle Elements to SVG
+        const legacyMap: Record<string, string> = {
+            'title': 'layout-title',
+            'description': 'layout-description',
+            'art': 'layout-center-image',
+            'corner': 'layout-top-left',
+            'reversedCorner': 'layout-bottom-right'
+        };
 
-        if (style.showCorner) {
-            updateMarker('layout-top-left', style.cornerX, style.cornerY, style.cornerWidth, style.cornerHeight, style.cornerRotate);
-        } else {
-            const el = svgDoc.getElementById('layout-top-left');
-            if (el) el.remove();
-        }
+        style.elements?.forEach(element => {
+            const legacyId = legacyMap[element.id];
 
-        if (style.showReversedCorner) {
-            updateMarker('layout-bottom-right', style.reversedCornerX, style.reversedCornerY, style.reversedCornerWidth, style.reversedCornerHeight, style.reversedCornerRotate);
-        } else {
-            const el = svgDoc.getElementById('layout-bottom-right');
-            if (el) el.remove();
-        }
+            updateElement(element.id, legacyId, {
+                x: element.x, y: element.y, width: element.width, height: element.height,
+                rotate: element.rotate, scale: element.scale, opacity: element.opacity,
+                color: element.color, fontSize: element.fontSize, fontFamily: element.fontFamily
+            });
+        });
 
-        // --- Apply Global/Game Logic Styles ---
-        const applyStyle = (id: string, attrs: Record<string, string | number>) => {
-            const el = svgDoc.getElementById(id);
+        // --- Global Styles (Frame/Corner BG colors which are not specific card elements but template parts) ---
+        const applyGlobalStyle = (id: string, attrs: Record<string, string | number>) => {
+            const el = svgDoc.getElementById(id); // These usually stay as IDs as they are structural
             if (el) {
                 Object.entries(attrs).forEach(([key, value]) => {
                     el.setAttribute(key, String(value));
@@ -182,24 +324,27 @@ class TemplateService {
             }
         };
 
-        if (style.svgFrameColor) applyStyle('frame', { fill: style.svgFrameColor });
+        if (style.svgFrameColor) applyGlobalStyle('frame', { fill: style.svgFrameColor });
+
+        // Corners BGs
+        // Assuming these IDs are standard in our templates
         if (style.svgCornerColor) {
-            applyStyle('corner-bg-top-left', { fill: style.svgCornerColor });
-            applyStyle('corner-bg-bottom-right', { fill: style.svgCornerColor });
-        }
-        if (style.svgStrokeWidth !== undefined) {
-            applyStyle('frame', { 'stroke-width': style.svgStrokeWidth });
-            // Also apply to corners?
-            applyStyle('corner-bg-top-left', { 'stroke-width': style.svgStrokeWidth });
-            applyStyle('corner-bg-bottom-right', { 'stroke-width': style.svgStrokeWidth });
+            applyGlobalStyle('corner-bg-top-left', { fill: style.svgCornerColor });
+            applyGlobalStyle('corner-bg-bottom-right', { fill: style.svgCornerColor });
         }
 
-        // Update Game Logic Text
+        if (style.svgStrokeWidth !== undefined) {
+            applyGlobalStyle('frame', { 'stroke-width': style.svgStrokeWidth });
+            applyGlobalStyle('corner-bg-top-left', { 'stroke-width': style.svgStrokeWidth });
+            applyGlobalStyle('corner-bg-bottom-right', { 'stroke-width': style.svgStrokeWidth });
+        }
+
+        // Note: Text Content updates (HP, Mana, etc) happen in main app render, 
+        // but if we want to bake them into SVG for export:
         const updateText = (id: string, text: string) => {
             const el = svgDoc.getElementById(id);
             if (el) el.textContent = text;
         };
-
         if (style.gameHp) updateText('text-hp', style.gameHp);
         if (style.gameMana) updateText('text-mana', style.gameMana);
         if (style.gameSuit) updateText('text-suit', style.gameSuit);

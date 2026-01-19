@@ -1,12 +1,46 @@
-<svg width="300" height="420" viewBox="0 0 300 420" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="300" height="420" fill="#FFFBEB"/>
-  <rect x="15" y="15" width="270" height="390" rx="4" stroke="#D97706" stroke-width="3" stroke-dasharray="8 4"/>
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FDB931;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#B8860B;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="paperGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FDFCF0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F5F0D0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="ornateShadow">
+      <feDropShadow dx="1" dy="1" stdDeviation="1" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Main Background -->
+  <rect width="300" height="420" rx="15" fill="url(#goldGrad)"/>
+  <rect x="10" y="10" width="280" height="400" rx="10" fill="url(#paperGrad)"/>
   
-  <!-- Layout Markers -->
-  <rect id="layout-title" x="50" y="40" width="200" height="40" fill="transparent" transform="rotate(-3, 150, 60)" />
-  <rect id="layout-center-image" x="40" y="100" width="220" height="160" fill="transparent" />
-  <rect id="layout-description" x="50" y="280" width="200" height="80" fill="transparent" />
-  
-  <circle id="layout-top-left" cx="20" cy="20" r="15" fill="#F59E0B"/>
-  <circle id="layout-bottom-right" cx="280" cy="400" r="15" fill="#F59E0B"/>
+  <!-- Decorative Frame -->
+  <rect x="15" y="15" width="270" height="390" rx="8" fill="none" stroke="#B8860B" stroke-width="2"/>
+  <rect x="18" y="18" width="264" height="384" rx="6" fill="none" stroke="#DAA520" stroke-width="1"/>
+
+  <!-- Ornate Corners -->
+  <path d="M10,10 L40,10 L10,40 Z" fill="#B8860B"/>
+  <path d="M290,10 L260,10 L290,40 Z" fill="#B8860B"/>
+  <path d="M10,410 L40,410 L10,380 Z" fill="#B8860B"/>
+  <path d="M290,410 L260,410 L290,380 Z" fill="#B8860B"/>
+
+  <!-- Title Area -->
+  <rect x="30" y="30" width="240" height="45" rx="4" fill="#FFFFFF" fill-opacity="0.8" stroke="#B8860B" stroke-width="1" filter="url(#ornateShadow)"/>
+  <rect id="layout-title" x="40" y="35" width="220" height="35" fill="transparent" />
+
+  <!-- Image Area -->
+  <rect x="25" y="85" width="250" height="180" rx="2" fill="#EAE0C0" stroke="#B8860B" stroke-width="2" filter="url(#ornateShadow)"/>
+  <rect id="layout-center-image" x="30" y="90" width="240" height="170" fill="transparent" />
+
+  <!-- Description Area -->
+  <rect x="25" y="275" width="250" height="100" rx="4" fill="#FFFFFF" fill-opacity="0.6" stroke="#B8860B" stroke-width="1" filter="url(#ornateShadow)"/>
+  <rect id="layout-description" x="35" y="285" width="230" height="80" fill="transparent" />
+
+  <!-- Layout Circles -->
+  <circle id="layout-top-left" cx="25" cy="25" r="18" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="1"/>
+  <circle id="layout-bottom-right" cx="275" cy="395" r="18" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="1"/>
 </svg>

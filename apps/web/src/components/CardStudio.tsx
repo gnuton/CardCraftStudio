@@ -5,48 +5,52 @@ import { Undo, Redo, Download, ArrowLeft, ZoomIn, ZoomOut, RotateCcw, Hand, Mous
 import type { DeckStyle } from '../App';
 import { imageService } from '../services/imageService';
 import { cn } from '../utils/cn';
+import { ImageProviderDialog } from './ImageProviderDialog/ImageProviderDialog';
+
+
 
 export interface CardConfig {
-    id?: string;
-    borderColor: string;
-    borderWidth: number;
-    topLeftContent: string;
-    bottomRightContent: string;
-    topLeftImage: string | null;
-    bottomRightImage: string | null;
-    centerImage: string | null;
-    title: string;
-    description: string;
-    typeBarContent?: string;
-    flavorTextContent?: string;
-    statsBoxContent?: string;
-    collectorInfoContent?: string;
+    id: string;
+    name: string; // Internal name for the card in list
+    data: Record<string, string>; // Map element ID to content
+
+    // Global overrides
+    borderColor?: string;
+    borderWidth?: number;
     count?: number;
 }
 
 interface CardStudioProps {
-    initialCard?: CardConfig;
+    initialCard?: any; // Weak type for migration
     deckStyle: DeckStyle;
     onUpdate: (card: CardConfig) => void;
     onDone: () => void;
 }
 
 export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStudioProps) => {
-    const [config, setConfig] = useState<CardConfig>(initialCard || {
-        id: crypto.randomUUID(),
-        borderColor: deckStyle.borderColor || '#000000',
-        borderWidth: deckStyle.borderWidth || 8,
-        topLeftContent: 'A',
-        bottomRightContent: 'A',
-        topLeftImage: null,
-        bottomRightImage: null,
-        centerImage: null,
-        title: 'New Card',
-        description: 'Card description...',
-        typeBarContent: 'Type - Subtype',
-        flavorTextContent: 'Flavor text...',
-        statsBoxContent: '1 / 1',
-        collectorInfoContent: 'Artist | 001/100'
+    const [config, setConfig] = useState<CardConfig>(() => {
+        // Migration Logic
+        if (initialCard && typeof initialCard.data === 'object') {
+            return initialCard as CardConfig;
+        }
+
+        const legacy = initialCard || {};
+        const data: Record<string, string> = {};
+
+        // Attempt to migrate legacy fields to default IDs if they exist
+        if (legacy.title) data['title'] = legacy.title;
+        if (legacy.description) data['description'] = legacy.description;
+        if (legacy.centerImage) data['art'] = legacy.centerImage;
+        if (legacy.topLeftContent) data['corner'] = legacy.topLeftContent;
+        // Add other legacy migrations as needed
+
+        return {
+            id: legacy.id || crypto.randomUUID(),
+            name: legacy.title || 'New Card',
+            data: data,
+            borderColor: legacy.borderColor,
+            borderWidth: legacy.borderWidth
+        };
     });
 
     const [history, setHistory] = useState<{ past: CardConfig[], future: CardConfig[] }>({
@@ -56,6 +60,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedElement, setSelectedElement] = useState<string | null>(null);
+    const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
     const [status, setStatus] = useState<string | null>(null);
 
@@ -72,7 +77,19 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
     };
 
     const handleConfigChange = (key: string, value: any) => {
-        const newConfig = { ...config, [key]: value };
+        const newConfig = {
+            ...config,
+            data: {
+                ...config.data,
+                [key]: value
+            }
+        };
+
+        // Special case: if title changes, update card name too
+        if (key === 'title') {
+            newConfig.name = value;
+        }
+
         pushToHistory();
         setConfig(newConfig);
         onUpdate(newConfig);
@@ -126,7 +143,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
             setIsGenerating(true);
             const dataUrl = await toSvg(cardRef.current, { cacheBust: true, pixelRatio: 3 });
             const link = document.createElement('a');
-            link.download = `${config.title.replace(/\s+/g, '_')}.svg`;
+            link.download = `${config.name.replace(/\s+/g, '_')}.svg`;
             link.href = dataUrl;
             link.click();
             showStatus('Exported SVG');
@@ -184,6 +201,25 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
         setViewPan({ x: 0, y: 0 });
     };
 
+    const handleElementSelect = (id: string | null) => {
+        if (isPanMode) return;
+        setSelectedElement(id);
+
+        if (id) {
+            const element = deckStyle.elements.find(e => e.id === id);
+            if (element && element.type === 'image') {
+                setIsImageDialogOpen(true);
+            }
+        }
+    };
+
+    const handleImageProviderSelect = (ref: string) => {
+        if (selectedElement) {
+            handleConfigChange(selectedElement, ref);
+        }
+        setIsImageDialogOpen(false);
+    };
+
     return (
         <div className="flex flex-col h-[calc(100vh-80px)] bg-background">
             {/* Toolbar Header */}
@@ -205,7 +241,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                 </div>
 
                 <div className="font-semibold text-foreground hidden md:block">
-                    {config.title || 'Untitled Card'}
+                    {config.name || 'Untitled Card'}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -272,7 +308,8 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                         isInteractive={!isPanMode} // Disable editing when panning
                         onContentChange={handleConfigChange}
                         selectedElement={selectedElement}
-                        onSelectElement={(el) => !isPanMode && setSelectedElement(el)}
+
+                        onSelectElement={handleElementSelect}
                     />
                 </div>
 
@@ -323,6 +360,12 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                     Double-click text to edit • Drag & drop images
                 </div>
             </div>
+
+            <ImageProviderDialog
+                isOpen={isImageDialogOpen}
+                onClose={() => setIsImageDialogOpen(false)}
+                onImageSelect={handleImageProviderSelect}
+            />
         </div>
     );
 };

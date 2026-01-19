@@ -1,24 +1,13 @@
-import React from 'react';
-import { Upload, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { ResolvedImage } from './ResolvedImage';
+import { Upload, X, Type, Image as ImageIcon, FileText } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
+import { ImageProviderDialog } from './ImageProviderDialog/ImageProviderDialog';
 import type { DeckStyle } from '../App';
+import type { CardConfig } from './CardStudio';
 
 interface ControlsProps {
-    config: {
-        borderColor: string;
-        borderWidth: number;
-        topLeftContent: string;
-        bottomRightContent: string;
-        topLeftImage: string | null;
-        bottomRightImage: string | null;
-        centerImage: string | null;
-        title: string;
-        description: string;
-        typeBarContent?: string;
-        flavorTextContent?: string;
-        statsBoxContent?: string;
-        collectorInfoContent?: string;
-    };
+    config: CardConfig;
     onChange: (key: string, value: any) => void;
     onGenerateSvg: () => void;
     isGenerating: boolean;
@@ -36,70 +25,45 @@ export const Controls: React.FC<ControlsProps> = ({
     selectedElement,
     onClearSelection
 }) => {
+    const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+    const [activeImageField, setActiveImageField] = useState<string | null>(null);
 
-
+    // Scroll to selected element
     React.useEffect(() => {
         if (selectedElement) {
-            const sectionName = elementSectionMap[selectedElement];
-            if (sectionName) {
-                const element = document.getElementById(`section-${sectionName}`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+            const element = document.getElementById(`control-section-${selectedElement}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
     }, [selectedElement]);
 
-    const handleImageUpload = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                onChange(key, reader.result as string);
-            };
-            reader.readAsDataURL(file);
+    const handleOpenImageDialog = (elementId: string) => {
+        setActiveImageField(elementId);
+        setIsImageDialogOpen(true);
+    };
+
+    const handleImageSelect = (ref: string) => {
+        if (activeImageField) {
+            onChange(activeImageField, ref);
+            setIsImageDialogOpen(false);
+            setActiveImageField(null);
         }
     };
 
-    // Map card element names to control section names
-    const elementSectionMap: Record<string, string> = {
-        corner: 'corner',
-        reversedCorner: 'corner',
-        title: 'title',
-        description: 'description',
-        typeBar: 'typeBar',
-        flavorText: 'flavorText',
-        statsBox: 'statsBox',
-        collectorInfo: 'collectorInfo',
-        art: 'art',
-    };
-
-    // Check if a section should be highlighted
-    const isHighlighted = (sectionName: string) => {
-        if (!selectedElement) return false;
-        return elementSectionMap[selectedElement] === sectionName;
-    };
-
-    // Get highlight classes for a section
-    const getHighlightClasses = (sectionName: string) => {
-        return isHighlighted(sectionName)
-            ? 'ring-2 ring-indigo-500 bg-indigo-500/10 rounded-lg p-3 -m-3 transition-all'
-            : 'transition-all';
-    };
-
     return (
-        <div className="w-full h-full bg-card p-6 border-r border-border overflow-y-auto overflow-x-hidden">
+        <div className="w-full h-full bg-card p-6 border-r border-border overflow-y-auto overflow-x-hidden custom-scrollbar">
             <h1 className="text-2xl font-bold mb-6 text-foreground">Card Editor</h1>
 
             <div className="space-y-6">
-                {/* Element Selection Indicator - shown when an element is selected */}
+                {/* Element Selection Indicator */}
                 {selectedElement && (
-                    <div className="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
+                    <div className="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl mb-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
                                 <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 capitalize">
-                                    {selectedElement.replace(/([A-Z])/g, ' $1').trim()}
+                                    Editing: {deckStyle.elements.find(e => e.id === selectedElement)?.name || selectedElement}
                                 </span>
                             </div>
                             <button
@@ -116,172 +80,75 @@ export const Controls: React.FC<ControlsProps> = ({
                     </div>
                 )}
 
-                {/* Border Settings Removed - enforced to 1px Black */
-                }
+                {/* Dynamic Controls List */}
+                <div className="space-y-6">
+                    {deckStyle.elements.map(element => {
+                        const isSelected = selectedElement === element.id;
+                        const wrapperClass = isSelected
+                            ? 'ring-2 ring-indigo-500 bg-indigo-500/10 rounded-lg p-3 -m-3 transition-all'
+                            : 'transition-all';
 
-                {/* Content Settings */}
-                {deckStyle.showCorner && (
-                    <div id="section-corner" className={`space-y-3 ${getHighlightClasses('corner')}`}>
-                        <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Corner Content</label>
-                        <div className="space-y-4">
-                            {config.topLeftImage ? (
-                                <div className="relative group">
-                                    <img src={config.topLeftImage} alt="Corner" className="w-full h-24 object-cover rounded-lg border border-border shadow-sm" />
-                                    <button
-                                        onClick={() => onChange('topLeftImage', null)}
-                                        className="absolute top-2 right-2 text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded shadow-lg hover:bg-destructive/90 transition-colors"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    <input
-                                        type="text"
-                                        value={config.topLeftContent}
-                                        onChange={(e) => {
-                                            onChange('topLeftContent', e.target.value);
-                                            onChange('bottomRightContent', e.target.value);
-                                        }}
-                                        className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all"
-                                        maxLength={3}
-                                        placeholder="Corner Text (e.g., A, 10, 心)"
-                                    />
-                                    <label className="flex flex-col items-center justify-center w-full h-16 border border-dashed border-input rounded-lg cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-all text-xs text-muted-foreground">
-                                        <div className="flex items-center gap-2">
-                                            <Upload className="w-4 h-4" />
-                                            <span>Upload Corner Image</span>
-                                        </div>
-                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) {
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => {
-                                                    const result = reader.result as string;
-                                                    onChange('topLeftImage', result);
-                                                    onChange('bottomRightImage', result);
-                                                };
-                                                reader.readAsDataURL(file);
-                                            }
-                                        }} />
-                                    </label>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Text Features */}
-                {(deckStyle.showTitle || deckStyle.showDescription || deckStyle.showTypeBar || deckStyle.showFlavorText || deckStyle.showStatsBox || deckStyle.showCollectorInfo) && (
-                    <div className="space-y-3">
-                        <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Card Content</label>
-                        <div className="space-y-4">
-                            {deckStyle.showTitle && (
-                                <div id="section-title" className={getHighlightClasses('title')}>
-                                    <label className="text-xs text-muted-foreground mb-1 block">Title</label>
-                                    <input
-                                        type="text"
-                                        value={config.title}
-                                        onChange={(e) => onChange('title', e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all"
-                                        placeholder="Enter card title..."
-                                    />
-                                </div>
-                            )}
-                            {deckStyle.showDescription && (
-                                <div id="section-description" className={getHighlightClasses('description')}>
-                                    <label className="text-xs text-muted-foreground mb-1 block">Description</label>
-                                    <RichTextEditor
-                                        value={config.description}
-                                        onChange={(value) => onChange('description', value)}
-                                    />
-                                </div>
-                            )}
-                            {deckStyle.showTypeBar && (
-                                <div id="section-typeBar" className={getHighlightClasses('typeBar')}>
-                                    <label className="text-xs text-muted-foreground mb-1 block">Type Bar</label>
-                                    <input
-                                        type="text"
-                                        value={config['typeBarContent'] || ''}
-                                        onChange={(e) => onChange('typeBarContent', e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all"
-                                        placeholder="Type - Subtype"
-                                    />
-                                </div>
-                            )}
-                            {deckStyle.showFlavorText && (
-                                <div id="section-flavorText" className={getHighlightClasses('flavorText')}>
-                                    <label className="text-xs text-muted-foreground mb-1 block">Flavor Text</label>
-                                    <textarea
-                                        value={config['flavorTextContent'] || ''}
-                                        onChange={(e) => onChange('flavorTextContent', e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all min-h-[60px]"
-                                        placeholder="Card flavor text..."
-                                    />
-                                </div>
-                            )}
-                            {(deckStyle.showStatsBox || deckStyle.showCollectorInfo) && (
-                                <div className="grid grid-cols-2 gap-4">
-                                    {deckStyle.showStatsBox && (
-                                        <div id="section-statsBox" className={getHighlightClasses('statsBox')}>
-                                            <label className="text-xs text-muted-foreground mb-1 block">Stats</label>
-                                            <input
-                                                type="text"
-                                                value={config['statsBoxContent'] || ''}
-                                                onChange={(e) => onChange('statsBoxContent', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all"
-                                                placeholder="1 / 1"
-                                            />
-                                        </div>
-                                    )}
-                                    {deckStyle.showCollectorInfo && (
-                                        <div id="section-collectorInfo" className={getHighlightClasses('collectorInfo')}>
-                                            <label className="text-xs text-muted-foreground mb-1 block">Collector Info</label>
-                                            <input
-                                                type="text"
-                                                value={config['collectorInfoContent'] || ''}
-                                                onChange={(e) => onChange('collectorInfoContent', e.target.value)}
-                                                className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all"
-                                                placeholder="Artist | 001/100"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Image Upload */}
-                {deckStyle.showArt && (
-                    <div id="section-art" className={`space-y-3 ${getHighlightClasses('art')}`}>
-                        <label className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Illustration</label>
-                        <div className="space-y-3">
-                            {config.centerImage ? (
-                                <div className="relative group">
-                                    <img src={config.centerImage} alt="Center" className="w-full h-40 object-cover rounded-lg border border-border shadow-md" />
-                                    <button
-                                        onClick={() => onChange('centerImage', null)}
-                                        className="absolute top-2 right-2 text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded shadow-lg hover:bg-destructive/90 transition-colors"
-                                    >
-                                        Remove Photo
-                                    </button>
-                                </div>
-                            ) : (
-                                <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-input rounded-xl cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-all border-spacing-4">
-                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <Upload className="w-8 h-8 text-muted-foreground/50 mb-2" />
-                                        <p className="text-sm font-medium text-muted-foreground">Drop illustration here</p>
-                                        <p className="text-xs text-muted-foreground/70 mt-1">PNG, JPG or SVG</p>
-                                    </div>
-                                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload('centerImage')} />
+                        return (
+                            <div
+                                key={element.id}
+                                id={`control-section-${element.id}`}
+                                className={wrapperClass}
+                            >
+                                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                                    {element.type === 'text' && <Type className="w-3 h-3" />}
+                                    {element.type === 'multiline' && <FileText className="w-3 h-3" />}
+                                    {element.type === 'image' && <ImageIcon className="w-3 h-3" />}
+                                    {element.name}
                                 </label>
-                            )}
-                        </div>
-                    </div>
-                )}
 
-                <div className="pt-6 border-t border-border">
+                                {element.type === 'image' ? (
+                                    <div className="space-y-3">
+                                        {config.data[element.id] ? (
+                                            <div className="relative group">
+                                                <ResolvedImage
+                                                    src={config.data[element.id]}
+                                                    alt={element.name}
+                                                    className="w-full h-32 object-contain rounded-lg border border-border bg-muted/50"
+                                                />
+                                                <button
+                                                    onClick={() => onChange(element.id, '')}
+                                                    className="absolute top-2 right-2 text-xs bg-destructive text-destructive-foreground px-2 py-1 rounded shadow-lg hover:bg-destructive/90 transition-colors"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                onClick={() => handleOpenImageDialog(element.id)}
+                                                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-input rounded-xl cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-all"
+                                            >
+                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                    <Upload className="w-6 h-6 text-muted-foreground/50 mb-2" />
+                                                    <span className="text-xs text-muted-foreground">Add Image</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : element.type === 'multiline' ? (
+                                    <RichTextEditor
+                                        value={config.data[element.id] || ''}
+                                        onChange={(value) => onChange(element.id, value)}
+                                    />
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={config.data[element.id] || ''}
+                                        onChange={(e) => onChange(element.id, e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-input bg-background/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm transition-all"
+                                        placeholder={`Enter ${element.name}...`}
+                                    />
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="pt-6 border-t border-border mt-8">
                     <button
                         onClick={onGenerateSvg}
                         disabled={isGenerating}
@@ -292,6 +159,12 @@ export const Controls: React.FC<ControlsProps> = ({
                     </button>
                 </div>
             </div>
+
+            <ImageProviderDialog
+                isOpen={isImageDialogOpen}
+                onClose={() => setIsImageDialogOpen(false)}
+                onImageSelect={handleImageSelect}
+            />
         </div>
     );
 };

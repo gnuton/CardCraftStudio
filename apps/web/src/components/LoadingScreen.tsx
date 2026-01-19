@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import logo from '../assets/logo.png';
 import splash from '../assets/splash.png';
@@ -7,6 +8,19 @@ interface LoadingScreenProps {
 }
 
 export const LoadingScreen = ({ version }: LoadingScreenProps) => {
+    // Pre-compute random values to avoid calling Math.random() during render
+    const particles = useMemo(() =>
+        [...Array(6)].map(() => ({
+            initialX: Math.random() * 100 + '%',
+            initialY: Math.random() * 100 + '%',
+            width: Math.random() * 300 + 100,
+            height: Math.random() * 300 + 100,
+            animateX: [null, Math.random() * 100 + '%', Math.random() * 100 + '%'],
+            animateY: [null, Math.random() * 100 + '%', Math.random() * 100 + '%'],
+            duration: Math.random() * 20 + 10,
+        })), []
+    );
+
     return (
         <motion.div
             initial={{ opacity: 1 }}
@@ -75,22 +89,22 @@ export const LoadingScreen = ({ version }: LoadingScreenProps) => {
 
             {/* Subtle animated elements */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {[...Array(6)].map((_, i) => (
+                {particles.map((particle, i) => (
                     <motion.div
                         key={i}
                         className="absolute rounded-full bg-indigo-500/10 blur-3xl"
                         initial={{
-                            x: Math.random() * 100 + '%',
-                            y: Math.random() * 100 + '%',
-                            width: Math.random() * 300 + 100,
-                            height: Math.random() * 300 + 100,
+                            x: particle.initialX,
+                            y: particle.initialY,
+                            width: particle.width,
+                            height: particle.height,
                         }}
                         animate={{
-                            x: [null, Math.random() * 100 + '%', Math.random() * 100 + '%'],
-                            y: [null, Math.random() * 100 + '%', Math.random() * 100 + '%'],
+                            x: particle.animateX,
+                            y: particle.animateY,
                         }}
                         transition={{
-                            duration: Math.random() * 20 + 10,
+                            duration: particle.duration,
                             repeat: Infinity,
                             ease: 'linear',
                         }}

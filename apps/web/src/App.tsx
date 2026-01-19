@@ -17,6 +17,8 @@ import { calculateHash } from './utils/hash';
 import { imageService } from './services/imageService';
 import { GlobalStyleEditor } from './components/GlobalStyleEditor';
 import { Navigation } from './components/Navigation';
+import { importDeckFromZip } from './utils/deckIO';
+import type { CardElement } from './types/element';
 
 const APP_VERSION = '1.2.0-drive-sync';
 const DECKS_STORAGE_KEY = 'cardcraftstudio-decks';
@@ -25,273 +27,43 @@ const SYNC_PROMPT_KEY = 'cardcraftstudio-sync-prompt-shown';
 const SYNC_ENABLED_KEY = 'cardcraftstudio-sync-enabled';
 
 export interface DeckStyle {
-  cornerColor: string;
-  titleColor: string;
-  descriptionColor: string;
-  cornerFont: string;
-  cornerFontSize?: number;
-  titleFont: string;
-  titleFontSize?: number;
-  descriptionFont: string;
-  descriptionFontSize?: number;
+  // Global Styling
+  borderColor: string;
+  borderWidth: number;
+  backgroundColor: string;
   backgroundImage: string | null;
-  cornerContent: string;
+  globalFont?: string;
+  layoutMode?: 'flow' | 'absolute';
 
-  // Title Extended Styles
-  titleX: number;
-  titleY: number;
-  titleRotate: number;
-  titleScale: number;
-  titleWidth: number;
-  titleBackgroundColor?: string;
-  titleBorderColor?: string;
-  titleBorderStyle?: string;
-  titleBorderWidth?: number; // pixels
-  titleOpacity?: number;
-  titleZIndex?: number;
-
-  // Description Extended Styles
-  descriptionX: number;
-  descriptionY: number;
-  descriptionRotate: number;
-  descriptionScale: number;
-  descriptionWidth: number;
-  descriptionBackgroundColor?: string;
-  descriptionBorderColor?: string;
-  descriptionBorderStyle?: string;
-  descriptionBorderWidth?: number;
-  descriptionOpacity?: number;
-  descriptionZIndex?: number;
-
-  // Art/Center Image Extended Styles
-  artX: number;
-  artY: number;
-  artWidth: number;
-  artHeight: number;
-  artBackgroundColor?: string;
-  artBorderColor?: string;
-  artBorderStyle?: string;
-  artBorderWidth?: number;
-  artOpacity?: number;
-  artZIndex?: number;
-  artRotate?: number; // Added explicitly as it was missing in standard but used in transform
-
-  // Visibility Flags
-  showTitle?: boolean;
-  showDescription?: boolean;
-  showArt?: boolean;
-  showTypeBar?: boolean;
-  showFlavorText?: boolean;
-  showStatsBox?: boolean;
-  showWatermark?: boolean;
-  showRarityIcon?: boolean;
-  showCollectorInfo?: boolean;
-
-  // Type Bar
-  typeBarX?: number; typeBarY?: number; typeBarWidth?: number; typeBarRotate?: number;
-  typeBarBackgroundColor?: string; typeBarBorderColor?: string; typeBarBorderWidth?: number; typeBarOpacity?: number; typeBarZIndex?: number;
-  typeBarContent?: string; typeBarColor?: string; typeBarFont?: string; typeBarFontSize?: number;
-
-  // Flavor Text
-  flavorTextX?: number; flavorTextY?: number; flavorTextWidth?: number; flavorTextRotate?: number;
-  flavorTextBackgroundColor?: string; flavorTextBorderColor?: string; flavorTextBorderWidth?: number; flavorTextOpacity?: number; flavorTextZIndex?: number;
-  flavorTextContent?: string; flavorTextColor?: string; flavorTextFont?: string; flavorTextFontSize?: number;
-
-  // Stats Box
-  statsBoxX?: number; statsBoxY?: number; statsBoxWidth?: number; statsBoxHeight?: number; statsBoxRotate?: number;
-  statsBoxBackgroundColor?: string; statsBoxBorderColor?: string; statsBoxBorderWidth?: number; statsBoxOpacity?: number; statsBoxZIndex?: number;
-  statsBoxContent?: string; statsBoxColor?: string; statsBoxFont?: string; statsBoxFontSize?: number;
-
-  // Watermark
-  watermarkX?: number; watermarkY?: number; watermarkWidth?: number; watermarkHeight?: number; watermarkRotate?: number;
-  watermarkOpacity?: number; watermarkZIndex?: number; watermarkUrl?: string | null;
-
-  // Rarity Icon
-  rarityIconX?: number; rarityIconY?: number; rarityIconWidth?: number; rarityIconHeight?: number; rarityIconRotate?: number;
-  rarityIconZIndex?: number; rarityIconUrl?: string | null;
-
-  // Collector Info
-  collectorInfoX?: number; collectorInfoY?: number; collectorInfoWidth?: number; collectorInfoRotate?: number;
-  collectorInfoZIndex?: number; collectorInfoContent?: string; collectorInfoColor?: string; collectorInfoFont?: string; collectorInfoFontSize?: number;
-
-  // Corner Extended Styles
-  showCorner: boolean;
-  cornerX: number;
-  cornerY: number;
-  cornerRotate: number;
-  cornerWidth: number;
-  cornerHeight: number;
-  cornerBackgroundColor?: string;
-  cornerBorderColor?: string;
-  cornerBorderStyle?: string;
-  cornerBorderWidth?: number;
-  cornerOpacity?: number;
-  cornerZIndex?: number;
-
-  // Reversed Corner Extended Styles
-  showReversedCorner: boolean;
-  reversedCornerX: number;
-  reversedCornerY: number;
-  reversedCornerRotate: number;
-  reversedCornerWidth: number;
-  reversedCornerHeight: number;
-  reversedCornerBackgroundColor?: string;
-  reversedCornerBorderColor?: string;
-  reversedCornerBorderStyle?: string;
-  reversedCornerBorderWidth?: number;
-  reversedCornerOpacity?: number;
-  reversedCornerZIndex?: number;
-  reversedCornerFontSize?: number;
-
-  // Game Logic
+  // Game Logic / Overlay (kept for now, or could be elements too)
   gameHp: string;
   gameMana: string;
   gameSuit: string;
+
   // SVG Styling
   svgFrameColor: string;
   svgCornerColor: string;
   svgStrokeWidth: number;
 
-  // New Base Settings
-  cornerRadius?: number;
-  shadowIntensity?: number;
-  textureOverlay?: 'none' | 'paper' | 'noise' | 'foil' | 'grunge';
-  textureOpacity?: number;
-  globalFont?: string;
-  showBleedLines?: boolean;
-  showSafeZone?: boolean;
-
-  // Card Back Styles
-  cardBackImage?: string | null;
-  cardBackBackgroundColor?: string;
-  cardBackTitleContent?: string;
-  cardBackTitleFont?: string;
-  cardBackTitleFontSize?: number;
-  cardBackTitleColor?: string;
-  showCardBackTitle?: boolean;
-  cardBackTitleX?: number;
-  cardBackTitleY?: number;
-  cardBackTitleRotate?: number;
-  cardBackTitleScale?: number;
-  cardBackTitleWidth?: number;
-  cardBackTitleZIndex?: number;
-
-  // Copyright Element (Back Only)
-  showCardBackCopyright?: boolean;
-  cardBackCopyrightContent?: string;
-  cardBackCopyrightFont?: string;
-  cardBackCopyrightFontSize?: number;
-  cardBackCopyrightColor?: string;
-  cardBackCopyrightX?: number;
-  cardBackCopyrightY?: number;
-  cardBackCopyrightRotate?: number;
-  cardBackCopyrightScale?: number;
-  cardBackCopyrightWidth?: number;
-  cardBackCopyrightZIndex?: number;
+  // Dynamic Elements
+  elements: CardElement[];
 
   id?: string;
   isLocked?: boolean;
 
-  // Global Card Styling (Default for new cards)
-  borderColor?: string;
-  borderWidth?: number;
-  backgroundColor?: string;
+  // Back Styling
+  cardBackBackgroundColor?: string;
+  cardBackImage?: string | null;
 }
 
 const defaultDeckStyle: DeckStyle = {
-  cornerColor: '#000000',
-  titleColor: '#000000',
-  descriptionColor: '#000000',
-  cornerFont: 'serif',
-  titleFont: 'sans-serif',
-  descriptionFont: 'sans-serif',
+  borderColor: '#000000',
+  borderWidth: 12,
+  backgroundColor: '#ffffff',
   backgroundImage: null,
-  cornerContent: 'A',
+  cardBackBackgroundColor: '#312e81',
+  cardBackImage: null,
 
-  titleX: 0,
-  titleY: 0,
-  titleRotate: 0,
-  titleScale: 1,
-  titleWidth: 200,
-  titleBackgroundColor: 'rgba(241, 245, 249, 0.9)', // slate-100/90
-  titleBorderColor: '#cbd5e1', // slate-300
-  titleBorderStyle: 'solid',
-  titleBorderWidth: 1,
-  titleOpacity: 1,
-  titleZIndex: 20,
-
-  descriptionX: 0,
-  descriptionY: 0,
-  descriptionRotate: 0,
-  descriptionScale: 1,
-  descriptionWidth: 250,
-  descriptionBackgroundColor: 'rgba(255, 255, 255, 0.1)', // white/10
-  descriptionBorderColor: 'rgba(255, 255, 255, 0.2)', // white/20
-  descriptionBorderStyle: 'solid',
-  descriptionBorderWidth: 1,
-  descriptionOpacity: 1,
-  descriptionZIndex: 20,
-
-  artX: 0,
-  artY: 0,
-  artWidth: 264,
-  artHeight: 164,
-  artRotate: 0,
-  artZIndex: 10,
-  showTitle: true,
-  showDescription: true,
-  showArt: true,
-  showTypeBar: false,
-  showFlavorText: false,
-  showStatsBox: false,
-  showWatermark: false,
-  showRarityIcon: false,
-  showCollectorInfo: false,
-
-  // Type Bar Defaults
-  typeBarX: 0, typeBarY: -20, typeBarWidth: 200, typeBarRotate: 0,
-  typeBarBackgroundColor: 'rgba(255, 255, 255, 0.9)', typeBarBorderColor: '#000000', typeBarBorderWidth: 1, typeBarOpacity: 1, typeBarZIndex: 25,
-  typeBarContent: 'Type - Subtype', typeBarColor: '#000000', typeBarFont: 'sans-serif',
-
-  // Flavor Text Defaults
-  flavorTextX: 0, flavorTextY: 100, flavorTextWidth: 220, flavorTextRotate: 0,
-  flavorTextBackgroundColor: 'transparent', flavorTextBorderColor: 'transparent', flavorTextBorderWidth: 0, flavorTextOpacity: 1, flavorTextZIndex: 25,
-  flavorTextContent: 'Flavor text goes here.', flavorTextColor: '#000000', flavorTextFont: 'serif',
-
-  // Stats Box Defaults
-  statsBoxX: 100, statsBoxY: 150, statsBoxWidth: 60, statsBoxHeight: 30, statsBoxRotate: 0,
-  statsBoxBackgroundColor: '#ffffff', statsBoxBorderColor: '#000000', statsBoxBorderWidth: 1, statsBoxOpacity: 1, statsBoxZIndex: 35,
-  statsBoxContent: '1 / 1', statsBoxColor: '#000000', statsBoxFont: 'sans-serif',
-
-  // Watermark Defaults
-  watermarkX: 0, watermarkY: 0, watermarkWidth: 100, watermarkHeight: 100, watermarkRotate: 0,
-  watermarkOpacity: 0.3, watermarkZIndex: 5, watermarkUrl: null,
-
-  // Rarity Icon Defaults
-  rarityIconX: 110, rarityIconY: 0, rarityIconWidth: 20, rarityIconHeight: 20, rarityIconRotate: 0,
-  rarityIconZIndex: 35, rarityIconUrl: null,
-
-  // Collector Info Defaults
-  collectorInfoX: 0, collectorInfoY: 195, collectorInfoWidth: 250, collectorInfoRotate: 0,
-  collectorInfoZIndex: 35, collectorInfoContent: 'Artist Name | 001/100', collectorInfoColor: '#000000', collectorInfoFont: 'sans-serif',
-
-  showCorner: true,
-  cornerX: -125,
-  cornerY: -185,
-  cornerRotate: 0,
-  cornerWidth: 40,
-  cornerHeight: 40,
-  cornerZIndex: 30,
-
-  showReversedCorner: true,
-  reversedCornerX: 125,
-  reversedCornerY: 185,
-  reversedCornerRotate: 180,
-  reversedCornerWidth: 40,
-  reversedCornerHeight: 40,
-  reversedCornerZIndex: 30,
-
-  // Functionality defaults
   gameHp: '20',
   gameMana: '10',
   gameSuit: '♥',
@@ -299,35 +71,48 @@ const defaultDeckStyle: DeckStyle = {
   svgCornerColor: '#000000',
   svgStrokeWidth: 2,
 
-  // Card Back Defaults
-  cardBackImage: null,
-  cardBackBackgroundColor: '#312e81', // indigo-900
-  cardBackTitleContent: 'GAME TITLE',
-  cardBackTitleFont: 'serif',
-  cardBackTitleColor: '#ffffff',
-  showCardBackTitle: true,
-  cardBackTitleX: 0,
-  cardBackTitleY: 0,
-  cardBackTitleRotate: 0,
-  cardBackTitleScale: 1.5,
-  cardBackTitleWidth: 250,
-  cardBackTitleZIndex: 30,
-
-  showCardBackCopyright: true,
-  cardBackCopyrightContent: '© 2024 CardCraft Studio',
-  cardBackCopyrightFont: 'sans-serif',
-  cardBackCopyrightColor: '#ffffff',
-  cardBackCopyrightX: 0,
-  cardBackCopyrightY: 180,
-  cardBackCopyrightRotate: 0,
-  cardBackCopyrightScale: 0.8,
-  cardBackCopyrightWidth: 200,
-  cardBackCopyrightZIndex: 30,
-
-  // Global Defaults
-  borderColor: '#000000',
-  borderWidth: 12,
-  backgroundColor: '#ffffff'
+  elements: [
+    // --- Front ---
+    {
+      id: 'title',
+      type: 'text',
+      side: 'front',
+      name: 'Title',
+      x: 0, y: 0, width: 200, height: 30, rotate: 0, scale: 1, zIndex: 20, opacity: 1,
+      fontFamily: 'sans-serif', fontSize: 16, color: '#000000',
+      backgroundColor: 'rgba(241, 245, 249, 0.9)', borderColor: '#cbd5e1', borderWidth: 1,
+      textAlign: 'left',
+      defaultContent: 'Card Title'
+    },
+    {
+      id: 'art',
+      type: 'image',
+      side: 'front',
+      name: 'Illustration',
+      x: 0, y: 0, width: 264, height: 164, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+    },
+    {
+      id: 'description',
+      type: 'multiline',
+      side: 'front',
+      name: 'Description',
+      x: 0, y: 0, width: 250, height: 100, rotate: 0, scale: 1, zIndex: 20, opacity: 1,
+      fontFamily: 'sans-serif', fontSize: 13, color: '#000000',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)', borderWidth: 1,
+      defaultContent: 'Card description...'
+    },
+    // --- Back ---
+    {
+      id: 'back_title',
+      type: 'text',
+      side: 'back',
+      name: 'Game Title',
+      x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
+      fontFamily: 'serif', fontSize: 24, color: '#ffffff',
+      textAlign: 'center',
+      defaultContent: 'GAME TITLE'
+    }
+  ]
 };
 
 function App() {
@@ -462,9 +247,11 @@ function App() {
         // SYNC IMAGES FIRST
         const imageRefs = new Set<string>();
         localDeck.cards.forEach(card => {
-          if (card.centerImage?.startsWith('ref:')) imageRefs.add(card.centerImage);
-          if (card.topLeftImage?.startsWith('ref:')) imageRefs.add(card.topLeftImage);
-          if (card.bottomRightImage?.startsWith('ref:')) imageRefs.add(card.bottomRightImage);
+          if (card.data) {
+            Object.values(card.data).forEach(val => {
+              if (val && typeof val === 'string' && val.startsWith('ref:')) imageRefs.add(val);
+            });
+          }
         });
         if (imageRefs.size > 0) {
           await imageService.syncImagesToCloud(Array.from(imageRefs));
@@ -520,9 +307,11 @@ function App() {
               // Download missing images for this deck
               const imageRefs = new Set<string>();
               importedDeck.cards.forEach((card: any) => {
-                if (card.centerImage?.startsWith('ref:')) imageRefs.add(card.centerImage.replace('ref:', ''));
-                if (card.topLeftImage?.startsWith('ref:')) imageRefs.add(card.topLeftImage.replace('ref:', ''));
-                if (card.bottomRightImage?.startsWith('ref:')) imageRefs.add(card.bottomRightImage.replace('ref:', ''));
+                if (card.data) {
+                  Object.values(card.data).forEach((val: any) => {
+                    if (val && typeof val === 'string' && val.startsWith('ref:')) imageRefs.add(val.replace('ref:', ''));
+                  });
+                }
               });
 
               if (imageRefs.size > 0) {
@@ -586,9 +375,11 @@ function App() {
           // Download missing images for this deck
           const imageRefs = new Set<string>();
           remoteDeck.cards.forEach((card: any) => {
-            if (card.centerImage?.startsWith('ref:')) imageRefs.add(card.centerImage.replace('ref:', ''));
-            if (card.topLeftImage?.startsWith('ref:')) imageRefs.add(card.topLeftImage.replace('ref:', ''));
-            if (card.bottomRightImage?.startsWith('ref:')) imageRefs.add(card.bottomRightImage.replace('ref:', ''));
+            if (card.data) {
+              Object.values(card.data).forEach((val: any) => {
+                if (val && typeof val === 'string' && val.startsWith('ref:')) imageRefs.add(val.replace('ref:', ''));
+              });
+            }
           });
 
           if (imageRefs.size > 0) {
@@ -675,18 +466,24 @@ function App() {
       const migratedDecks = await Promise.all(decks.map(async (deck) => {
         let deckChanged = false;
         const migratedCards = await Promise.all(deck.cards.map(async (card) => {
-          const center = await imageService.processImage(card.centerImage);
-          const top = await imageService.processImage(card.topLeftImage);
-          const bottom = await imageService.processImage(card.bottomRightImage);
+          let hasChanges = false;
+          const newData = { ...card.data };
 
-          if (center !== card.centerImage || top !== card.topLeftImage || bottom !== card.bottomRightImage) {
+          if (card.data) {
+            for (const [key, val] of Object.entries(card.data)) {
+              if (val) {
+                const processed = await imageService.processImage(val);
+                if (processed && processed !== val) {
+                  newData[key] = processed;
+                  hasChanges = true;
+                }
+              }
+            }
+          }
+
+          if (hasChanges) {
             deckChanged = true;
-            return {
-              ...card,
-              centerImage: center,
-              topLeftImage: top,
-              bottomRightImage: bottom
-            };
+            return { ...card, data: newData };
           }
           return card;
         }));
@@ -775,6 +572,26 @@ function App() {
   const handleUpdateProjectName = (name: string) => updateActiveDeck({ name });
   const handleUpdateDeckStyle = (style: DeckStyle) => updateActiveDeck({ style });
 
+  const handleImportDeck = async (file: File) => {
+    try {
+      const importedData = await importDeckFromZip(file);
+
+      const newDeck: Deck = {
+        id: crypto.randomUUID(),
+        name: importedData.name,
+        cards: importedData.cards.map(card => ({ ...card, id: crypto.randomUUID() })), // Regenerate IDs to avoid conflicts
+        style: importedData.style || { ...defaultDeckStyle },
+        updatedAt: Date.now()
+      };
+
+      setDecks(prev => [...prev, newDeck]);
+      addToast(`Imported deck "${newDeck.name}"`, 'success');
+    } catch (error) {
+      console.error('Import error:', error);
+      addToast('Failed to import deck', 'error');
+    }
+  };
+
 
 
   const handleEditCard = (index: number) => {
@@ -856,13 +673,13 @@ function App() {
     if (!activeDeck) return;
     const newCard: CardConfig = {
       id: crypto.randomUUID(),
-      title: 'New Card',
-      description: 'Card description...',
-      topLeftContent: '',
-      bottomRightContent: '',
-      topLeftImage: null,
-      bottomRightImage: null,
-      centerImage: null,
+      name: 'New Card',
+      data: {
+        title: 'New Card',
+        description: 'Card description...',
+        art: '',
+        corner: '',
+      },
       borderColor: '#000000',
       borderWidth: 8
     };
@@ -980,6 +797,7 @@ function App() {
                 onCreateDeck={handleCreateDeck}
                 onSelectDeck={handleSelectDeck}
                 onDeleteDeck={handleDeleteDeck}
+                onImportDeck={handleImportDeck}
               />
               <NewDeckDialog
                 isOpen={isNewDeckDialogOpen}

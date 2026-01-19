@@ -42,6 +42,12 @@ A modern web application for designing and printing custom playing cards with ri
 - **PDF Export**: Multi-page, print-ready PDFs with cut lines
 - **SVG Export**: Individual cards as scalable vector graphics
 
+### 🖼️ SVG Card Templates
+- **Template Synchronization**: Load standard SVG files as card templates. The application automatically detects and maps elements.
+- **Visual Sync**: Position, rotation, scale, opacity, fonts, and colors of SVG elements are faithfully rendered in the Card Editor.
+- **Bi-directional Editing**: Changes made in the Style Editor (e.g., moving a title or changing a font) are written back to the SVG upon export.
+- **Reference Mapping**: Use `data-ref` attributes in your SVGs (e.g., `data-ref="title"`) to explicitly link graphical elements to card properties. These references are displayed in the editor for easy debugging.
+
 ## Installation
 
 ### Prerequisites

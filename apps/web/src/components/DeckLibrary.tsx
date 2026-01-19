@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Calendar, Layers } from 'lucide-react';
+import { Plus, Trash2, Calendar, Layers, Upload } from 'lucide-react';
 import type { DeckStyle } from '../App';
 import type { CardConfig } from './CardStudio';
+import { ResolvedImage } from './ResolvedImage';
 
 export interface Deck {
     id: string;
@@ -16,15 +17,16 @@ interface DeckLibraryProps {
     onCreateDeck: () => void;
     onSelectDeck: (id: string) => void;
     onDeleteDeck: (id: string) => void;
+    onImportDeck: (file: File) => void;
 }
 
-export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck }: DeckLibraryProps) => {
+export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck, onImportDeck }: DeckLibraryProps) => {
     return (
         <div className="min-h-screen bg-background p-8 font-sans transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-foreground">My Decks</h1>
+                        <h1 className="text-3xl font-bold text-foreground">Decks Library</h1>
                         <p className="text-muted-foreground mt-1">Manage your card collections</p>
                     </div>
                 </div>
@@ -35,13 +37,37 @@ export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck }:
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         whileHover={{ scale: 1.02 }}
-                        onClick={onCreateDeck}
-                        className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-accent/50 transition-colors group"
+                        className="flex flex-col h-64 border-2 border-dashed border-border rounded-xl bg-card overflow-hidden transition-colors shadow-sm relative group"
                     >
-                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
-                            <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-600 transition-colors" />
+                        {/* Primary Action: Create New Deck - takes up most space */}
+                        <div
+                            onClick={onCreateDeck}
+                            className="flex-1 flex flex-col items-center justify-center cursor-pointer hover:bg-accent/50 transition-colors w-full"
+                        >
+                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30 transition-colors">
+                                <Plus className="w-8 h-8 text-muted-foreground group-hover:text-indigo-600 transition-colors" />
+                            </div>
+                            <h3 className="font-medium text-foreground">Create New Deck</h3>
                         </div>
-                        <h3 className="font-medium text-foreground">Create New Deck</h3>
+
+                        {/* Secondary Action: Import */}
+                        <div className="border-t border-border border-dashed">
+                            <label className="cursor-pointer flex items-center justify-center gap-2 p-3 w-full hover:bg-accent/80 transition-colors text-sm font-medium text-muted-foreground hover:text-indigo-600">
+                                <Upload className="w-4 h-4" />
+                                <span>Import from ZIP</span>
+                                <input
+                                    type="file"
+                                    accept=".zip"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        if (e.target.files?.[0]) {
+                                            onImportDeck(e.target.files[0]);
+                                            e.target.value = ''; // Reset
+                                        }
+                                    }}
+                                />
+                            </label>
+                        </div>
                     </motion.div>
 
                     {decks.map(deck => (
@@ -63,9 +89,13 @@ export const DeckLibrary = ({ decks, onCreateDeck, onSelectDeck, onDeleteDeck }:
                                         <div className="w-20 h-28 bg-background border border-border rounded shadow-sm transform -rotate-6 translate-x-[-15px] translate-y-2"></div>
                                         <div className="w-20 h-28 bg-background border border-border rounded shadow-sm transform rotate-6 translate-x-[15px] translate-y-2 absolute"></div>
                                         <div className="w-20 h-28 bg-background border border-border rounded shadow-md transform rotate-0 z-10 absolute flex flex-col items-center justify-center p-2 text-center">
-                                            <span className="text-[10px] font-bold text-foreground truncate w-full">{deck.cards[0]?.title}</span>
-                                            {deck.cards[0]?.centerImage && (
-                                                <img src={deck.cards[0].centerImage} className="w-full h-12 object-cover mt-1 rounded-sm opacity-80" />
+                                            <span className="text-[10px] font-bold text-foreground truncate w-full">{deck.cards[0]?.name}</span>
+                                            {deck.cards[0]?.data?.art && (
+                                                <ResolvedImage
+                                                    src={deck.cards[0].data.art}
+                                                    alt={deck.cards[0]?.name || 'Card preview'}
+                                                    className="w-full h-12 object-cover mt-1 rounded-sm opacity-80"
+                                                />
                                             )}
                                         </div>
                                     </div>

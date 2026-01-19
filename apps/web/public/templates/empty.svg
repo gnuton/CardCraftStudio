@@ -1,0 +1,14 @@
+<svg width="300" height="420" viewBox="0 0 300 420" xmlns="http://www.w3.org/2000/svg">
+  <!-- Clean white canvas -->
+  <rect width="300" height="420" rx="12" fill="#FFFFFF"/>
+  
+  <!-- Subtle border to define the card edge -->
+  <rect x="1" y="1" width="298" height="418" rx="11" fill="none" stroke="#E8E8E8" stroke-width="1"/>
+
+  <!-- Invisible layout markers - positioned for maximum flexibility -->
+  <rect id="layout-title" x="30" y="30" width="240" height="40" fill="transparent" />
+  <rect id="layout-center-image" x="40" y="90" width="220" height="180" fill="transparent" />
+  <rect id="layout-description" x="30" y="290" width="240" height="100" fill="transparent" />
+  <circle id="layout-top-left" cx="20" cy="20" r="10" fill="transparent" />
+  <circle id="layout-bottom-right" cx="280" cy="400" r="10" fill="transparent" />
+</svg>

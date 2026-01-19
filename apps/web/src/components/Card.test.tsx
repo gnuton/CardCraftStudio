@@ -16,26 +16,56 @@ vi.mock('./RichTextEditor', () => ({
 
 describe('Card Component (Fixed Layout)', () => {
     const mockStyle: DeckStyle = {
-        showTitle: true,
-        showDescription: true,
-        showCorner: true,
-
-        titleX: 10, titleY: 10, titleWidth: 100,
-        descriptionX: 10, descriptionY: 50, descriptionWidth: 100,
-        cornerX: 5, cornerY: 5, cornerWidth: 20, cornerHeight: 20,
-
-        // Fonts
+        borderColor: '#000000',
+        borderWidth: 12,
+        backgroundColor: '#ffffff',
+        backgroundImage: null,
         globalFont: 'Inter',
-        titleFont: 'Inter',
-        descriptionFont: 'Inter',
-        cornerFont: 'Inter'
+        cardBackBackgroundColor: '#312e81',
+        svgFrameColor: '#000000',
+        svgCornerColor: '#000000',
+        svgStrokeWidth: 2,
+        elements: [
+            {
+                id: 'title',
+                type: 'text',
+                side: 'front',
+                name: 'Title',
+                x: 0, y: -180,
+                width: 200, height: 40,
+                rotate: 0, scale: 1,
+                zIndex: 10, opacity: 1,
+                color: '#000',
+                fontFamily: 'Inter',
+                fontSize: 16,
+                textAlign: 'center',
+                defaultContent: 'Default Title'
+            },
+            {
+                id: 'description',
+                type: 'multiline',
+                side: 'front',
+                name: 'Description',
+                x: 0, y: 100,
+                width: 250, height: 100,
+                rotate: 0, scale: 1,
+                zIndex: 5, opacity: 1,
+                color: '#333',
+                fontFamily: 'Inter',
+                fontSize: 12,
+                textAlign: 'left',
+                defaultContent: 'Default Description'
+            }
+        ]
     } as any;
 
     it('renders static content correctly', () => {
         render(
             <Card
-                title="Test Title"
-                description="Test Desc"
+                data={{
+                    title: 'Test Title',
+                    description: 'Test Desc'
+                }}
                 deckStyle={mockStyle}
             />
         );
@@ -48,15 +78,29 @@ describe('Card Component (Fixed Layout)', () => {
         const handleSelect = vi.fn();
         render(
             <Card
-                title="Test Title"
+                data={{
+                    title: 'Test Title'
+                }}
                 deckStyle={mockStyle}
                 isInteractive={true}
                 onSelectElement={handleSelect}
             />
         );
 
-        const titleParams = screen.getByText('Test Title');
-        fireEvent.click(titleParams);
+        const titleEl = screen.getByText('Test Title');
+        fireEvent.click(titleEl);
         expect(handleSelect).toHaveBeenCalledWith('title');
+    });
+
+    it('renders default content when data is not provided', () => {
+        render(
+            <Card
+                data={{}}
+                deckStyle={mockStyle}
+            />
+        );
+
+        expect(screen.getByText('Default Title')).toBeInTheDocument();
+        expect(screen.getByText('Default Description')).toBeInTheDocument();
     });
 });
