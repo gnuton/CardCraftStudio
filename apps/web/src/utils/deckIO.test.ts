@@ -4,11 +4,7 @@ import type { CardConfig } from '../components/CardStudio';
 import type { DeckStyle } from '../App';
 
 // Setup Mocks
-const { mockAddPage, mockAddImage, mockSave, mockJsPDF, mockJSZip, mockZipFile, mockZipFolder, mockZipGenerateAsync, mockZipLoadAsync, mockZipFileAsync } = vi.hoisted(() => ({
-    mockAddPage: vi.fn(),
-    mockAddImage: vi.fn(),
-    mockSave: vi.fn(),
-    mockJsPDF: vi.fn(),
+const { mockJSZip, mockZipFile, mockZipFolder, mockZipGenerateAsync, mockZipLoadAsync, mockZipFileAsync } = vi.hoisted(() => ({
     mockJSZip: vi.fn(),
     mockZipFile: vi.fn(),
     mockZipFolder: vi.fn(),
@@ -27,37 +23,7 @@ const mockDeckStyle: DeckStyle = {
     borderColor: '#000000',
     borderWidth: 12,
     backgroundColor: '#ffffff',
-    cornerColor: '#000000',
-    titleColor: '#000000',
-    descriptionColor: '#000000',
-    cornerFont: 'serif',
-    titleFont: 'sans-serif',
-    descriptionFont: 'sans-serif',
     backgroundImage: null,
-    cornerContent: 'A',
-    titleX: 0,
-    titleY: 0,
-    titleRotate: 0,
-    titleScale: 1,
-    titleWidth: 200,
-    descriptionX: 0,
-    descriptionY: 0,
-    descriptionRotate: 0,
-    descriptionScale: 1,
-    descriptionWidth: 250,
-    artX: 0,
-    artY: 0,
-    artWidth: 264,
-    artHeight: 164,
-    showTitle: true,
-    showDescription: true,
-    showArt: true,
-    showCorner: true,
-    cornerX: -125,
-    cornerY: -185,
-    cornerRotate: 0,
-    cornerWidth: 40,
-    cornerHeight: 40,
     gameHp: '10',
     gameMana: '10',
     gameSuit: 'hearts',
@@ -171,14 +137,14 @@ describe('deckIO utils', () => {
                 style: mockDeckStyle
             });
 
-            mockZipFileAsync.mockImplementation((type: string) => {
+            mockZipFileAsync.mockImplementation(() => {
                 return mockDeckJson; // For text
             });
 
             // We need to differentiate .async('text') for deck.json and .async('blob') for images
             // But verify calls first
 
-            const zipInstance = new mockJSZip();
+
             // Refine mock behavior for specific files
             mockZipFile.mockImplementation((path: string) => {
                 if (path === 'deck.json') {

@@ -1,7 +1,8 @@
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CardStudio, CardConfig } from './CardStudio';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { CardStudio } from './CardStudio';
+import type { CardConfig } from './CardStudio';
 import type { DeckStyle } from '../App';
 
 // Mock child components

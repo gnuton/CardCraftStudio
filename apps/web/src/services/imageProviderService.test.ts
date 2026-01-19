@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { imageProviderService } from './imageProviderService';
 
 const mockedFetch = vi.fn();

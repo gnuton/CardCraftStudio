@@ -464,7 +464,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
             // Filter for SVGs that are not deck JSONs
             const svgFiles = files.filter(f => f.name.endsWith('.svg'));
 
-            const templates = await Promise.all(svgFiles.map(async (file) => {
+            const templates: Template[] = await Promise.all(svgFiles.map(async (file) => {
                 const blob = await driveService.getFileBlob(file.id);
                 const url = URL.createObjectURL(blob);
 
@@ -475,7 +475,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                         ...TEMPLATES[0].style, // Use default style as base
                         backgroundImage: url,
                     },
-                    side: 'front',
+                    side: 'front' as const,
                     isCustom: true
                 };
             }));
