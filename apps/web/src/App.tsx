@@ -21,6 +21,12 @@ import { importDeckFromZip } from './utils/deckIO';
 import type { CardElement } from './types/element';
 
 const APP_VERSION = '1.2.0-drive-sync';
+
+interface DriveFile {
+  id: string;
+  name: string;
+  modifiedTime: string;
+}
 const DECKS_STORAGE_KEY = 'cardcraftstudio-decks';
 const THEME_STORAGE_KEY = 'cardcraftstudio-theme';
 const SYNC_PROMPT_KEY = 'cardcraftstudio-sync-prompt-shown';
@@ -54,6 +60,11 @@ export interface DeckStyle {
   // Back Styling
   cardBackBackgroundColor?: string;
   cardBackImage?: string | null;
+
+  // Card Size
+  cardSizePreset?: 'poker' | 'bridge' | 'tarot' | 'mini' | 'euro' | 'square' | 'custom';
+  cardWidth?: number;
+  cardHeight?: number;
 }
 
 const defaultDeckStyle: DeckStyle = {
@@ -175,7 +186,7 @@ function App() {
             // Try to reuse stored token or silent sign-in, fallback to explicit consent if needed
             await driveService.ensureSignedIn();
             setIsAuthenticated(true);
-          } catch (e) {
+          } catch {
             setIsAuthenticated(false);
 
             // Check if user previously enabled sync
@@ -214,7 +225,7 @@ function App() {
         const remainingDeletions = [...pendingDeletions];
 
         for (const deletedId of pendingDeletions) {
-          const fileToDelete = remoteFiles.find((f: any) => f.name === `deck-${deletedId}.json`);
+          const fileToDelete = remoteFiles.find((f: DriveFile) => f.name === `deck-${deletedId}.json`);
           if (fileToDelete) {
             try {
               await driveService.deleteFile(fileToDelete.id);
@@ -241,7 +252,7 @@ function App() {
 
       for (let i = 0; i < decksToProcess.length; i++) {
         const localDeck = decksToProcess[i];
-        const remoteFile = currentRemoteFiles.find((f: any) => f.name === `deck-${localDeck.id}.json`);
+        const remoteFile = currentRemoteFiles.find((f: DriveFile) => f.name === `deck-${localDeck.id}.json`);
         const localContent = JSON.stringify(localDeck);
 
         // SYNC IMAGES FIRST
@@ -287,7 +298,7 @@ function App() {
 
       // 2. Download NEW decks from cloud (files we don't have locally)
       if (!resumeDecks) {
-        const newRemoteFiles = currentRemoteFiles.filter((f: any) =>
+        const newRemoteFiles = currentRemoteFiles.filter((f: DriveFile) =>
           f.name.startsWith('deck-') &&
           f.name.endsWith('.json') &&
           !decks.find(d => `deck-${d.id}.json` === f.name)
@@ -306,9 +317,9 @@ function App() {
             if (importedDeck && importedDeck.id && importedDeck.cards) {
               // Download missing images for this deck
               const imageRefs = new Set<string>();
-              importedDeck.cards.forEach((card: any) => {
+              importedDeck.cards.forEach((card: { data?: Record<string, unknown> }) => {
                 if (card.data) {
-                  Object.values(card.data).forEach((val: any) => {
+                  Object.values(card.data).forEach((val: unknown) => {
                     if (val && typeof val === 'string' && val.startsWith('ref:')) imageRefs.add(val.replace('ref:', ''));
                   });
                 }
@@ -317,7 +328,7 @@ function App() {
               if (imageRefs.size > 0) {
                 // We need to find the specific files for these hashes
                 for (const hash of imageRefs) {
-                  const imgFile = remoteFiles.find(f => f.name.startsWith(`img-${hash}.`));
+                  const imgFile = remoteFiles.find((f: DriveFile) => f.name.startsWith(`img-${hash}.`));
                   if (imgFile) {
                     await imageService.downloadImageIfMissing(hash, imgFile.id);
                   }
@@ -337,11 +348,10 @@ function App() {
       }
 
       // Mark sync as enabled persistently
-      localStorage.setItem(SYNC_ENABLED_KEY, 'true');
       if (!silent) addToast('Sync completed successfully!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sync failed', error);
-      const message = error?.result?.error?.message || error?.message || "An unexpected error occurred during sync.";
+      const message = (error as { result?: { error?: { message: string } }, message?: string })?.result?.error?.message || (error as Error)?.message || "An unexpected error occurred during sync.";
       setSyncError(message);
       addToast('Sync failed: ' + message, 'error');
     } finally {
@@ -367,16 +377,16 @@ function App() {
       } else {
         // Download remote version (overwriting local)
         const remoteFiles = await driveService.listFiles();
-        const remoteFile = remoteFiles.find((f: any) => f.name === `deck-${deckToResolve.id}.json`);
+        const remoteFile = remoteFiles.find((f: DriveFile) => f.name === `deck-${deckToResolve.id}.json`);
         if (remoteFile) {
           const content = await driveService.getFileContent(remoteFile.id);
           const remoteDeck = JSON.parse(content);
 
           // Download missing images for this deck
           const imageRefs = new Set<string>();
-          remoteDeck.cards.forEach((card: any) => {
+          remoteDeck.cards.forEach((card: { data?: Record<string, unknown> }) => {
             if (card.data) {
-              Object.values(card.data).forEach((val: any) => {
+              Object.values(card.data).forEach((val: unknown) => {
                 if (val && typeof val === 'string' && val.startsWith('ref:')) imageRefs.add(val.replace('ref:', ''));
               });
             }
@@ -384,7 +394,7 @@ function App() {
 
           if (imageRefs.size > 0) {
             for (const hash of imageRefs) {
-              const imgFile = remoteFiles.find(f => f.name.startsWith(`img-${hash}.`));
+              const imgFile = remoteFiles.find((f: DriveFile) => f.name.startsWith(`img-${hash}.`));
               if (imgFile) {
                 await imageService.downloadImageIfMissing(hash, imgFile.id);
               }
@@ -501,6 +511,7 @@ function App() {
     };
 
     migrateImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run once on mount
 
   // Auto-Sync Effect
@@ -513,6 +524,7 @@ function App() {
     }, 5000); // 5 second debounce
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decks, isAuthenticated]); // Trigger on deck changes or auth status
 
   const activeDeck = activeDeckId ? decks.find(d => d.id === activeDeckId) : null;

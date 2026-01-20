@@ -8,17 +8,13 @@ import { getGoogleFontUrl } from '../utils/fonts';
 import { TransformWrapper } from './TransformWrapper';
 import { motion } from 'framer-motion';
 
-interface CardProps {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
     data?: Record<string, string>;
     deckStyle?: DeckStyle;
 
     // Global overrides
     borderColor?: string;
     borderWidth?: number;
-
-    className?: string;
-    style?: React.CSSProperties;
-    id?: string;
 
     // Interaction
     isInteractive?: boolean;
@@ -27,17 +23,14 @@ interface CardProps {
     selectedElement?: string | null;
     onContentChange?: (key: string, value: string) => void;
     onSelectElement?: (element: string | null) => void;
-    onElementUpdate?: (element: string | null, updates: any) => void;
+    onElementUpdate?: (element: string | null, updates: Record<string, unknown>) => void;
     onDeleteElement?: (elementId: string) => void;
     allowTextEditing?: boolean;
     parentScale?: number;
 
     // Legacy props support (optional, can be ignored if we fully migrate)
     // But maintaining signature prevents immediate breaks in parent, though we ignore them
-    // Legacy props support (optional, can be ignored if we fully migrate)
-    // But maintaining signature prevents immediate breaks in parent, though we ignore them
     renderMode?: '3d' | 'front' | 'back';
-    [key: string]: any;
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
@@ -61,6 +54,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             allowTextEditing = true,
             parentScale = 1,
             renderMode = '3d',
+            ...props
         },
         ref
     ) => {
@@ -115,7 +109,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 fontFamily: element.fontFamily,
                 fontSize: `${element.fontSize}px`,
                 color: element.color,
-                textAlign: element.textAlign || 'left',
+                textAlign: (element.textAlign || 'left') as 'left' | 'center' | 'right' | 'justify',
                 backgroundColor: element.backgroundColor,
                 borderColor: element.borderColor,
                 borderWidth: element.borderWidth ? `${element.borderWidth}px` : undefined,
@@ -241,8 +235,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             };
 
             // Calculate bounds to prevent elements from escaping the card
-            const cardHalfWidth = 187.5; // 375 / 2
-            const cardHalfHeight = 262.5; // 525 / 2
+            const cardWidth = deckStyle?.cardWidth || 375;
+            const cardHeight = deckStyle?.cardHeight || 525;
+            const cardHalfWidth = cardWidth / 2;
+            const cardHalfHeight = cardHeight / 2;
 
             // Bounds should keep the element center within the card
             // Allow some margin so elements can be partially outside
@@ -267,7 +263,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                             rotate: element.rotate,
                             scale: element.scale
                         }}
-                        useScaleForResize={true} // Defaulting to scale for simplicity
+                        useScaleForResize={false} // Use width/height handles for X/Y resizing
                         onSelect={() => onSelectElement?.(element.id)}
                         onUpdate={(newVals) => {
                             onElementUpdate?.(element.id, {
@@ -296,7 +292,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
 
         const elements = deckStyle?.elements || [];
 
-        const FrontFaceContent = () => (
+        const frontFaceContent = (
             <div
                 className="w-full h-full relative"
                 style={{
@@ -317,35 +313,41 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         );
 
         if (renderMode === 'front') {
+            const cardWidth = deckStyle?.cardWidth || 375;
+            const cardHeight = deckStyle?.cardHeight || 525;
             return (
                 <div
                     ref={ref}
                     id={id}
                     className={cn("relative", className)}
                     style={{
-                        width: '375px',
-                        height: '525px',
+                        width: `${cardWidth}px`,
+                        height: `${cardHeight}px`,
                         ...style
                     }}
+                    {...props}
                 >
                     <div className={cn("w-full h-full bg-white rounded-[18px] shadow-sm flex flex-col font-sans select-none", isInteractive ? "overflow-visible" : "overflow-hidden")}>
-                        <FrontFaceContent />
+                        {frontFaceContent}
                     </div>
                 </div>
             );
         }
 
+        const cardWidth = deckStyle?.cardWidth || 375;
+        const cardHeight = deckStyle?.cardHeight || 525;
         return (
             <div
                 ref={ref}
                 id={id}
                 className={cn("relative", className)}
                 style={{
-                    width: '375px',
-                    height: '525px',
+                    width: `${cardWidth}px`,
+                    height: `${cardHeight}px`,
                     perspective: '1000px',
                     ...style
                 }}
+                {...props}
             >
                 <motion.div
                     animate={{ rotateY: isFlipped ? 180 : 0 }}
@@ -368,7 +370,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         }}
                         className={cn("w-full h-full bg-white rounded-[18px] shadow-sm flex flex-col font-sans select-none", isInteractive ? "overflow-visible" : "overflow-hidden")}
                     >
-                        <FrontFaceContent />
+                        {frontFaceContent}
                     </div>
 
                     {/* Back Side */}

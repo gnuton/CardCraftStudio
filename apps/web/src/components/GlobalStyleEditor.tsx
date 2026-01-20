@@ -3,7 +3,7 @@ import { ImageProviderDialog } from './ImageProviderDialog/ImageProviderDialog';
 import { templateService } from '../services/templateService';
 import { driveService } from '../services/googleDrive';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, ChevronDown, ChevronRight, Trash2, Plus, Type, Palette, Layout, Save, Cloud, Download, Loader2, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, AlertCircle, X, Box } from 'lucide-react';
+import { Settings, ChevronDown, ChevronRight, Trash2, Plus, Type, Palette, Layout, Save, Cloud, Download, Loader2, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, AlertCircle, X, Box, Maximize2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Card } from './Card';
 import { ResolvedImage } from './ResolvedImage';
@@ -356,7 +356,7 @@ const TEMPLATES: Template[] = [
                     fontFamily: 'serif', fontSize: 24, color: '#e0e7ff', textAlign: 'center', defaultContent: 'ROYAL DECK'
                 }
             ]
-        } as any
+        } as DeckStyle
     },
     {
         id: 'mystic_back',
@@ -380,7 +380,7 @@ const TEMPLATES: Template[] = [
                     fontFamily: 'serif', fontSize: 48, color: '#d0ebff', textAlign: 'center', defaultContent: '✧'
                 }
             ]
-        } as any
+        } as DeckStyle
     },
     {
         id: 'cyber_back',
@@ -399,7 +399,7 @@ const TEMPLATES: Template[] = [
                     fontFamily: 'monospace', fontSize: 24, color: '#38bdf8', textAlign: 'center', defaultContent: 'SYSTEM.BACK'
                 }
             ]
-        } as any
+        } as DeckStyle
     }
 ];
 
@@ -663,7 +663,8 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
         templates: true,
-        elements: true
+        elements: true,
+        cardSize: true
     });
 
     const toggleGroup = (group: string) => {
@@ -759,7 +760,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                         <label className="text-xs font-semibold text-foreground/70">Align</label>
                                         <select
                                             value={element.textAlign || 'left'}
-                                            onChange={(e) => handleUpdateElement(element.id, { textAlign: e.target.value as any })}
+                                            onChange={(e) => handleUpdateElement(element.id, { textAlign: e.target.value as 'left' | 'center' | 'right' })}
                                             className="w-full bg-muted border border-border rounded px-2 py-1 text-sm"
                                         >
                                             <option value="left">Left</option>
@@ -1153,6 +1154,92 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 </div>
                             )}
                         </div>
+
+                        {/* Card Size Group */}
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => toggleGroup('cardSize')}
+                                className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
+                            >
+                                {expandedGroups.cardSize ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                <Maximize2 className="w-3 h-3" />
+                                Card Size
+                            </button>
+
+                            {expandedGroups.cardSize && (
+                                <div className="space-y-4 pl-5">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-foreground/70">Size Preset</label>
+                                        <select
+                                            value={currentStyle.cardSizePreset || 'poker'}
+                                            onChange={(e) => {
+                                                const preset = e.target.value as DeckStyle['cardSizePreset'];
+                                                const sizes: Record<string, { width: number; height: number }> = {
+                                                    poker: { width: 375, height: 525 },      // 2.5" x 3.5" (standard poker)
+                                                    bridge: { width: 338, height: 525 },     // 2.25" x 3.5" (bridge)
+                                                    tarot: { width: 413, height: 713 },      // 2.75" x 4.75" (tarot)
+                                                    mini: { width: 263, height: 413 },       // 1.75" x 2.75" (mini)
+                                                    euro: { width: 433, height: 675 },       // 2.875" x 4.5" (euro)
+                                                    square: { width: 450, height: 450 },     // 3" x 3" (square)
+                                                    custom: { width: currentStyle.cardWidth || 375, height: currentStyle.cardHeight || 525 }
+                                                };
+                                                const size = sizes[preset || 'poker'];
+                                                handleStyleChange({
+                                                    cardSizePreset: preset,
+                                                    cardWidth: size.width,
+                                                    cardHeight: size.height
+                                                });
+                                            }}
+                                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                        >
+                                            <option value="poker">Poker (2.5" × 3.5")</option>
+                                            <option value="bridge">Bridge (2.25" × 3.5")</option>
+                                            <option value="tarot">Tarot (2.75" × 4.75")</option>
+                                            <option value="mini">Mini (1.75" × 2.75")</option>
+                                            <option value="euro">Euro (2.875" × 4.5")</option>
+                                            <option value="square">Square (3" × 3")</option>
+                                            <option value="custom">Custom Size</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Custom Size Inputs - only visible when custom is selected */}
+                                    {currentStyle.cardSizePreset === 'custom' && (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-semibold text-foreground/70">Width (px)</label>
+                                                <input
+                                                    type="number"
+                                                    min="100"
+                                                    max="1000"
+                                                    value={currentStyle.cardWidth || 375}
+                                                    onChange={(e) => handleStyleChange({ cardWidth: Number(e.target.value) })}
+                                                    className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-semibold text-foreground/70">Height (px)</label>
+                                                <input
+                                                    type="number"
+                                                    min="100"
+                                                    max="1000"
+                                                    value={currentStyle.cardHeight || 525}
+                                                    onChange={(e) => handleStyleChange({ cardHeight: Number(e.target.value) })}
+                                                    className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Size Preview */}
+                                    <div className="text-xs text-muted-foreground flex items-center gap-2 pt-1">
+                                        <span className="font-mono bg-muted px-2 py-0.5 rounded">
+                                            {currentStyle.cardWidth || 375} × {currentStyle.cardHeight || 525}
+                                        </span>
+                                        <span>pixels</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -1193,7 +1280,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 }}
                                 isInteractive={!isPanMode} // Disable internal interactivity when in pan mode
                                 selectedElement={selectedElement}
-                                onElementUpdate={(id: string, updates: Partial<CardElement>) => handleUpdateElement(id, updates)}
+                                onElementUpdate={(id, updates) => id && handleUpdateElement(id, updates as Partial<CardElement>)}
                                 onDeleteElement={handleDeleteElement}
                                 isFlipped={isFlipped}
                                 allowTextEditing={false}

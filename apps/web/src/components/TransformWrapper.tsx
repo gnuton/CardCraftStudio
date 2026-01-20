@@ -54,9 +54,8 @@ export const TransformWrapper = ({
     parentScale = 1
 }: TransformWrapperProps) => {
     const [isDragging, setIsDragging] = useState(false);
-
-    // Force re-render trigger for visual updates during drag
-    const [, forceRender] = useState(0);
+    const [activeAction, setActiveAction] = useState<string | null>(null);
+    const [interactionTransform, setInteractionTransform] = useState<TransformValues | null>(null);
 
     const elementRef = useRef<HTMLDivElement>(null);
 
@@ -68,9 +67,6 @@ export const TransformWrapper = ({
     const useScaleForResizeRef = useRef(useScaleForResize);
     const onUpdateRef = useRef(onUpdate);
     const valuesRef = useRef(values);
-
-    // Local transform stored in REF (not state) for zero-latency updates
-    const localTransformRef = useRef<TransformValues | null>(null);
 
     useEffect(() => { boundsRef.current = bounds; }, [bounds]);
     useEffect(() => { parentScaleRef.current = parentScale; }, [parentScale]);
@@ -123,59 +119,83 @@ export const TransformWrapper = ({
             const rad = -initialValues.rotate * (Math.PI / 180);
             const cos = Math.cos(rad);
             const sin = Math.sin(rad);
-            const localDx = (deltaX * cos - deltaY * sin) / scale;
-            const localDy = (deltaX * sin + deltaY * cos) / scale;
+            const lDx = (deltaX * cos - deltaY * sin) / scale;
+            const lDy = (deltaX * sin + deltaY * cos) / scale;
 
             if (useScaleForResizeRef.current) {
-                const changes = action.includes('right') || action.includes('bottom')
-                    ? Math.max(localDx, localDy)
-                    : Math.min(localDx, localDy);
-                const scaleChange = action.includes('right') || action.includes('bottom') ? 1 : -1;
-                const newScale = Math.max(0.1, initialValues.scale! + (scaleChange * changes / 100));
+                const changes = Math.max(lDx, lDy);
+                const newScale = Math.max(0.1, initialValues.scale! + (changes / 100));
                 newValues = { ...initialValues, scale: newScale };
             } else {
-                let w = initialValues.width;
-                let h = initialValues.height;
-                if (action.includes('e')) w += localDx * 2;
-                if (action.includes('w')) w -= localDx * 2;
-                if (action.includes('s') && h !== undefined) h += localDy * 2;
-                if (action.includes('n') && h !== undefined) h -= localDy * 2;
+                const w0 = initialValues.width;
+                const h0 = initialValues.height || w0;
+                const x0 = initialValues.x;
+                const y0 = initialValues.y;
+                const angle = initialValues.rotate * (Math.PI / 180);
+                const cAngle = Math.cos(angle);
+                const sAngle = Math.sin(angle);
+
+                let anchorLocalX = 0;
+                let anchorLocalY = 0;
+
+                if (action.includes('w')) anchorLocalX = w0 / 2;
+                else if (action.includes('e')) anchorLocalX = -w0 / 2;
+
+                if (action.includes('n')) anchorLocalY = h0 / 2;
+                else if (action.includes('s')) anchorLocalY = -h0 / 2;
+
+                const anchorWorldX = x0 + anchorLocalX * cAngle - anchorLocalY * sAngle;
+                const anchorWorldY = y0 + anchorLocalX * sAngle + anchorLocalY * cAngle;
+
+                let newW = w0;
+                let newH = h0;
+
+                if (action.includes('e')) newW = w0 + lDx;
+                else if (action.includes('w')) newW = w0 - lDx;
+
+                if (action.includes('s')) newH = h0 + lDy;
+                else if (action.includes('n')) newH = h0 - lDy;
+
+                newW = Math.max(minWidthRef.current, newW);
+                newH = Math.max(minHeightRef.current, newH);
+
+                let newAnchorLocalX = 0;
+                let newAnchorLocalY = 0;
+
+                if (action.includes('w')) newAnchorLocalX = newW / 2;
+                else if (action.includes('e')) newAnchorLocalX = -newW / 2;
+
+                if (action.includes('n')) newAnchorLocalY = newH / 2;
+                else if (action.includes('s')) newAnchorLocalY = -newH / 2;
+
+                const newX = anchorWorldX - (newAnchorLocalX * cAngle - newAnchorLocalY * sAngle);
+                const newY = anchorWorldY - (newAnchorLocalX * sAngle + newAnchorLocalY * cAngle);
+
                 newValues = {
                     ...initialValues,
-                    width: Math.max(minWidthRef.current, w),
-                    height: h !== undefined ? Math.max(minHeightRef.current, h) : undefined
+                    x: newX,
+                    y: newY,
+                    width: newW,
+                    height: initialValues.height !== undefined ? newH : undefined
                 };
             }
         } else {
             return;
         }
 
-        // Update ref immediately (no React overhead)
-        localTransformRef.current = newValues;
-        // Trigger minimal re-render for visual update
-        forceRender(n => n + 1);
+        setInteractionTransform(newValues);
     }, [getConstrainedPosition]);
 
-    // Store handlers in refs for stable cleanup
-    const handleMouseMoveRef = useRef(handleMouseMove);
-    useEffect(() => { handleMouseMoveRef.current = handleMouseMove; }, [handleMouseMove]);
-
     const handleMouseUp = useCallback(() => {
-        // Commit final values to parent
-        if (localTransformRef.current) {
-            onUpdateRef.current(localTransformRef.current);
+        if (interactionTransform) {
+            onUpdateRef.current(interactionTransform);
         }
-
-        localTransformRef.current = null;
+        setInteractionTransform(null);
         dragStateRef.current = null;
         setIsDragging(false);
+        setActiveAction(null);
         document.body.style.cursor = '';
-        document.removeEventListener('mousemove', handleMouseMoveRef.current);
-        document.removeEventListener('mouseup', handleMouseUpRef.current);
-    }, []);
-
-    const handleMouseUpRef = useRef(handleMouseUp);
-    useEffect(() => { handleMouseUpRef.current = handleMouseUp; }, [handleMouseUp]);
+    }, [interactionTransform]);
 
     const handleMouseDown = useCallback((e: React.MouseEvent, action: string) => {
         if (!isActive) return;
@@ -192,7 +212,6 @@ export const TransformWrapper = ({
         }
         if (action === 'drag' && !isSelected) return;
 
-        // Get element center for rotation
         let cx = 0, cy = 0;
         if (elementRef.current) {
             const rect = elementRef.current.getBoundingClientRect();
@@ -201,8 +220,6 @@ export const TransformWrapper = ({
         }
 
         const currentValues = valuesRef.current;
-
-        // Store initial state
         dragStateRef.current = {
             startX: e.clientX,
             startY: e.clientY,
@@ -211,24 +228,26 @@ export const TransformWrapper = ({
             action
         };
 
-        // Initialize local transform
-        localTransformRef.current = { ...currentValues };
+        setInteractionTransform({ ...currentValues });
         if (action === 'drag') setIsDragging(true);
-
-        document.addEventListener('mousemove', handleMouseMoveRef.current);
-        document.addEventListener('mouseup', handleMouseUpRef.current);
+        setActiveAction(action);
     }, [isActive, isSelected, disableDrag, onSelect]);
 
-    // Cleanup
     useEffect(() => {
-        return () => {
-            document.removeEventListener('mousemove', handleMouseMoveRef.current);
-            document.removeEventListener('mouseup', handleMouseUpRef.current);
-        };
-    }, []);
+        if (!activeAction) return;
 
-    // Use local ref values during drag, otherwise props
-    const displayValues = localTransformRef.current || values;
+        const onMouseMove = (e: MouseEvent) => handleMouseMove(e);
+        const onMouseUp = () => handleMouseUp();
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        return () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+    }, [activeAction, handleMouseMove, handleMouseUp]);
+
+    const displayValues = interactionTransform || values;
     const { zIndex, ...restStyle } = style || {};
 
     return (
@@ -257,14 +276,13 @@ export const TransformWrapper = ({
                     boxShadow: isSelected ? '0 0 0 2px #3b82f6' : 'none',
                     userSelect: 'none',
                     touchAction: 'none',
-                    willChange: localTransformRef.current ? 'transform' : 'auto',
+                    willChange: interactionTransform ? 'transform' : 'auto',
                 }}
             >
                 {children}
 
                 {isSelected && isActive && !hideControls && (
                     <>
-                        {/* Rotation Handle */}
                         <div
                             className="absolute -top-12 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-[#3b82f6] rounded-full shadow cursor-grab active:cursor-grabbing hover:bg-blue-50 z-[9999] text-[#3b82f6]"
                             onMouseDown={(e) => handleMouseDown(e, 'rotate')}
@@ -275,7 +293,6 @@ export const TransformWrapper = ({
                             <div className="absolute top-full left-1/2 w-px h-4 bg-[#3b82f6] -translate-x-1/2 pointer-events-none" />
                         </div>
 
-                        {/* Resize Handles */}
                         {!useScaleForResize && (
                             <>
                                 <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-nw')} />
@@ -289,15 +306,14 @@ export const TransformWrapper = ({
                             </>
                         )}
 
-                        {/* Scale Handle */}
                         {useScaleForResize && (
                             <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white border-2 border-[#3b82f6] cursor-nwse-resize z-[9999]" onMouseDown={(e) => handleMouseDown(e, 'resize-scale')} />
                         )}
 
-                        {/* Delete Button */}
                         {onDelete && (
                             <button
                                 className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-8 h-8 flex items-center justify-center bg-white border border-red-500 rounded-full shadow hover:bg-red-50 z-[9999] text-red-500 transition-colors"
+                                onMouseDown={(e) => e.stopPropagation()}
                                 onClick={(e) => { e.stopPropagation(); onDelete(); }}
                                 title="Delete element"
                             >

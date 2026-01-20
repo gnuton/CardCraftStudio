@@ -30,13 +30,14 @@ describe('TransformWrapper', () => {
 
     it('updates coordinates when dragged', async () => {
         const onUpdate = vi.fn();
+        const onSelect = vi.fn();
         const { getByText } = render(
             <TransformWrapper
                 isActive={true}
                 isSelected={true}
                 values={defaultValues}
                 onUpdate={onUpdate}
-                onSelect={() => { }}
+                onSelect={onSelect}
             >
                 <div>Test Element</div>
             </TransformWrapper>
@@ -60,15 +61,22 @@ describe('TransformWrapper', () => {
         }));
 
         await act(async () => {
-            fireEvent.mouseDown(element, { clientX: 100, clientY: 100 });
-            fireEvent.mouseMove(document, { clientX: 150, clientY: 150 });
-            fireEvent.mouseUp(document);
+            fireEvent.mouseDown(element, { clientX: 100, clientY: 100, bubbles: true });
         });
 
-        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            x: 50,
-            y: 50
-        }));
+        await act(async () => {
+            fireEvent.mouseMove(document, { clientX: 150, clientY: 150, bubbles: true });
+        });
+
+        await act(async () => {
+            fireEvent.mouseUp(document, { bubbles: true });
+        });
+
+        // Verify onUpdate was called with the expected transformation
+        expect(onUpdate).toHaveBeenCalled();
+        const lastCall = onUpdate.mock.calls[onUpdate.mock.calls.length - 1][0];
+        expect(lastCall.x).toBe(50);
+        expect(lastCall.y).toBe(50);
     });
 
     it('respects bounds when dragged', async () => {
@@ -104,9 +112,15 @@ describe('TransformWrapper', () => {
         }));
 
         await act(async () => {
-            fireEvent.mouseDown(element, { clientX: 0, clientY: 0 });
-            fireEvent.mouseMove(document, { clientX: 500, clientY: 500 });
-            fireEvent.mouseUp(document);
+            fireEvent.mouseDown(element, { clientX: 0, clientY: 0, bubbles: true });
+        });
+
+        await act(async () => {
+            fireEvent.mouseMove(document, { clientX: 500, clientY: 500, bubbles: true });
+        });
+
+        await act(async () => {
+            fireEvent.mouseUp(document, { bubbles: true });
         });
 
         // Bounds are minX: -50, maxX: 50, minY: -50, maxY: 50.
@@ -114,10 +128,10 @@ describe('TransformWrapper', () => {
         // - x is clamped to maxX (50)
         // - y is clamped to maxY (50)
 
-        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            x: 50,
-            y: 50
-        }));
+        expect(onUpdate).toHaveBeenCalled();
+        const lastCall = onUpdate.mock.calls[onUpdate.mock.calls.length - 1][0];
+        expect(lastCall.x).toBe(50);
+        expect(lastCall.y).toBe(50);
     });
 
     it('updates rotation when rotate handle is dragged', async () => {
@@ -151,22 +165,28 @@ describe('TransformWrapper', () => {
             toJSON: () => { },
         }));
 
+        // Start dragging rotate handle
+        // Center is (0,0)
+        // startX: 0, startY: -100
         await act(async () => {
-            // Start dragging rotate handle
-            // Center is (0,0)
-            // startX: 0, startY: -100
-            fireEvent.mouseDown(rotateHandle!, { clientX: 0, clientY: -100 });
+            fireEvent.mouseDown(rotateHandle!, { clientX: 0, clientY: -100, bubbles: true });
+        });
+
+        await act(async () => {
             // Move to 100, 0 (90 degrees clockwise)
-            fireEvent.mouseMove(document, { clientX: 100, clientY: 0 });
-            fireEvent.mouseUp(document);
+            fireEvent.mouseMove(document, { clientX: 100, clientY: 0, bubbles: true });
+        });
+
+        await act(async () => {
+            fireEvent.mouseUp(document, { bubbles: true });
         });
 
         // atan2(0-0, 100-0) = 0
         // atan2(-100-0, 0-0) = -PI/2
         // deltaRad = 0 - (-PI/2) = PI/2 = 90 deg
 
-        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            rotate: 90
-        }));
+        expect(onUpdate).toHaveBeenCalled();
+        const lastCall = onUpdate.mock.calls[onUpdate.mock.calls.length - 1][0];
+        expect(lastCall.rotate).toBe(90);
     });
 });
