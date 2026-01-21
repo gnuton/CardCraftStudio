@@ -1,4 +1,4 @@
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 import { Palette, Box, Layers, Eye } from 'lucide-react';
 
 interface StyleControlsProps {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from './Card';
 import type { CardConfig } from './CardStudio';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 
 interface DeckPrintLayoutProps {
     pages: CardConfig[][];

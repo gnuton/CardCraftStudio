@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { CardStudio } from './CardStudio';
 import type { CardConfig } from './CardStudio';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 
 // Mock child components
 vi.mock('./Card', () => ({

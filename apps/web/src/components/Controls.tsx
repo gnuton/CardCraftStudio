@@ -3,7 +3,7 @@ import { ResolvedImage } from './ResolvedImage';
 import { Upload, X, Type, Image as ImageIcon, FileText } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
 import { ImageProviderDialog } from './ImageProviderDialog/ImageProviderDialog';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 import type { CardConfig } from './CardStudio';
 
 interface ControlsProps {

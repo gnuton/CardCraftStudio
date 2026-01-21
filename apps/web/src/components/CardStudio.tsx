@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from './Card';
 import { toSvg } from 'html-to-image';
 import { Undo, Redo, Download, ArrowLeft, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2 } from 'lucide-react';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 import { imageService } from '../services/imageService';
 import { cn } from '../utils/cn';
 import { ImageProviderDialog } from './ImageProviderDialog/ImageProviderDialog';

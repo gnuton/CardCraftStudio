@@ -1,7 +1,7 @@
 import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Card } from './Card';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 
 // Mock RichTextEditor
 vi.mock('./RichTextEditor', () => ({

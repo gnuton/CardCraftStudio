@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { exportDeckToZip, importDeckFromZip } from './deckIO';
 import type { CardConfig } from '../components/CardStudio';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 
 // Setup Mocks
 const { mockJSZip, mockZipFile, mockZipFolder, mockZipGenerateAsync, mockZipLoadAsync, mockZipFileAsync } = vi.hoisted(() => ({

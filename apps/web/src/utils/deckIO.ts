@@ -1,7 +1,7 @@
 
 import JSZip from 'jszip';
 import type { CardConfig } from '../components/CardStudio';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 
 interface DeckExportData {
     deckName: string;

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { StyleControls } from './StyleControls';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 
 describe('StyleControls', () => {
     const mockStyle: DeckStyle = {

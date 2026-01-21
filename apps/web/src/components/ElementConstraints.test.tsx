@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Card } from './Card';
 import { GlobalStyleEditor } from './GlobalStyleEditor';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 
 // Mock TransformWrapper to verify drag bounds
 // We use a different name for the mock to avoid hoisting issues if we were reusing it,

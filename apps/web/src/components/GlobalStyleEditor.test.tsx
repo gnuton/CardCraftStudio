@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { GlobalStyleEditor } from './GlobalStyleEditor';
 import { describe, it, expect } from 'vitest';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 
 const mockDeckStyle: DeckStyle = {
     borderColor: '#000000',

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '../utils/cn';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 import type { CardElement } from '../types/element';
 import { ResolvedImage } from './ResolvedImage';
 
