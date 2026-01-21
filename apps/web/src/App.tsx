@@ -18,7 +18,7 @@ import { imageService } from './services/imageService';
 import { GlobalStyleEditor } from './components/GlobalStyleEditor';
 import { Navigation } from './components/Navigation';
 import { importDeckFromZip } from './utils/deckIO';
-import type { CardElement } from './types/element';
+
 
 const APP_VERSION = '1.2.0-drive-sync';
 
@@ -32,67 +32,33 @@ const THEME_STORAGE_KEY = 'cardcraftstudio-theme';
 const SYNC_PROMPT_KEY = 'cardcraftstudio-sync-prompt-shown';
 const SYNC_ENABLED_KEY = 'cardcraftstudio-sync-enabled';
 
-export interface DeckStyle {
-  // Global Styling
-  borderColor: string;
-  borderWidth: number;
-  backgroundColor: string;
-  backgroundImage: string | null;
-  globalFont?: string;
-  layoutMode?: 'flow' | 'absolute';
-
-  // Game Logic / Overlay (kept for now, or could be elements too)
-  gameHp: string;
-  gameMana: string;
-  gameSuit: string;
-
-  // SVG Styling
-  svgFrameColor: string;
-  svgCornerColor: string;
-  svgStrokeWidth: number;
-
-  // Dynamic Elements
-  elements: CardElement[];
-
-  id?: string;
-  isLocked?: boolean;
-
-  // Back Styling
-  cardBackBackgroundColor?: string;
-  cardBackImage?: string | null;
-
-  // Card Size
-  cardSizePreset?: 'poker' | 'bridge' | 'tarot' | 'mini' | 'euro' | 'square' | 'custom';
-  cardWidth?: number;
-  cardHeight?: number;
-}
+import type { DeckStyle } from './types/deck';
 
 const defaultDeckStyle: DeckStyle = {
-  borderColor: '#000000',
-  borderWidth: 12,
+  id: 'simple',
+  borderColor: '#e2e8f0',
+  borderWidth: 2,
   backgroundColor: '#ffffff',
-  backgroundImage: null,
+  backgroundImage: '/templates/simple.svg',
   cardBackBackgroundColor: '#312e81',
   cardBackImage: null,
 
-  gameHp: '20',
-  gameMana: '10',
-  gameSuit: '♥',
-  svgFrameColor: '#000000',
-  svgCornerColor: '#000000',
-  svgStrokeWidth: 2,
+  gameHp: '',
+  gameMana: '',
+  gameSuit: '',
+  svgFrameColor: '#e2e8f0',
+  svgCornerColor: '#e2e8f0',
+  svgStrokeWidth: 1,
 
   elements: [
-    // --- Front ---
     {
       id: 'title',
       type: 'text',
       side: 'front',
       name: 'Title',
-      x: 0, y: 0, width: 200, height: 30, rotate: 0, scale: 1, zIndex: 20, opacity: 1,
-      fontFamily: 'sans-serif', fontSize: 16, color: '#000000',
-      backgroundColor: 'rgba(241, 245, 249, 0.9)', borderColor: '#cbd5e1', borderWidth: 1,
-      textAlign: 'left',
+      x: 0, y: -160, width: 240, height: 30, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+      fontFamily: 'Outfit, sans-serif', fontSize: 20, color: '#1e293b',
+      textAlign: 'center',
       defaultContent: 'Card Title'
     },
     {
@@ -100,28 +66,48 @@ const defaultDeckStyle: DeckStyle = {
       type: 'image',
       side: 'front',
       name: 'Illustration',
-      x: 0, y: 0, width: 264, height: 164, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+      x: 0, y: -25, width: 250, height: 190, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
+      url: ''
     },
     {
       id: 'description',
       type: 'multiline',
       side: 'front',
       name: 'Description',
-      x: 0, y: 0, width: 250, height: 100, rotate: 0, scale: 1, zIndex: 20, opacity: 1,
-      fontFamily: 'sans-serif', fontSize: 13, color: '#000000',
-      backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)', borderWidth: 1,
+      x: 0, y: 140, width: 240, height: 70, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+      fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#475569',
+      textAlign: 'left',
       defaultContent: 'Card description...'
     },
-    // --- Back ---
     {
       id: 'back_title',
       type: 'text',
       side: 'back',
       name: 'Game Title',
       x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-      fontFamily: 'serif', fontSize: 24, color: '#ffffff',
+      fontFamily: 'serif', fontSize: 24, color: '#1e293b',
       textAlign: 'center',
-      defaultContent: 'GAME TITLE'
+      defaultContent: 'CARDCRAFT'
+    },
+    {
+      id: 'corner',
+      type: 'text',
+      side: 'front',
+      name: 'Cost',
+      x: -135, y: -195, width: 20, height: 20, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
+      fontFamily: 'sans-serif', fontSize: 12, color: '#000000',
+      textAlign: 'center',
+      defaultContent: '1'
+    },
+    {
+      id: 'reversedCorner',
+      type: 'text',
+      side: 'front',
+      name: 'Rarity',
+      x: 135, y: 195, width: 20, height: 20, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
+      fontFamily: 'sans-serif', fontSize: 12, color: '#000000',
+      textAlign: 'center',
+      defaultContent: '•'
     }
   ]
 };

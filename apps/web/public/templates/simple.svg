@@ -29,17 +29,17 @@
 
   <!-- Title Area with subtle background -->
   <rect x="20" y="25" width="260" height="50" rx="6" fill="#FFFFFF" fill-opacity="0.6" filter="url(#softShadow)"/>
-  <rect id="layout-title" x="30" y="35" width="240" height="30" fill="transparent" />
+  <rect data-ref="title" data-type="text" x="30" y="35" width="240" height="30" fill="transparent" />
 
   <!-- Image Frame with elegant border -->
   <rect x="20" y="90" width="260" height="200" rx="8" fill="#FFFFFF" stroke="#D0D0D0" stroke-width="2" filter="url(#softShadow)"/>
-  <rect id="layout-center-image" x="25" y="95" width="250" height="190" rx="6" fill="transparent" />
+  <rect data-ref="art" data-type="image" x="25" y="95" width="250" height="190" rx="6" fill="transparent" />
 
   <!-- Description Area -->
   <rect x="20" y="305" width="260" height="90" rx="6" fill="#FFFFFF" fill-opacity="0.6" filter="url(#softShadow)"/>
-  <rect id="layout-description" x="30" y="315" width="240" height="70" fill="transparent" />
+  <rect data-ref="description" data-type="multiline" x="30" y="315" width="240" height="70" fill="transparent" />
 
   <!-- Invisible layout markers for compatibility -->
-  <circle id="layout-top-left" cx="15" cy="15" r="8" fill="transparent" />
-  <circle id="layout-bottom-right" cx="285" cy="405" r="8" fill="transparent" />
+  <circle data-ref="corner" data-type="text" cx="15" cy="15" r="8" fill="transparent" />
+  <circle data-ref="reversedCorner" data-type="text" cx="285" cy="405" r="8" fill="transparent" />
 </svg>

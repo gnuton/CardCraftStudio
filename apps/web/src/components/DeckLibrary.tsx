@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Plus, Trash2, Calendar, Layers, Upload } from 'lucide-react';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 import type { CardConfig } from './CardStudio';
 import { ResolvedImage } from './ResolvedImage';
 

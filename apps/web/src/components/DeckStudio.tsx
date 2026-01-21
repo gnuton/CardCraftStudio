@@ -5,7 +5,7 @@ import { Plus, Trash2, Edit, Copy, Settings, X, Download, Loader2, Archive, Pale
 import { DeckPrintLayout } from './DeckPrintLayout';
 import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 import { exportDeckToZip } from '../utils/deckIO';
 
 interface DeckStudioProps {

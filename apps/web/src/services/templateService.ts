@@ -1,4 +1,4 @@
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 import { imageService } from './imageService';
 
 // ... (interfaces existing) ...
@@ -21,6 +21,7 @@ export interface MarkerLayout {
     fill?: string;
     stroke?: string;
     strokeWidth?: number;
+    elementType?: 'text' | 'multiline' | 'image';
 }
 
 export interface ExtractedLayout {
@@ -131,11 +132,43 @@ class TemplateService {
                 const fontFamily = el.getAttribute('font-family') || styleMap['font-family'];
                 if (fontFamily) marker.fontFamily = fontFamily.replace(/['"]/g, '');
 
+                // NEW: Extract element type from data-type attribute
+                const dataType = el.getAttribute('data-type');
+                if (dataType && ['text', 'multiline', 'image'].includes(dataType)) {
+                    marker.elementType = dataType as 'text' | 'multiline' | 'image';
+                }
+
                 // Center Relative Offset Calculation
                 marker.offsetX = marker.x + marker.width / 2 - centerX;
                 marker.offsetY = marker.y + marker.height / 2 - centerY;
 
                 return marker;
+            };
+
+            // Helper: Infer element type from naming conventions (fallback)
+            const inferElementType = (ref: string): 'text' | 'multiline' | 'image' => {
+                const refLower = ref.toLowerCase();
+
+                // Image patterns
+                if (refLower.includes('art') ||
+                    refLower.includes('image') ||
+                    refLower.includes('illustration') ||
+                    refLower.includes('photo') ||
+                    refLower.includes('picture')) {
+                    return 'image';
+                }
+
+                // Multiline text patterns
+                if (refLower.includes('description') ||
+                    refLower.includes('body') ||
+                    refLower.includes('effect') ||
+                    refLower.includes('flavor') ||
+                    refLower.includes('text')) {
+                    return 'multiline';
+                }
+
+                // Default to single-line text
+                return 'text';
             };
 
             // Recursively walk or just querySelectorAll
@@ -145,7 +178,13 @@ class TemplateService {
                 const ref = el.getAttribute('data-ref');
                 if (ref) {
                     const props = extractProps(el);
-                    if (props) elements[ref] = props;
+                    if (props) {
+                        // Apply convention-based inference if type not explicitly set
+                        if (!props.elementType) {
+                            props.elementType = inferElementType(ref);
+                        }
+                        elements[ref] = props;
+                    }
                 }
             });
 
@@ -230,6 +269,7 @@ class TemplateService {
             x?: number; y?: number; width?: number; height?: number;
             rotate?: number; scale?: number; opacity?: number;
             color?: string; fontSize?: number; fontFamily?: string;
+            elementType?: string;
         }) => {
             // Find by data-ref first, then ID
             let el = svgDoc.querySelector(`[data-ref="${refName}"]`);
@@ -292,6 +332,7 @@ class TemplateService {
                 if (props.color) el.setAttribute('fill', props.color);
                 if (props.fontSize) el.setAttribute('font-size', props.fontSize.toString());
                 if (props.fontFamily) el.setAttribute('font-family', props.fontFamily);
+                if (props.elementType) el.setAttribute('data-type', props.elementType);
             }
         };
 
@@ -310,7 +351,8 @@ class TemplateService {
             updateElement(element.id, legacyId, {
                 x: element.x, y: element.y, width: element.width, height: element.height,
                 rotate: element.rotate, scale: element.scale, opacity: element.opacity,
-                color: element.color, fontSize: element.fontSize, fontFamily: element.fontFamily
+                color: element.color, fontSize: element.fontSize, fontFamily: element.fontFamily,
+                elementType: element.type
             });
         });
 

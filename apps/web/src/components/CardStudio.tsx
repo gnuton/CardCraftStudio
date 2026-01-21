@@ -162,15 +162,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
     const [startPanPoint, setStartPanPoint] = useState({ x: 0, y: 0 });
 
     const handleWheel = (e: React.WheelEvent) => {
-        // Zoom without modifiers (or with Ctrl if preferred, but matching StyleEditor which is wheel directly)
-        // StyleEditor uses pure wheel for zoom. CardStudio used Ctrl+Wheel.
-        // Let's enable pure wheel if isPanMode is NOT set? Or always?
-        // User asked for "like style editor".
-        // StyleEditor:
-        // const handleWheel = (e: React.WheelEvent) => {
-        //    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        //    setViewScale(prev => Math.min(Math.max(0.5, prev + delta), 3));
-        // };
+        // Zoom on wheel
 
         // Let's modify to standard wheel zoom
         if (e.ctrlKey || true) { // Always zoom on wheel for now to match StyleEditor behavior pattern generally

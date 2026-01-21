@@ -14,6 +14,17 @@ export interface GoogleDriveConfig {
     clientId: string;
 }
 
+interface TokenResponse {
+    access_token: string;
+    error?: string;
+}
+
+interface FileMetadata {
+    name: string;
+    mimeType?: string;
+    parents?: string[];
+}
+
 export class GoogleDriveService {
     private tokenClient: google.accounts.oauth2.TokenClient | null = null;
     private accessToken: string | null = null;
@@ -64,7 +75,7 @@ export class GoogleDriveService {
                     this.tokenClient = google.accounts.oauth2.initTokenClient({
                         client_id: CLIENT_ID,
                         scope: SCOPES,
-                        callback: (tokenResponse: any) => {
+                        callback: (tokenResponse: TokenResponse) => {
                             this.accessToken = tokenResponse.access_token;
                         },
                     });
@@ -86,7 +97,8 @@ export class GoogleDriveService {
             if (!this.tokenClient) return reject('Token client not initialized');
 
             // Override callback to capture resolution
-            (this.tokenClient as any).callback = (resp: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (this.tokenClient as any).callback = (resp: TokenResponse) => {
                 if (resp.error) {
                     reject(resp);
                 } else {
@@ -114,7 +126,8 @@ export class GoogleDriveService {
         return new Promise((resolve, reject) => {
             if (!this.tokenClient) return reject('Token client not initialized');
 
-            (this.tokenClient as any).callback = (resp: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (this.tokenClient as any).callback = (resp: TokenResponse) => {
                 if (resp.error) {
                     reject(resp);
                 } else {
@@ -231,7 +244,7 @@ export class GoogleDriveService {
     /**
      * Helper to build multipart body for Drive API
      */
-    private createMultipartBody(metadata: any, file: Blob, isUpdate = false): FormData {
+    private createMultipartBody(metadata: FileMetadata, file: Blob, isUpdate = false): FormData {
         const form = new FormData();
         form.append('metadata', new Blob([JSON.stringify(isUpdate ? {} : metadata)], { type: 'application/json' }));
         form.append('file', file);

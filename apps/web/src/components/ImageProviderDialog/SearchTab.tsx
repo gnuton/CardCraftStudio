@@ -26,7 +26,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onImageSelect }) => {
             try {
                 const searchResults = await imageProviderService.searchImages(query, 1);
                 setResults(searchResults);
-            } catch (err) {
+            } catch {
                 setError('Failed to search images. Please try again.');
                 setResults([]);
             } finally {
@@ -54,7 +54,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onImageSelect }) => {
             };
 
             reader.readAsDataURL(blob);
-        } catch (err) {
+        } catch {
             setError('Failed to load image. Please try another.');
             setSelectedImage(null);
         }

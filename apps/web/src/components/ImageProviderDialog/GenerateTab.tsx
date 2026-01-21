@@ -37,7 +37,7 @@ export const GenerateTab: React.FC<GenerateTabProps> = ({ onImageSelect }) => {
         try {
             const imageBase64 = await imageProviderService.generateImage(prompt, style);
             setGeneratedImage(imageBase64);
-        } catch (err) {
+        } catch {
             setError('Failed to generate image. Please try again.');
         } finally {
             setLoading(false);
@@ -52,7 +52,7 @@ export const GenerateTab: React.FC<GenerateTabProps> = ({ onImageSelect }) => {
             if (ref) {
                 onImageSelect(ref);
             }
-        } catch (err) {
+        } catch {
             setError('Failed to process image');
         }
     };

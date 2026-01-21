@@ -30,17 +30,17 @@
 
   <!-- Title Area -->
   <rect x="30" y="30" width="240" height="45" rx="4" fill="#FFFFFF" fill-opacity="0.8" stroke="#B8860B" stroke-width="1" filter="url(#ornateShadow)"/>
-  <rect id="layout-title" x="40" y="35" width="220" height="35" fill="transparent" />
+  <rect data-ref="title" data-type="text" x="40" y="35" width="220" height="35" fill="transparent" />
 
   <!-- Image Area -->
   <rect x="25" y="85" width="250" height="180" rx="2" fill="#EAE0C0" stroke="#B8860B" stroke-width="2" filter="url(#ornateShadow)"/>
-  <rect id="layout-center-image" x="30" y="90" width="240" height="170" fill="transparent" />
+  <rect data-ref="art" data-type="image" x="30" y="90" width="240" height="170" fill="transparent" />
 
   <!-- Description Area -->
   <rect x="25" y="275" width="250" height="100" rx="4" fill="#FFFFFF" fill-opacity="0.6" stroke="#B8860B" stroke-width="1" filter="url(#ornateShadow)"/>
-  <rect id="layout-description" x="35" y="285" width="230" height="80" fill="transparent" />
+  <rect data-ref="description" data-type="multiline" x="35" y="285" width="230" height="80" fill="transparent" />
 
   <!-- Layout Circles -->
-  <circle id="layout-top-left" cx="25" cy="25" r="18" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="1"/>
-  <circle id="layout-bottom-right" cx="275" cy="395" r="18" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="1"/>
+  <circle data-ref="corner" data-type="text" cx="25" cy="25" r="18" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="1"/>
+  <circle data-ref="reversedCorner" data-type="text" cx="275" cy="395" r="18" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="1"/>
 </svg>

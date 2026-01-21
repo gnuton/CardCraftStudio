@@ -8,18 +8,13 @@ import { cn } from '../utils/cn';
 import { Card } from './Card';
 import { ResolvedImage } from './ResolvedImage';
 import type { CardConfig } from './CardStudio';
-import type { DeckStyle } from '../App';
+import type { DeckStyle } from '../types/deck';
 import { FontPicker } from './FontPicker';
 import type { CardElement } from '../types/element';
 import { createDefaultElement } from '../types/element';
 
-interface Template {
-    id: string;
-    name: string;
-    style: DeckStyle;
-    side?: 'front' | 'back' | 'both';
-    isCustom?: boolean;
-}
+import { TEMPLATES, type Template } from '../constants/templates';
+import { TemplatePickerModal } from './TemplatePickerModal';
 
 interface GlobalStyleEditorProps {
     deckStyle: DeckStyle;
@@ -29,384 +24,9 @@ interface GlobalStyleEditorProps {
     onBack: () => void;
 }
 
-
-
-
-const TEMPLATES: Template[] = [
-    {
-        id: 'simple',
-        name: 'Simple Clean',
-        side: 'front',
-        style: {
-            borderColor: '#e2e8f0',
-            borderWidth: 2,
-            backgroundColor: '#ffffff',
-            backgroundImage: 'templates/simple.svg',
-            globalFont: 'Outfit, sans-serif',
-            gameHp: '', gameMana: '', gameSuit: '',
-            svgFrameColor: '#e2e8f0',
-            svgCornerColor: '#e2e8f0',
-            svgStrokeWidth: 1,
-            elements: [
-                {
-                    id: 'title', type: 'text', side: 'front', name: 'Title',
-                    x: 0, y: -160, width: 240, height: 30, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'Outfit, sans-serif', fontSize: 20, color: '#1e293b', textAlign: 'center', defaultContent: 'Card Title'
-                },
-                {
-                    id: 'art', type: 'image', side: 'front', name: 'Illustration',
-                    x: 0, y: -25, width: 250, height: 190, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
-                    url: ''
-                },
-                {
-                    id: 'description', type: 'multiline', side: 'front', name: 'Description',
-                    x: 0, y: 140, width: 240, height: 70, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#475569', textAlign: 'left', defaultContent: 'Card description...'
-                },
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Game Title',
-                    x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-                    fontFamily: 'serif', fontSize: 24, color: '#1e293b', textAlign: 'center', defaultContent: 'CARDCRAFT'
-                }
-            ]
-        }
-    },
-    {
-        id: 'golden_era',
-        name: 'Golden Era',
-        side: 'front',
-        style: {
-            borderColor: '#B8860B',
-            borderWidth: 12,
-            backgroundColor: '#FDFCF0',
-            backgroundImage: 'templates/golden_era.svg',
-            globalFont: 'serif',
-            gameHp: 'LVL', gameMana: '1', gameSuit: '★',
-            svgFrameColor: '#B8860B',
-            svgCornerColor: '#FFD700',
-            svgStrokeWidth: 2,
-            elements: [
-                {
-                    id: 'title', type: 'text', side: 'front', name: 'Title',
-                    x: 0, y: -157.5, width: 220, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'Georgia, serif', fontSize: 22, color: '#78350f', textAlign: 'center', defaultContent: 'Ancient Wisdom'
-                },
-                {
-                    id: 'art', type: 'image', side: 'front', name: 'Illustration',
-                    x: 0, y: -35, width: 240, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
-                    url: ''
-                },
-                {
-                    id: 'description', type: 'multiline', side: 'front', name: 'Description',
-                    x: 0, y: 115, width: 230, height: 80, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'Georgia, serif', fontSize: 13, color: '#451a03', textAlign: 'left', defaultContent: 'Knowledge from a forgotten time.'
-                },
-                {
-                    id: 'corner', type: 'text', side: 'front', name: 'Cost',
-                    x: -125, y: -185, width: 35, height: 35, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'serif', fontSize: 16, color: '#000000', textAlign: 'center', defaultContent: '1'
-                },
-                {
-                    id: 'reversedCorner', type: 'text', side: 'front', name: 'Rarity',
-                    x: 125, y: 185, width: 35, height: 35, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'serif', fontSize: 16, color: '#000000', textAlign: 'center', defaultContent: 'R'
-                },
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Game Title',
-                    x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-                    fontFamily: 'serif', fontSize: 24, color: '#78350f', textAlign: 'center', defaultContent: 'ANCIENT'
-                }
-            ]
-        }
-    },
-    {
-        id: 'modern_blue',
-        name: 'Modern Tech',
-        side: 'front',
-        style: {
-            borderColor: '#0f172a',
-            borderWidth: 10,
-            backgroundColor: '#0f172a',
-            backgroundImage: 'templates/modern_blue.svg',
-            globalFont: 'sans-serif',
-            gameHp: 'SYNC',
-            gameMana: '50',
-            gameSuit: 'Ω',
-            svgFrameColor: '#38bdf8',
-            svgCornerColor: '#1e293b',
-            svgStrokeWidth: 2,
-            elements: [
-                {
-                    id: 'title', type: 'text', side: 'front', name: 'Title',
-                    x: 0, y: -155, width: 240, height: 40, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'Outfit, sans-serif', fontSize: 20, color: '#f8fafc', textAlign: 'center', defaultContent: 'CYBER UNIT X'
-                },
-                {
-                    id: 'art', type: 'image', side: 'front', name: 'Illustration',
-                    x: 0, y: -25, width: 260, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
-                    url: ''
-                },
-                {
-                    id: 'description', type: 'multiline', side: 'front', name: 'Description',
-                    x: 0, y: 130, width: 240, height: 80, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#94a3b8', textAlign: 'left', defaultContent: 'Protocol 7 initialized. Syncing data...'
-                },
-                {
-                    id: 'corner', type: 'text', side: 'front', name: 'ID',
-                    x: -125, y: -185, width: 30, height: 30, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'monospace', fontSize: 12, color: '#38bdf8', textAlign: 'center', defaultContent: '01'
-                },
-                {
-                    id: 'reversedCorner', type: 'text', side: 'front', name: 'Status',
-                    x: 125, y: 185, width: 35, height: 35, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'monospace', fontSize: 12, color: '#38bdf8', textAlign: 'center', defaultContent: 'OK'
-                },
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Game Title',
-                    x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-                    fontFamily: 'sans-serif', fontSize: 24, color: '#38bdf8', textAlign: 'center', defaultContent: 'NETWORK'
-                }
-            ]
-        }
-    },
-    {
-        id: 'eldritch_archive',
-        name: 'Eldritch Archive',
-        side: 'front',
-        style: {
-            borderColor: '#2e102e',
-            borderWidth: 12,
-            backgroundColor: '#1a0a1a',
-            backgroundImage: 'templates/eldritch_archive.svg',
-            globalFont: 'serif',
-            gameHp: 'OCCULT',
-            gameMana: 'Ω',
-            gameSuit: '♆',
-            svgFrameColor: '#6a1b9a',
-            svgCornerColor: '#ba68c8',
-            svgStrokeWidth: 3,
-            elements: [
-                {
-                    id: 'title', type: 'text', side: 'front', name: 'Title',
-                    x: 0, y: -162.5, width: 230, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'serif', fontSize: 20, color: '#e1bee7', textAlign: 'center', defaultContent: 'The Unspeakable'
-                },
-                {
-                    id: 'art', type: 'image', side: 'front', name: 'Illustration',
-                    x: 0, y: -35, width: 240, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
-                    url: ''
-                },
-                {
-                    id: 'description', type: 'multiline', side: 'front', name: 'Description',
-                    x: 0, y: 132.5, width: 240, height: 75, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'serif', fontSize: 13, color: '#ce93d8', textAlign: 'left', defaultContent: 'What lies beyond the veil is not meant for mortal eyes.'
-                },
-                {
-                    id: 'corner', type: 'text', side: 'front', name: 'Type',
-                    x: -25, y: 77.5, width: 200, height: 25, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'serif', fontSize: 12, color: '#ffffff', textAlign: 'left', defaultContent: 'Legendary Horror'
-                },
-                {
-                    id: 'reversedCorner', type: 'text', side: 'front', name: 'Seal',
-                    x: 115, y: 175, width: 40, height: 40, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'serif', fontSize: 18, color: '#ba68c8', textAlign: 'center', defaultContent: '☥'
-                },
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Game Title',
-                    x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-                    fontFamily: 'serif', fontSize: 24, color: '#ba68c8', textAlign: 'center', defaultContent: 'ELDRIITCH'
-                }
-            ]
-        }
-    },
-    {
-        id: 'neon_data',
-        name: 'Neon Cyber',
-        side: 'front',
-        style: {
-            borderColor: '#050505',
-            borderWidth: 10,
-            backgroundColor: '#050505',
-            backgroundImage: 'templates/neon_data.svg',
-            globalFont: 'sans-serif',
-            gameHp: 'NET',
-            gameMana: 'PWR',
-            gameSuit: '↯',
-            svgFrameColor: '#00f0ff',
-            svgCornerColor: '#7000ff',
-            svgStrokeWidth: 2,
-            elements: [
-                {
-                    id: 'title', type: 'text', side: 'front', name: 'Title',
-                    x: -15, y: -170, width: 210, height: 30, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'monospace', fontSize: 18, color: '#00f0ff', textAlign: 'left', defaultContent: 'DATA_GHOST'
-                },
-                {
-                    id: 'art', type: 'image', side: 'front', name: 'Illustration',
-                    x: 0, y: -35, width: 260, height: 180, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
-                    url: ''
-                },
-                {
-                    id: 'description', type: 'multiline', side: 'front', name: 'Description',
-                    x: 0, y: 130, width: 250, height: 90, rotate: 0, scale: 1, zIndex: 10, opacity: 0.9,
-                    fontFamily: 'monospace', fontSize: 12, color: '#00f0ff', textAlign: 'left', defaultContent: 'Buffer overflow detected. System corrupted.'
-                },
-                {
-                    id: 'corner', type: 'text', side: 'front', name: 'ID',
-                    x: 120, y: -175, width: 30, height: 30, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'monospace', fontSize: 14, color: '#00f0ff', textAlign: 'center', defaultContent: 'X'
-                },
-                {
-                    id: 'reversedCorner', type: 'text', side: 'front', name: 'Core',
-                    x: 127.5, y: 177.5, width: 25, height: 35, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'monospace', fontSize: 14, color: '#7000ff', textAlign: 'center', defaultContent: 'A'
-                },
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Game Title',
-                    x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-                    fontFamily: 'monospace', fontSize: 24, color: '#7000ff', textAlign: 'center', defaultContent: 'NEON'
-                }
-            ]
-        }
-    },
-    {
-        id: 'pocket_monster',
-        name: 'Monster Card',
-        side: 'front',
-        style: {
-            borderColor: '#f59e0b',
-            borderWidth: 12,
-            backgroundColor: '#fbbf24',
-            backgroundImage: 'templates/pocket_monster.svg',
-            globalFont: 'sans-serif',
-            gameHp: '60',
-            gameMana: 'HP',
-            gameSuit: '⚡',
-            svgFrameColor: '#f59e0b',
-            svgCornerColor: '#ef4444',
-            svgStrokeWidth: 2,
-            elements: [
-                {
-                    id: 'title', type: 'text', side: 'front', name: 'Title',
-                    x: -30, y: -172.5, width: 180, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'sans-serif', fontSize: 20, color: '#1e293b', textAlign: 'left', defaultContent: 'Pikabolt'
-                },
-                {
-                    id: 'art', type: 'image', side: 'front', name: 'Illustration',
-                    x: 0, y: -50, width: 260, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
-                    url: ''
-                },
-                {
-                    id: 'description', type: 'multiline', side: 'front', name: 'Description',
-                    x: 0, y: 122.5, width: 250, height: 95, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
-                    fontFamily: 'sans-serif', fontSize: 13, color: '#1e293b', textAlign: 'left', defaultContent: 'Thunder Shock: Flip a coin.'
-                },
-                {
-                    id: 'corner', type: 'text', side: 'front', name: 'HP',
-                    x: 110, y: -173, width: 30, height: 30, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'sans-serif', fontSize: 14, color: '#ffffff', textAlign: 'center', defaultContent: '60'
-                },
-                {
-                    id: 'reversedCorner', type: 'text', side: 'front', name: 'Footer',
-                    x: -100, y: 192.5, width: 60, height: 15, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
-                    fontFamily: 'sans-serif', fontSize: 10, color: '#000000', textAlign: 'left', defaultContent: 'Basic Monster'
-                },
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Game Title',
-                    x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-                    fontFamily: 'sans-serif', fontSize: 24, color: '#ef4444', textAlign: 'center', defaultContent: 'MONSTER'
-                }
-            ]
-        }
-    },
-    {
-        id: 'empty',
-        name: 'Empty Canvas',
-        side: 'both',
-        style: {
-            borderColor: '#e2e8f0',
-            borderWidth: 1,
-            backgroundColor: '#ffffff',
-            backgroundImage: 'templates/empty.svg',
-            globalFont: 'sans-serif',
-            gameHp: '',
-            gameMana: '',
-            gameSuit: '',
-            svgFrameColor: '#e2e8f0',
-            svgCornerColor: '#e2e8f0',
-            svgStrokeWidth: 1,
-            elements: []
-        }
-    },
-    // --- Back Templates ---
-    {
-        id: 'royal_back',
-        name: 'Royal Back',
-        side: 'back',
-        style: {
-            borderColor: '#4338ca',
-            borderWidth: 12,
-            backgroundColor: '#1e1b4b',
-            cardBackBackgroundColor: '#1e1b4b',
-            cardBackImage: null,
-            elements: [
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Game Title',
-                    x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-                    fontFamily: 'serif', fontSize: 24, color: '#e0e7ff', textAlign: 'center', defaultContent: 'ROYAL DECK'
-                }
-            ]
-        } as DeckStyle
-    },
-    {
-        id: 'mystic_back',
-        name: 'Mystic Seal',
-        side: 'back',
-        style: {
-            borderColor: '#1a1b1e',
-            borderWidth: 10,
-            backgroundColor: '#2c2e33',
-            cardBackBackgroundColor: '#2c2e33',
-            cardBackImage: null,
-            elements: [
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Game Title',
-                    x: 0, y: -100, width: 250, height: 40, rotate: 0, scale: 1.2, zIndex: 30, opacity: 1,
-                    fontFamily: 'serif', fontSize: 28, color: '#d0ebff', textAlign: 'center', defaultContent: 'MYSTERY'
-                },
-                {
-                    id: 'seal', type: 'text', side: 'back', name: 'Seal',
-                    x: 0, y: 50, width: 100, height: 100, rotate: 0, scale: 2, zIndex: 30, opacity: 0.5,
-                    fontFamily: 'serif', fontSize: 48, color: '#d0ebff', textAlign: 'center', defaultContent: '✧'
-                }
-            ]
-        } as DeckStyle
-    },
-    {
-        id: 'cyber_back',
-        name: 'Data Grid',
-        side: 'back',
-        style: {
-            borderColor: '#0f172a',
-            borderWidth: 8,
-            backgroundColor: '#020617',
-            cardBackBackgroundColor: '#020617',
-            cardBackImage: null,
-            elements: [
-                {
-                    id: 'back_title', type: 'text', side: 'back', name: 'Header',
-                    x: 0, y: 0, width: 250, height: 40, rotate: 0, scale: 1.5, zIndex: 30, opacity: 1,
-                    fontFamily: 'monospace', fontSize: 24, color: '#38bdf8', textAlign: 'center', defaultContent: 'SYSTEM.BACK'
-                }
-            ]
-        } as DeckStyle
-    }
-];
-
-
-
 export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack }: GlobalStyleEditorProps) => {
     const [currentStyle, setCurrentStyle] = useState<DeckStyle>(deckStyle);
+    const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
     const [isFontPickerOpen, setIsFontPickerOpen] = useState(false);
     const [selectedElement, setSelectedElement] = useState<string | null>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -583,6 +203,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const applyTemplate = async (template: Template) => {
         const templateStyle = template.style;
         const finalStyle: DeckStyle = JSON.parse(JSON.stringify(currentStyle)); // Start with current
+        finalStyle.id = template.id;
 
         if (template.side === 'back') {
             // Only update back related properties
@@ -631,6 +252,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                 const layout = await templateService.parseSvgLayout(svgUrl);
                 if (layout && layout.elements && finalStyle.elements) {
                     // Update elements based on SVG layout matches
+                    // Update existing elements based on SVG layout matches
                     finalStyle.elements = finalStyle.elements.map(el => {
                         // Match element by ID (e.g. 'title', 'description', 'art')
                         const layoutEl = layout.elements?.[el.id];
@@ -651,6 +273,35 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                             };
                         }
                         return el;
+                    });
+
+                    // Create NEW elements from SVG if they don't exist
+                    const matchedIds = new Set(finalStyle.elements.map(e => e.id));
+                    Object.entries(layout.elements).forEach(([id, layoutEl]) => {
+                        if (!matchedIds.has(id)) {
+                            // Use explicit type or fallback to 'text' if undefined
+                            const type = layoutEl.elementType || 'text';
+                            const newEl = createDefaultElement(type, 'front');
+
+                            // Override defaults with SVG layout
+                            const elWithLayout = {
+                                ...newEl,
+                                id: id,
+                                name: id.charAt(0).toUpperCase() + id.slice(1), // Capitalize ID for name
+                                x: Math.round(layoutEl.offsetX),
+                                y: Math.round(layoutEl.offsetY),
+                                width: Math.round(layoutEl.width),
+                                height: Math.round(layoutEl.height),
+                                rotate: layoutEl.rotation || 0,
+                                scale: layoutEl.scale ?? 1,
+                                opacity: layoutEl.opacity ?? 1,
+                                ...(layoutEl.fill ? { color: layoutEl.fill } : {}),
+                                ...(layoutEl.fontFamily ? { fontFamily: layoutEl.fontFamily } : {}),
+                                ...(layoutEl.fontSize ? { fontSize: layoutEl.fontSize } : {})
+                            };
+
+                            finalStyle.elements!.push(elWithLayout);
+                        }
                     });
                 }
             } catch (e) {
@@ -1025,74 +676,44 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                             </button>
 
                             {expandedGroups.templates && (
-                                <div className="space-y-4 pl-0">
-                                    <div className="mb-4 p-3 rounded-xl border-2 border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm relative overflow-hidden group">
-                                        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                                        <div className="flex flex-col gap-2 pl-2">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
-                                                    <Settings className="w-3 h-3" />
-                                                    Current Style
+                                <div className="space-y-3 pl-0">
+                                    <button
+                                        onClick={() => setIsTemplatePickerOpen(true)}
+                                        className="w-full p-3 rounded-xl border border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm flex items-center justify-between group hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all text-left"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-10 h-10 rounded-lg border border-border overflow-hidden bg-background relative flex-shrink-0">
+                                                {((isFlipped && currentStyle.cardBackImage) || (!isFlipped && currentStyle.backgroundImage)) ? (
+                                                    <img
+                                                        src={(isFlipped ? currentStyle.cardBackImage : currentStyle.backgroundImage) || ''}
+                                                        className="w-full h-full object-cover"
+                                                        alt="Template Preview"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                                                        <Layout className="w-4 h-4 opacity-50" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block mb-0.5">
+                                                    Current Template
                                                 </span>
-                                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-200/50 text-indigo-700 dark:bg-indigo-800/50 dark:text-indigo-300">
-                                                    Local Setting
+                                                <span className="text-sm font-bold block text-foreground truncate">
+                                                    {[...TEMPLATES, ...customTemplates].find(t => t.id === currentStyle.id)?.name || 'Custom / Unsaved'}
                                                 </span>
                                             </div>
-
-                                            <p className="text-[10px] text-muted-foreground leading-tight">
-                                                Changes are applied only to this deck. To reuse this style later, save it as a template.
-                                            </p>
-
-                                            <div className="flex gap-1 mt-1">
-                                                <div className="w-3 h-3 rounded-full border border-border/50 shadow-sm" style={{ backgroundColor: currentStyle.backgroundColor }}></div>
-                                                <div className="w-3 h-3 rounded-full border border-border/50 shadow-sm" style={{ backgroundColor: currentStyle.borderColor }}></div>
-                                            </div>
-
-                                            <button
-                                                onClick={handleSave}
-                                                className="mt-2 w-full py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm hover:shadow"
-                                            >
-                                                <Plus className="w-3 h-3" />
-                                                Save as Template
-                                            </button>
                                         </div>
-                                    </div>
+                                        <Settings className="w-4 h-4 text-indigo-500 group-hover:rotate-90 transition-transform flex-shrink-0" />
+                                    </button>
 
-                                    <div className="h-px bg-border/50 my-2 mx-2" />
-
-                                    <div className="space-y-3 pl-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-1">
-                                        {[...TEMPLATES, ...customTemplates]
-                                            .filter(t => !t.side || t.side === 'both' || (isFlipped ? t.side === 'back' : t.side === 'front'))
-                                            .map(template => (
-                                                <button
-                                                    key={template.id}
-                                                    onClick={() => applyTemplate(template)}
-                                                    className={cn(
-                                                        "w-full p-3 rounded-xl border text-left transition-all hover:shadow-md group relative h-20 flex flex-col justify-between overflow-hidden flex-shrink-0",
-                                                        (isFlipped ? currentStyle.cardBackImage === template.style.cardBackImage && currentStyle.cardBackBackgroundColor === template.style.cardBackBackgroundColor
-                                                            : currentStyle.backgroundImage === template.style.backgroundImage && currentStyle.backgroundColor === template.style.backgroundColor)
-                                                            ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
-                                                            : "border-border bg-muted/30"
-                                                    )}
-                                                >
-                                                    {((isFlipped && template.style.cardBackImage) || (!isFlipped && template.style.backgroundImage)) && (
-                                                        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
-                                                            <img src={(isFlipped ? template.style.cardBackImage : template.style.backgroundImage) || ''} className="w-full h-full object-cover" />
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-1.5 relative z-10">
-                                                        <span className="text-xs font-bold block truncate">{template.name}</span>
-                                                        {template.isCustom && (
-                                                            <Settings className="w-2.5 h-2.5 text-indigo-500 flex-shrink-0" />
-                                                        )}
-                                                    </div>
-                                                    <div className="flex gap-1 relative z-10">
-                                                        <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: isFlipped ? template.style.cardBackBackgroundColor : template.style.backgroundColor }}></div>
-                                                        <div className="w-2.5 h-2.5 rounded-full border border-border" style={{ backgroundColor: template.style.borderColor }}></div>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                    </div>
+                                    <button
+                                        onClick={handleSave}
+                                        className="w-full py-2 px-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                        Save Layout as New Template
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -1544,6 +1165,14 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                     )}
                 </AnimatePresence>
             </div>
+            <TemplatePickerModal
+                isOpen={isTemplatePickerOpen}
+                onClose={() => setIsTemplatePickerOpen(false)}
+                onSelect={applyTemplate}
+                currentTemplateId={currentStyle.id}
+                customTemplates={customTemplates}
+                isFlipped={isFlipped}
+            />
             <ImageProviderDialog
                 isOpen={isImageDialogOpen}
                 onClose={() => setIsImageDialogOpen(false)}
