@@ -167,6 +167,30 @@ describe('GlobalStyleEditor', () => {
             ])
         }));
     });
+
+    it('renders template preview when background image is set', async () => {
+        const styleWithBg = {
+            ...mockDeckStyle,
+            backgroundImage: 'test-bg.jpg'
+        };
+
+        render(
+            <GlobalStyleEditor
+                deckStyle={styleWithBg}
+                sampleCard={mockSampleCard as any}
+                onUpdateStyle={() => { }}
+                onBack={() => { }}
+            />
+        );
+
+        // Expand Templates group if needed (it is expanded by default in the component)
+
+        // Check for Template Preview image
+        // Since ResolvedImage uses useEffect, we need to wait for it
+        const previewImg = await screen.findByAltText('Template Preview');
+        expect(previewImg).toBeInTheDocument();
+        expect(previewImg).toHaveAttribute('src', 'test-bg.jpg');
+    });
 });
 
 // Need to import vi for the last test

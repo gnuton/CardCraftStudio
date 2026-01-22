@@ -684,7 +684,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div className="w-10 h-10 rounded-lg border border-border overflow-hidden bg-background relative flex-shrink-0">
                                                 {((isFlipped && currentStyle.cardBackImage) || (!isFlipped && currentStyle.backgroundImage)) ? (
-                                                    <img
+                                                    <ResolvedImage
                                                         src={(isFlipped ? currentStyle.cardBackImage : currentStyle.backgroundImage) || ''}
                                                         className="w-full h-full object-cover"
                                                         alt="Template Preview"

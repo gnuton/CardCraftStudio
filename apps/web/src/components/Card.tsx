@@ -90,13 +90,13 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             }
         }, [isInteractive, onSelectElement]);
 
-        const resolveBgImage = (url: string | null | undefined) => {
-            if (!url) return undefined;
+        const getBgImageSrc = (url: string | null | undefined) => {
+            if (!url) return null;
             if (url.startsWith('templates/') || url.startsWith('/templates/')) {
                 const cleanPath = url.startsWith('/') ? url.slice(1) : url;
-                return `url(${import.meta.env.BASE_URL}${cleanPath})`;
+                return `${import.meta.env.BASE_URL}${cleanPath}`;
             }
-            return `url(${url})`;
+            return url;
         };
 
         const renderElementContent = (element: CardElement) => {
@@ -300,13 +300,19 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                     borderWidth: `${borderWidth ?? deckStyle?.borderWidth ?? 12}px`,
                     borderStyle: 'solid',
                     backgroundColor: deckStyle?.backgroundColor || '#ffffff',
-                    backgroundImage: resolveBgImage(deckStyle?.backgroundImage),
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
                     fontFamily: deckStyle?.globalFont || 'Inter, sans-serif',
                     borderRadius: '18px',
+                    overflow: 'hidden',
                 }}
             >
+                {/* Background Image Layer */}
+                {deckStyle?.backgroundImage && (
+                    <ResolvedImage
+                        src={getBgImageSrc(deckStyle.backgroundImage)}
+                        alt="Background"
+                        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    />
+                )}
                 {/* Render FRONT elements */}
                 {elements.filter((e: CardElement) => e.side === 'front').map(renderTransformableElement)}
             </div>
@@ -385,18 +391,23 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         }}
                     >
                         <div
-                            className={cn("w-full h-full bg-white rounded-[18px] shadow-sm relative", isInteractive ? "overflow-visible" : "overflow-hidden")}
+                            className={cn("w-full h-full bg-white rounded-[18px] shadow-sm relative overflow-hidden", isInteractive ? "overflow-visible" : "overflow-hidden")}
                             style={{
                                 backgroundColor: deckStyle?.cardBackBackgroundColor || '#312e81',
-                                backgroundImage: deckStyle?.cardBackImage ? resolveBgImage(deckStyle.cardBackImage) : undefined,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
                                 borderColor: borderColor || deckStyle?.borderColor || '#000000',
                                 borderWidth: `${borderWidth ?? deckStyle?.borderWidth ?? 12}px`,
                                 borderStyle: 'solid',
                                 borderRadius: '18px'
                             }}
                         >
+                            {/* Background Image Layer */}
+                            {deckStyle?.cardBackImage && (
+                                <ResolvedImage
+                                    src={getBgImageSrc(deckStyle.cardBackImage)}
+                                    alt="Background"
+                                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                                />
+                            )}
                             {/* Render BACK elements */}
                             {elements.filter((e: CardElement) => e.side === 'back').map(renderTransformableElement)}
                         </div>
