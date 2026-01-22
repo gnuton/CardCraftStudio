@@ -17,4 +17,4 @@ README.md
 tests
 *.test.ts
 vitest.config.ts
-tsconfig.json
+
