@@ -1,40 +1,6 @@
 provider "google" {
-  project = "cardcraft-studio-1769044078"
+  project = var.project_id
   region  = var.region
-}
-
-# ...
-
-resource "google_cloud_run_v2_service" "backend" {
-  # ...
-  template {
-    containers {
-      # ...
-      env {
-        name  = "GOOGLE_CLOUD_PROJECT"
-        value = "cardcraft-studio-1769044078"
-      }
-    }
-  }
-}
-
-# IAM
-resource "google_project_iam_member" "github_actions_run" {
-  project = "cardcraft-studio-1769044078"
-  role    = "roles/run.admin"
-  member  = "serviceAccount:github-actions@cardcraft-studio-1769044078.iam.gserviceaccount.com"
-}
-
-resource "google_project_iam_member" "github_actions_registry" {
-  project = "cardcraft-studio-1769044078"
-  role    = "roles/artifactregistry.writer"
-  member  = "serviceAccount:github-actions@cardcraft-studio-1769044078.iam.gserviceaccount.com"
-}
-
-resource "google_project_iam_member" "github_actions_sa_user" {
-  project = "cardcraft-studio-1769044078"
-  role    = "roles/iam.serviceAccountUser"
-  member  = "serviceAccount:github-actions@cardcraft-studio-1769044078.iam.gserviceaccount.com"
 }
 
 # 1. Enable APIs
@@ -62,8 +28,6 @@ resource "google_artifact_registry_repository" "repo" {
 }
 
 # 3. Cloud Run Service 
-# We define it here, but the image will be provided by the CI/CD pipeline
-# This ensures environment variables and infrastructure settings are managed as code.
 resource "google_cloud_run_v2_service" "backend" {
   name     = var.service_name
   location = var.region
@@ -84,17 +48,11 @@ resource "google_cloud_run_v2_service" "backend" {
         }
       }
 
-      # Environment Variables (Managed here!)
+      # Environment Variables
       env {
         name  = "GOOGLE_CLOUD_PROJECT"
         value = var.project_id
       }
-      
-      # Sensitive variables should be in Secret Manager in production, 
-      # but for now we can pass them from GitHub Secrets to Cloud Run directly 
-      # or managed them as 'secret' env vars if we had Secret Manager set up.
-      # For simplicity in this step, we will expect the GH Action to set env vars 
-      # during deployment or we can define placeholders here.
     }
     
     scaling {
@@ -124,6 +82,7 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
+
 # 5. IAM - Permissions for the GitHub Actions Service Account
 resource "google_project_iam_member" "github_actions_run" {
   project = var.project_id
