@@ -1,4 +1,4 @@
-name: Deploy Velvet App to GitHub Pages
+name: Deploy Frontend - Velvet App to GitHub Pages
 
 on:
   push:
