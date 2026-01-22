@@ -1,3 +1,4 @@
+console.log('Starting application...');
 import { createApp } from './app';
 import dotenv from 'dotenv';
 

@@ -1,6 +1,40 @@
 provider "google" {
-  project = var.project_id
+  project = "cardcraft-studio-1769044078"
   region  = var.region
+}
+
+# ...
+
+resource "google_cloud_run_v2_service" "backend" {
+  # ...
+  template {
+    containers {
+      # ...
+      env {
+        name  = "GOOGLE_CLOUD_PROJECT"
+        value = "cardcraft-studio-1769044078"
+      }
+    }
+  }
+}
+
+# IAM
+resource "google_project_iam_member" "github_actions_run" {
+  project = "cardcraft-studio-1769044078"
+  role    = "roles/run.admin"
+  member  = "serviceAccount:github-actions@cardcraft-studio-1769044078.iam.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "github_actions_registry" {
+  project = "cardcraft-studio-1769044078"
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:github-actions@cardcraft-studio-1769044078.iam.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "github_actions_sa_user" {
+  project = "cardcraft-studio-1769044078"
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:github-actions@cardcraft-studio-1769044078.iam.gserviceaccount.com"
 }
 
 # 1. Enable APIs
