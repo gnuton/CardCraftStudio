@@ -31,6 +31,8 @@ cd apps/backend
 # Build the image
 docker build -t cardcraft-backend .
 
+
+
 # Test locally
 docker run -p 8080:8080 \
   -e GOOGLE_API_KEY=your_key \

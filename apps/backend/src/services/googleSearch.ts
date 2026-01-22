@@ -35,6 +35,12 @@ class GoogleSearchService {
         url.searchParams.append('num', pageSize.toString());
         url.searchParams.append('start', start.toString());
 
+        // Filter for copyleft/Creative Commons images:
+        // cc_publicdomain: Public Domain
+        // cc_attribute: Requires Attribution
+        // cc_sharealike: Share Alike
+        url.searchParams.append('rights', 'cc_publicdomain,cc_attribute,cc_sharealike');
+
         const response = await fetch(url.toString());
 
         if (!response.ok) {
