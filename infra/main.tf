@@ -78,11 +78,11 @@ resource "google_cloud_run_v2_service" "backend" {
     percent = 100
   }
 
-  lifecycle {
-    ignore_changes = [
-      template[0].containers[0].image, # Allow GH Action to update image without TF reverting it
-    ]
-  }
+  # lifecycle {
+  #   ignore_changes = [
+  #     template[0].containers[0].image, # Allow GH Action to update image without TF reverting it
+  #   ]
+  # }
 
   depends_on = [google_project_service.apis]
 }
