@@ -87,7 +87,7 @@ jobs:
             --image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/cardcraft/backend:${{ github.sha }} \
             --region=${{ env.REGION }} \
             --platform=managed \
-            --set-env-vars="GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GOOGLE_CUSTOM_SEARCH_CX=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }},GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }}" \
+            --set-env-vars="GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GOOGLE_CUSTOM_SEARCH_CX=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }},GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},ALLOWED_ORIGINS=https://${{ github.repository_owner }}.github.io" \
             --timeout=300s \
             --port=8080 \
             --allow-unauthenticated

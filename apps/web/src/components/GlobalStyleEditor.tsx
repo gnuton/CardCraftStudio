@@ -77,7 +77,13 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const hasChanges = JSON.stringify(deckStyle) !== JSON.stringify(currentStyle);
 
     const fetchCustomTemplates = async () => {
-        if (!driveService.isSignedIn) return;
+        if (!driveService.isSignedIn) {
+            try {
+                await driveService.trySilentSignIn();
+            } catch {
+                return;
+            }
+        }
 
         try {
             const files = await driveService.listFiles();
@@ -170,7 +176,13 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
             const fileName = `${newTemplateName.trim().replace(/\s+/g, '_').toLowerCase()}.svg`;
 
-            // 2. Sync to GDrive if signed in
+            // 2. Sync to GDrive if signed in (or can sign in)
+            try {
+                await driveService.ensureSignedIn();
+            } catch (e) {
+                console.warn("Auth failed during save", e);
+            }
+
             if (driveService.isSignedIn) {
                 const fileId = await driveService.saveBlob(fileName, new Blob([svgContent], { type: 'image/svg+xml' }));
 

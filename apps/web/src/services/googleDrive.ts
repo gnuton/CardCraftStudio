@@ -16,6 +16,7 @@ export interface GoogleDriveConfig {
 
 interface TokenResponse {
     access_token: string;
+    expires_in: string; // Seconds until expiration (Google API returns string)
     error?: string;
 }
 
@@ -106,6 +107,11 @@ export class GoogleDriveService {
                     // Store token only if present
                     if (this.accessToken) {
                         localStorage.setItem('gdrive_access_token', this.accessToken);
+
+                        // Calculate validation timestamp
+                        const expiresInSeconds = Number(resp.expires_in) || 3599;
+                        const expirationTime = Date.now() + (expiresInSeconds * 1000);
+                        localStorage.setItem('gdrive_token_expires_at', expirationTime.toString());
                     }
                     // IMPORTANT: Pass the token to gapi.client
                     gapi.client.setToken({ access_token: resp.access_token });
@@ -135,6 +141,10 @@ export class GoogleDriveService {
                     // Store token only if present
                     if (this.accessToken) {
                         localStorage.setItem('gdrive_access_token', this.accessToken);
+                        // Calculate validation timestamp
+                        const expiresInSeconds = Number(resp.expires_in) || 3599;
+                        const expirationTime = Date.now() + (expiresInSeconds * 1000);
+                        localStorage.setItem('gdrive_token_expires_at', expirationTime.toString());
                     }
                     gapi.client.setToken({ access_token: resp.access_token });
                     resolve(resp.access_token);
@@ -152,13 +162,23 @@ export class GoogleDriveService {
     async ensureSignedIn(): Promise<string> {
         // Try to reuse token from previous session
         const stored = localStorage.getItem('gdrive_access_token');
-        if (stored) {
+        const storedExpiresAt = localStorage.getItem('gdrive_token_expires_at');
+
+        // validate expiration
+        const now = Date.now();
+        const isValid = stored && storedExpiresAt && (now < Number(storedExpiresAt) - 60000); // 1 minute safety buffer
+
+        if (isValid) {
             this.accessToken = stored;
             // Only set token if we have a valid string
             if (stored) {
                 gapi.client.setToken({ access_token: stored });
             }
-            return stored;
+            return stored!;
+        } else {
+            // Token expired or invalid, clear it
+            localStorage.removeItem('gdrive_access_token');
+            localStorage.removeItem('gdrive_token_expires_at');
         }
         try {
             return await this.trySilentSignIn();
@@ -168,6 +188,14 @@ export class GoogleDriveService {
         }
     }
     get isSignedIn(): boolean {
+        if (!this.accessToken) return false;
+
+        // check expiration
+        const storedExpiresAt = localStorage.getItem('gdrive_token_expires_at');
+        if (storedExpiresAt) {
+            return Date.now() < Number(storedExpiresAt) - 60000;
+        }
+
         return !!this.accessToken;
     }
 
@@ -365,6 +393,10 @@ export class GoogleDriveService {
             errorMessage += " (Check API scopes and if Drive API is enabled in Google Cloud Console)";
         } else if (response.status === 401) {
             errorMessage += " (Authentication expired, please reload)";
+            // Clear invalid token
+            localStorage.removeItem('gdrive_access_token');
+            localStorage.removeItem('gdrive_token_expires_at');
+            this.accessToken = null;
         }
 
         throw new Error(errorMessage);

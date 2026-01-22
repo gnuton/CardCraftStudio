@@ -175,6 +175,7 @@ Set these in Cloud Run:
 | `GOOGLE_API_KEY` | Google Cloud API Key | Yes |
 | `GOOGLE_CUSTOM_SEARCH_CX` | Custom Search Engine ID | Yes |
 | `GOOGLE_CLOUD_PROJECT` | GCP Project ID | Yes |
+| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins (e.g. `https://username.github.io`) | No (Defaults to localhost) |
 | `PORT` | Server port (auto-set by Cloud Run) | No |
 
 ## Cost Optimization

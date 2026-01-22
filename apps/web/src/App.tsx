@@ -196,10 +196,9 @@ function App() {
   const handleSync = async (resumeDecks?: Deck[], silent = false) => {
     setSyncError(null);
     try {
-      if (!driveService.isSignedIn) {
-        await driveService.signIn();
-        setIsAuthenticated(true);
-      }
+      // Ensure valid session (refreshes token if needed)
+      await driveService.ensureSignedIn();
+      setIsAuthenticated(true);
 
       setIsSyncing(true);
 
