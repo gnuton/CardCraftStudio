@@ -88,6 +88,7 @@ jobs:
             --region=${{ env.REGION }} \
             --platform=managed \
             --set-env-vars="GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GOOGLE_CUSTOM_SEARCH_CX=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }},GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }}" \
+            --timeout=300s \
             --port=8080
 
       - name: Get Service URL
