@@ -41,7 +41,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: infra
-        run: terraform apply -auto-approve -var="project_id=${{ env.PROJECT_ID }}"
+        run: terraform apply -auto-approve -var="project_id=${{ env.PROJECT_ID }}" -var="google_api_key=${{ secrets.GOOGLE_API_KEY }}" -var="google_custom_search_cx=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }}"
 
   deploy:
     needs: provision

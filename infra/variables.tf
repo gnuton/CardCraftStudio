@@ -15,6 +15,18 @@ variable "service_name" {
   default     = "cardcraft-backend"
 }
 
+variable "google_api_key" {
+  description = "Google API Key for Custom Search"
+  type        = string
+  sensitive   = true
+}
+
+variable "google_custom_search_cx" {
+  description = "Google Custom Search Engine ID"
+  type        = string
+  sensitive   = true
+}
+
 variable "repository_name" {
   description = "The name of the Artifact Registry repository"
   type        = string

@@ -34,6 +34,8 @@ resource "google_cloud_run_v2_service" "backend" {
   ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
+    timeout = "300s"
+    
     containers {
       image = "us-docker.pkg.dev/cloudrun/container/hello" # Placeholder, will be updated by GH Action
       
@@ -52,6 +54,16 @@ resource "google_cloud_run_v2_service" "backend" {
       env {
         name  = "GOOGLE_CLOUD_PROJECT"
         value = var.project_id
+      }
+      
+      env {
+        name  = "GOOGLE_API_KEY"
+        value = var.google_api_key
+      }
+
+      env {
+        name  = "GOOGLE_CUSTOM_SEARCH_CX"
+        value = var.google_custom_search_cx
       }
     }
     
