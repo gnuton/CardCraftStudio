@@ -22,12 +22,11 @@ describe('GoogleSearchService', () => {
                 items: [
                     {
                         link: 'http://example.com/image.jpg',
-                        image: { thumbnailLink: 'http://example.com/thumb.jpg' },
+                        image: {
+                            thumbnailLink: 'http://example.com/thumb.jpg',
+                            contextLink: 'http://example.com'
+                        },
                         title: 'Test Image',
-                        image: { contextLink: 'http://example.com' } // Context link inside image object or root? Checking Google API specs... 
-                        // Actually: root has `link`, image object has `thumbnailLink`. 
-                        // `title` is at root. 
-                        // `image` object has `contextLink` usually.
                     }
                 ]
             }),
