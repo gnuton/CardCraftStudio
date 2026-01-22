@@ -44,6 +44,8 @@ class GoogleSearchService {
         const response = await fetch(url.toString());
 
         if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`Google Search API Error Body: ${errorBody}`);
             throw new Error(`Google Search API error: ${response.status} ${response.statusText}`);
         }
 
