@@ -89,7 +89,8 @@ jobs:
             --platform=managed \
             --set-env-vars="GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GOOGLE_CUSTOM_SEARCH_CX=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }},GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }}" \
             --timeout=300s \
-            --port=8080
+            --port=8080 \
+            --allow-unauthenticated
 
       - name: Get Service URL
         id: get-url

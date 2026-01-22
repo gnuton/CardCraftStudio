@@ -89,6 +89,7 @@ resource "google_cloud_run_v2_service" "backend" {
 
 # 4. IAM - Allow Unauthenticated Access
 resource "google_cloud_run_v2_service_iam_member" "public_access" {
+  project  = google_cloud_run_v2_service.backend.project
   location = google_cloud_run_v2_service.backend.location
   name     = google_cloud_run_v2_service.backend.name
   role     = "roles/run.invoker"
