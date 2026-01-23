@@ -1,4 +1,5 @@
 import request from 'supertest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import express from 'express';
 import { createApp } from '../src/app';
 
@@ -24,7 +25,7 @@ describe('Premium Middleware', () => {
             .send({ prompt: 'test dragon' });
 
         expect(response.status).toBe(403);
-        expect(response.body).toEqual({ error: 'Premium subscription required' });
+        expect(response.body).toMatchObject({ detail: expect.stringContaining('premium') });
     });
 
     it('should allow generate with valid premium header', async () => {

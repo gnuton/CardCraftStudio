@@ -1,405 +1,258 @@
-/// <reference types="gapi" />
-/// <reference types="gapi.client.drive" />
 /// <reference types="google.accounts" />
 
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-// NOTE: Ideally, these should be in environment variables
-// But for standard GitHub Pages usage without a backend, we might prompt the user
-// or use a user-provided CLIENT_ID.
+// Configuration from environment
 let CLIENT_ID = '';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 export interface GoogleDriveConfig {
     clientId: string;
 }
 
-interface TokenResponse {
-    access_token: string;
-    expires_in: string; // Seconds until expiration (Google API returns string)
-    error?: string;
-}
-
-interface FileMetadata {
-    name: string;
-    mimeType?: string;
-    parents?: string[];
+interface AuthResponse {
+    accessToken: string;
+    refreshToken: string; // This is the encrypted one from the backend
+    expiryDate?: number;
 }
 
 export class GoogleDriveService {
-    private tokenClient: google.accounts.oauth2.TokenClient | null = null;
     private accessToken: string | null = null;
     private isInitialized = false;
 
     constructor() { }
 
     /**
-     * Loads the necessary Google scripts dynamically
+     * Loads the Google Identiy Services script dynamically
      */
     async loadScripts(): Promise<void> {
         return new Promise((resolve, reject) => {
-            if (typeof gapi !== 'undefined' && typeof google !== 'undefined') {
+            if (typeof google !== 'undefined') {
                 resolve();
                 return;
             }
 
-            const script1 = document.createElement('script');
-            script1.src = 'https://apis.google.com/js/api.js';
-            script1.onload = () => {
-                const script2 = document.createElement('script');
-                script2.src = 'https://accounts.google.com/gsi/client';
-                script2.onload = () => resolve();
-                script2.onerror = reject;
-                document.body.appendChild(script2);
-            };
-            script1.onerror = reject;
-            document.body.appendChild(script1);
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.onload = () => resolve();
+            script.onerror = reject;
+            document.body.appendChild(script);
         });
     }
 
-    /**
-     * Initialize the GAPI client
-     */
     async init(config: GoogleDriveConfig): Promise<void> {
         if (this.isInitialized) return;
-
         CLIENT_ID = config.clientId;
         await this.loadScripts();
 
-        return new Promise((resolve, reject) => {
-            gapi.load('client', async () => {
-                try {
-                    await gapi.client.init({
-                        discoveryDocs: [DISCOVERY_DOC],
-                    });
+        // Try to recover session from local storage
+        const storedToken = localStorage.getItem('gdrive_access_token');
+        const expiresAt = localStorage.getItem('gdrive_token_expires_at');
 
-                    this.tokenClient = google.accounts.oauth2.initTokenClient({
-                        client_id: CLIENT_ID,
-                        scope: SCOPES,
-                        callback: (tokenResponse: TokenResponse) => {
-                            this.accessToken = tokenResponse.access_token;
-                        },
-                    });
+        if (storedToken && expiresAt && Date.now() < Number(expiresAt) - 60000) {
+            this.accessToken = storedToken;
+        }
 
-                    this.isInitialized = true;
-                    resolve();
-                } catch (err) {
-                    reject(err);
-                }
-            });
-        });
+        this.isInitialized = true;
+    }
+
+    get isReady(): boolean {
+        return this.isInitialized;
+    }
+
+    get isSignedIn(): boolean {
+        return !!this.accessToken && Date.now() < Number(localStorage.getItem('gdrive_token_expires_at')) - 60000;
     }
 
     /**
-     * Trigger the sign-in flow
+     * Trigger the sign-in flow (Auth Code Flow)
      */
     async signIn(): Promise<string> {
         return new Promise((resolve, reject) => {
-            if (!this.tokenClient) return reject('Token client not initialized');
+            if (!CLIENT_ID) return reject('Client ID not configured');
 
-            // Override callback to capture resolution
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (this.tokenClient as any).callback = (resp: TokenResponse) => {
-                if (resp.error) {
-                    reject(resp);
-                } else {
-                    this.accessToken = resp.access_token;
-                    // Store token only if present
-                    if (this.accessToken) {
-                        localStorage.setItem('gdrive_access_token', this.accessToken);
+            const redirectUri = `${window.location.origin}${window.location.pathname}oauth-callback.html`.replace(/\/\/oauth/, '/oauth');
+            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+                `client_id=${CLIENT_ID}&` +
+                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `response_type=code&` +
+                `scope=${encodeURIComponent(SCOPES)}&` +
+                `access_type=offline&` +
+                `prompt=consent`;
 
-                        // Calculate validation timestamp
-                        const expiresInSeconds = Number(resp.expires_in) || 3599;
-                        const expirationTime = Date.now() + (expiresInSeconds * 1000);
-                        localStorage.setItem('gdrive_token_expires_at', expirationTime.toString());
-                    }
-                    // IMPORTANT: Pass the token to gapi.client
-                    gapi.client.setToken({ access_token: resp.access_token });
-                    resolve(resp.access_token);
-                }
-            };
+            // Open the popup
+            const width = 500;
+            const height = 600;
+            const left = window.screenX + (window.outerWidth - width) / 2;
+            const top = window.screenY + (window.outerHeight - height) / 2;
 
-            // Request token with explicit consent (fallback when silent fails)
-            this.tokenClient.requestAccessToken({ prompt: 'consent' });
-        });
-    }
+            const popup = window.open(authUrl, 'google_auth_popup', `width=${width},height=${height},left=${left},top=${top}`);
 
-    /**
-     * Attempts to get a token without showing a popup.
-     * Fails if user is not signed in or hasn't granted permissions.
-     */
-    async trySilentSignIn(): Promise<string> {
-        return new Promise((resolve, reject) => {
-            if (!this.tokenClient) return reject('Token client not initialized');
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (this.tokenClient as any).callback = (resp: TokenResponse) => {
-                if (resp.error) {
-                    reject(resp);
-                } else {
-                    this.accessToken = resp.access_token;
-                    // Store token only if present
-                    if (this.accessToken) {
-                        localStorage.setItem('gdrive_access_token', this.accessToken);
-                        // Calculate validation timestamp
-                        const expiresInSeconds = Number(resp.expires_in) || 3599;
-                        const expirationTime = Date.now() + (expiresInSeconds * 1000);
-                        localStorage.setItem('gdrive_token_expires_at', expirationTime.toString());
-                    }
-                    gapi.client.setToken({ access_token: resp.access_token });
-                    resolve(resp.access_token);
-                }
-            };
-
-            // Request token silently (no UI)
-            this.tokenClient.requestAccessToken({ prompt: 'none' });
-        });
-    }
-
-    /**
-     * Ensure the user is signed in. Tries silent sign‑in first; if it fails, falls back to explicit consent.
-     */
-    async ensureSignedIn(): Promise<string> {
-        // Try to reuse token from previous session
-        const stored = localStorage.getItem('gdrive_access_token');
-        const storedExpiresAt = localStorage.getItem('gdrive_token_expires_at');
-
-        // validate expiration
-        const now = Date.now();
-        const isValid = stored && storedExpiresAt && (now < Number(storedExpiresAt) - 60000); // 1 minute safety buffer
-
-        if (isValid) {
-            this.accessToken = stored;
-            // Only set token if we have a valid string
-            if (stored) {
-                gapi.client.setToken({ access_token: stored });
+            if (!popup) {
+                return reject('Popup blocked. Please allow popups for this site.');
             }
-            return stored!;
-        } else {
-            // Token expired or invalid, clear it
-            localStorage.removeItem('gdrive_access_token');
-            localStorage.removeItem('gdrive_token_expires_at');
-        }
-        try {
-            return await this.trySilentSignIn();
-        } catch (_) {
-            // Silent sign‑in failed, request explicit consent
-            return await this.signIn();
-        }
-    }
-    get isSignedIn(): boolean {
-        if (!this.accessToken) return false;
 
-        // check expiration
-        const storedExpiresAt = localStorage.getItem('gdrive_token_expires_at');
-        if (storedExpiresAt) {
-            return Date.now() < Number(storedExpiresAt) - 60000;
-        }
+            const channel = new BroadcastChannel('google_drive_auth');
 
-        return !!this.accessToken;
-    }
+            const cleanup = () => {
+                channel.close();
+                if (checkInterval) clearInterval(checkInterval);
+            };
 
-    /**
-     * Get or create the app-specific folder
-     */
-    private async getAppFolderId(): Promise<string> {
-        const response = await gapi.client.drive.files.list({
-            q: "mimeType='application/vnd.google-apps.folder' and name='CardCraftStudio Data' and trashed=false",
-            fields: 'files(id, name)',
-            spaces: 'drive',
+            const checkInterval = setInterval(() => {
+                if (popup.closed) {
+                    cleanup();
+                    reject('Authentication window was closed');
+                }
+            }, 1000);
+
+            channel.onmessage = async (event) => {
+                const { code, error } = event.data;
+                cleanup();
+
+                if (error) {
+                    reject(error);
+                } else if (code) {
+                    try {
+                        // Exchange code for tokens via backend
+                        const response = await fetch(`${API_BASE_URL}/api/drive/auth/token`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code })
+                        });
+
+                        if (!response.ok) throw new Error('Failed to exchange auth code');
+
+                        const data: AuthResponse = await response.json();
+                        this.saveSession(data);
+                        resolve(data.accessToken);
+                    } catch (e) {
+                        reject(e);
+                    }
+                }
+            };
         });
+    }
 
-        const files = response.result.files;
-        if (files && files.length > 0) {
-            return files[0].id!;
+    private saveSession(data: AuthResponse) {
+        this.accessToken = data.accessToken;
+        localStorage.setItem('gdrive_access_token', data.accessToken);
+        localStorage.setItem('gdrive_refresh_token', data.refreshToken);
+
+        const expiry = data.expiryDate || (Date.now() + 3599 * 1000);
+        localStorage.setItem('gdrive_token_expires_at', expiry.toString());
+    }
+
+    async ensureSignedIn(): Promise<string> {
+        const expiresAt = localStorage.getItem('gdrive_token_expires_at');
+        const now = Date.now();
+
+        if (this.accessToken && expiresAt && now < Number(expiresAt) - 60000) {
+            return this.accessToken;
         }
 
-        // Create folder if not exists
-        const createResponse = await gapi.client.drive.files.create({
-            resource: {
-                name: 'CardCraftStudio Data',
-                mimeType: 'application/vnd.google-apps.folder',
-            },
-            fields: 'id',
-        });
+        const refreshToken = localStorage.getItem('gdrive_refresh_token');
+        if (refreshToken) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/drive/auth/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken })
+                });
 
-        return createResponse.result.id!;
-    }
-
-    /**
-     * Save (upload/update) a file to the folder
-     */
-    async saveFile(fileName: string, content: string, mimeType = 'application/json'): Promise<void> {
-        // Find if file exists
-        const folderId = await this.getAppFolderId();
-        const listResponse = await gapi.client.drive.files.list({
-            q: `name='${fileName}' and '${folderId}' in parents and trashed=false`,
-            fields: 'files(id)',
-        });
-
-        const file = new Blob([content], { type: mimeType });
-        const metadata = {
-            name: fileName,
-            mimeType: mimeType,
-            parents: [folderId],
-        };
-
-        const existingFile = listResponse.result.files?.[0];
-
-        if (existingFile) {
-            // Update
-            const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${this.accessToken}`,
-                },
-                body: this.createMultipartBody(metadata, file, true),
-            });
-            if (!response.ok) await this.handleApiError(response);
-        } else {
-            // Create
-            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${this.accessToken}`,
-                },
-                body: this.createMultipartBody(metadata, file),
-            });
-            if (!response.ok) await this.handleApiError(response);
+                if (response.ok) {
+                    const data: AuthResponse = await response.json();
+                    this.saveSession(data);
+                    return data.accessToken;
+                }
+            } catch (e) {
+                console.error('Failed to refresh token', e);
+            }
         }
+
+        return await this.signIn();
     }
 
     /**
-     * Helper to build multipart body for Drive API
-     */
-    private createMultipartBody(metadata: FileMetadata, file: Blob, isUpdate = false): FormData {
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(isUpdate ? {} : metadata)], { type: 'application/json' }));
-        form.append('file', file);
-        return form;
-    }
-
-    /**
-     * List all files in the app folder
+     * Proxy calls to Backend for Drive operations
      */
     async listFiles(): Promise<any[]> {
-        const folderId = await this.getAppFolderId();
-        const response = await gapi.client.drive.files.list({
-            q: `'${folderId}' in parents and trashed=false`,
-            fields: 'files(id, name, modifiedTime, md5Checksum)',
+        const token = await this.ensureSignedIn();
+        const response = await fetch(`${API_BASE_URL}/api/drive/files`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        return response.result.files || [];
+        if (!response.ok) throw new Error('Failed to list files');
+        return await response.json();
     }
 
-    /**
-     * Download file content as string (for JSON)
-     */
     async getFileContent(fileId: string): Promise<string> {
-        const response = await gapi.client.drive.files.get({
-            fileId: fileId,
-            alt: 'media',
+        const token = await this.ensureSignedIn();
+        const response = await fetch(`${API_BASE_URL}/api/drive/files/${fileId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        return response.body;
+        if (!response.ok) throw new Error('Failed to get file content');
+        return await response.text();
     }
 
-    /**
-     * Download file as Blob (for images)
-     */
-    /**
-     * Download file as Blob (for images)
-     */
-    async getFileBlob(fileId: string): Promise<Blob> {
-        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    async saveFile(fileName: string, content: string, mimeType = 'application/json'): Promise<void> {
+        const token = await this.ensureSignedIn();
+        const response = await fetch(`${API_BASE_URL}/api/drive/files`, {
+            method: 'POST',
             headers: {
-                Authorization: `Bearer ${this.accessToken}`,
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             },
+            body: JSON.stringify({ name: fileName, content, mimeType })
         });
-        if (!response.ok) await this.handleApiError(response);
+        if (!response.ok) throw new Error('Failed to save file');
+    }
+
+    async deleteFile(fileId: string): Promise<void> {
+        const token = await this.ensureSignedIn();
+        const response = await fetch(`${API_BASE_URL}/api/drive/files/${fileId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Failed to delete file');
+    }
+
+    async getFileBlob(fileId: string): Promise<Blob> {
+        const token = await this.ensureSignedIn();
+        const response = await fetch(`${API_BASE_URL}/api/drive/files/${fileId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Failed to get file blob');
         return await response.blob();
     }
 
-    /**
-     * Delete a file by ID
-     */
-    async deleteFile(fileId: string): Promise<void> {
-        await gapi.client.drive.files.delete({
-            fileId: fileId,
-        });
-    }
+    async saveBlob(fileName: string, blob: Blob): Promise<string> {
+        const token = await this.ensureSignedIn();
 
-    /**
-     * Save a Blob to Drive
-     */
-    async saveBlob(fileName: string, blob: Blob, folderId?: string): Promise<string> {
-        const parentFolderId = folderId || await this.getAppFolderId();
-
-        // Check if file exists to update or create
-        const listResponse = await gapi.client.drive.files.list({
-            q: `name='${fileName}' and '${parentFolderId}' in parents and trashed=false`,
-            fields: 'files(id)',
+        // Convert blob to base64 for simplicity in the proxy (or use FormData)
+        // Let's use Base64 to keep the backend route simple for now
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve) => {
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                resolve(result.split(',')[1]);
+            };
+            reader.readAsDataURL(blob);
         });
 
-        const metadata = {
-            name: fileName,
-            parents: [parentFolderId],
-        };
+        const base64 = await base64Promise;
 
-        const existingFile = listResponse.result.files?.[0];
+        const response = await fetch(`${API_BASE_URL}/api/drive/files`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: fileName, content: base64, mimeType: blob.type })
+        });
 
-        if (existingFile && existingFile.id) {
-            const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=multipart`, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${this.accessToken}`,
-                },
-                body: this.createMultipartBody(metadata, blob, true),
-            });
-            if (!response.ok) await this.handleApiError(response);
-            return existingFile.id;
-        } else {
-            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${this.accessToken}`,
-                },
-                body: this.createMultipartBody(metadata, blob),
-            });
-            if (!response.ok) await this.handleApiError(response);
-            const result = await response.json();
-            return result.id;
-        }
-    }
-
-    /**
-     * Parse API error response and throw formatted error
-     */
-    private async handleApiError(response: Response) {
-        let errorMessage = `API Error: ${response.status} ${response.statusText}`;
-        try {
-            const errorBody = await response.json();
-            if (errorBody?.error?.message) {
-                errorMessage = errorBody.error.message;
-            } else if (errorBody?.error_description) {
-                errorMessage = errorBody.error_description;
-            }
-        } catch (e) {
-            // Raw text fallback
-            const text = await response.text();
-            if (text) errorMessage = text;
-        }
-
-        // Add context for common codes
-        if (response.status === 403) {
-            errorMessage += " (Check API scopes and if Drive API is enabled in Google Cloud Console)";
-        } else if (response.status === 401) {
-            errorMessage += " (Authentication expired, please reload)";
-            // Clear invalid token
-            localStorage.removeItem('gdrive_access_token');
-            localStorage.removeItem('gdrive_token_expires_at');
-            this.accessToken = null;
-        }
-
-        throw new Error(errorMessage);
+        if (!response.ok) throw new Error('Failed to save blob');
+        const data = await response.json();
+        return data.id;
     }
 }
 

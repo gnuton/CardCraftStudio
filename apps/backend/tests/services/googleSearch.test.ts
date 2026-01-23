@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { googleSearchService } from '../../src/services/googleSearch';
 
 const mockedFetch = vi.fn();
@@ -53,7 +54,8 @@ describe('GoogleSearchService', () => {
         mockedFetch.mockResolvedValueOnce({
             ok: false,
             status: 403,
-            statusText: 'Forbidden'
+            statusText: 'Forbidden',
+            text: async () => 'Error body'
         });
 
         await expect(googleSearchService.searchImages('fail', 1, 10))

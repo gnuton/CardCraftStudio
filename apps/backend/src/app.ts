@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { imageRouter } from './routes/images';
+import { driveRouter } from './routes/drive';
 import { errorHandler } from './middleware/errorHandler';
 
 export const createApp = (): express.Application => {
@@ -17,7 +18,7 @@ export const createApp = (): express.Application => {
 
     app.use(cors({
         origin: [...defaultOrigins, ...allowedOrigins],
-        methods: ['GET', 'POST', 'OPTIONS'],
+        methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'x-premium-user'],
         credentials: true
     }));
@@ -28,6 +29,7 @@ export const createApp = (): express.Application => {
     });
 
     app.use('/api/images', imageRouter);
+    app.use('/api/drive', driveRouter);
 
     app.use(errorHandler);
 

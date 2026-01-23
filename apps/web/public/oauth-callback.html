@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Authenticating...</title>
+</head>
+
+<body>
+    <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+        <h2 id="status">Authenticating...</h2>
+        <p id="message">Please wait while we complete the connection.</p>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+
+        const channel = new BroadcastChannel('google_drive_auth');
+
+        if (code) {
+            document.getElementById('status').innerText = 'Authentication Secret Received';
+            channel.postMessage({ code });
+            setTimeout(() => window.close(), 1000);
+        } else if (error) {
+            document.getElementById('status').innerText = 'Authentication Failed';
+            document.getElementById('message').innerText = error;
+            channel.postMessage({ error });
+            setTimeout(() => window.close(), 2000);
+        } else {
+            // Handle case where it might be in the hash (fragment)
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const hashCode = hashParams.get('code');
+            if (hashCode) {
+                channel.postMessage({ code: hashCode });
+                setTimeout(() => window.close(), 1000);
+            }
+        }
+    </script>
+</body>
+
+</html>

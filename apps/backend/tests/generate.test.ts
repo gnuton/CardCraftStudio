@@ -1,4 +1,5 @@
 import request from 'supertest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express from 'express';
 import { createApp } from '../src/app';
 import { googleImagenService } from '../src/services/googleImagen';
@@ -24,7 +25,7 @@ describe('Image Generation API', () => {
             .send({});
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ error: 'Prompt is required' });
+        expect(response.body).toMatchObject({ detail: expect.stringContaining('prompt') });
     });
 
     it('should generate image successfully', async () => {
@@ -53,6 +54,6 @@ describe('Image Generation API', () => {
             .send({ prompt: 'crash test' });
 
         expect(response.status).toBe(500);
-        expect(response.body).toEqual({ error: 'Failed to generate image' });
+        expect(response.body).toMatchObject({ detail: expect.stringContaining('Imagen API Error') });
     });
 });

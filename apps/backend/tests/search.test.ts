@@ -1,4 +1,5 @@
 import request from 'supertest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express from 'express';
 import { createApp } from '../src/app';
 import { googleSearchService } from '../src/services/googleSearch';
@@ -24,7 +25,7 @@ describe('Image Search API', () => {
             .send({});
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ error: 'Query is required' });
+        expect(response.body).toMatchObject({ detail: expect.stringContaining('query') });
     });
 
     it('should return search results successfully', async () => {
@@ -51,6 +52,6 @@ describe('Image Search API', () => {
             .send({ query: 'crash test' });
 
         expect(response.status).toBe(500);
-        expect(response.body).toEqual({ error: 'Failed to search images' });
+        expect(response.body).toMatchObject({ detail: expect.stringContaining('Google API Error') });
     });
 });
