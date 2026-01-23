@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { imageRouter } from './routes/images';
+import { errorHandler } from './middleware/errorHandler';
 
 export const createApp = (): express.Application => {
     const app = express();
@@ -27,6 +28,8 @@ export const createApp = (): express.Application => {
     });
 
     app.use('/api/images', imageRouter);
+
+    app.use(errorHandler);
 
     return app;
 };
