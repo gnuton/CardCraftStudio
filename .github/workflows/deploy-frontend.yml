@@ -40,7 +40,7 @@ jobs:
         run: npm run build --workspace=@cardcraft/web
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          VITE_API_BASE_URL: 'https://cardcraft-backend-ifhot3y3ra-uc.a.run.app'
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
