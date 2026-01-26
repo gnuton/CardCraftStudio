@@ -11,10 +11,15 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "cors": "^2.8.5",
     "dotenv": "^16.4.2",
     "express": "^4.21.0",
-    "googleapis": "^170.1.0"
+    "firebase-admin": "^13.6.0",
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^170.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "stripe": "^20.2.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

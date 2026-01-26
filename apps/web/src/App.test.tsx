@@ -20,6 +20,18 @@ vi.mock('./utils/deckIO', () => ({
     exportDeckToZip: vi.fn() // mock export too just in case
 }));
 
+vi.mock('./contexts/AuthContext', () => ({
+    useAuth: () => ({
+        user: { uid: 'test-uid', email: 'test@example.com', plan: 'free' },
+        token: 'test-token',
+        isAuthenticated: true,
+        login: vi.fn(),
+        logout: vi.fn(),
+        isLoading: false,
+    }),
+    AuthProvider: ({ children }: any) => children,
+}));
+
 describe('App Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();

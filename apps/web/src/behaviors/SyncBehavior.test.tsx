@@ -3,6 +3,18 @@ import App from '../App';
 import { driveService } from '../services/googleDrive';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('../contexts/AuthContext', () => ({
+    useAuth: () => ({
+        user: { uid: 'test-uid', email: 'test@example.com', plan: 'free' },
+        token: 'test-token',
+        isAuthenticated: true,
+        login: vi.fn(),
+        logout: vi.fn(),
+        isLoading: false,
+    }),
+    AuthProvider: ({ children }: any) => children,
+}));
+
 // Mock Lucide icons
 vi.mock('lucide-react', async (importOriginal) => {
     const actual = await importOriginal();

@@ -8,6 +8,7 @@ export interface TokenPack {
     accessToken: string;
     refreshToken: string;
     expiryDate?: number;
+    idToken?: string;
 }
 
 export class GoogleAuthService {
@@ -29,7 +30,8 @@ export class GoogleAuthService {
         return {
             accessToken: tokens.access_token!,
             refreshToken: tokens.refresh_token!,
-            expiryDate: tokens.expiry_date || undefined
+            expiryDate: tokens.expiry_date || undefined,
+            idToken: tokens.id_token || undefined
         };
     }
 

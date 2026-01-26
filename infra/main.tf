@@ -13,7 +13,9 @@ resource "google_project_service" "apis" {
     "aiplatform.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "iam.googleapis.com",
-    "drive.googleapis.com"
+    "drive.googleapis.com",
+    "firestore.googleapis.com",
+    "firebase.googleapis.com"
   ])
   service            = each.key
   disable_on_destroy = false
@@ -124,4 +126,14 @@ resource "google_project_iam_member" "github_actions_sa_user" {
   project = var.project_id
   role    = "roles/iam.serviceAccountUser"
   member  = "serviceAccount:github-actions@${var.project_id}.iam.gserviceaccount.com"
+}
+
+# 6. Firestore Database
+resource "google_firestore_database" "database" {
+  project     = var.project_id
+  name        = "(default)"
+  location_id = var.region
+  type        = "FIRESTORE_NATIVE"
+
+  depends_on = [google_project_service.apis]
 }

@@ -1,15 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import { ApiError } from '../utils/ApiError';
 
 export const requirePremium = (req: Request, res: Response, next: NextFunction) => {
-    // Check for premium status
-    // In production, this would verify a JWT token or session
-    // For now, we'll use a simple header check
-    const isPremium = req.headers['x-premium-user'] === 'true';
+    const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+    const authHeader = req.headers.authorization;
 
-    if (!isPremium) {
-        return next(new ApiError(403, 'Premium subscription required', 'This endpoint requires a premium subscription.', 'https://cardcraft.io/premium'));
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return next(new ApiError(401, 'Authentication required', 'Please sign in to access premium features.'));
     }
 
-    next();
+    const token = authHeader.split(' ')[1];
+
+    try {
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+
+        if (decoded.plan !== 'premium') {
+            return next(new ApiError(403, 'Premium subscription required', 'This endpoint requires a premium subscription.', 'https://cardcraft.io/premium'));
+        }
+
+        // Attach user info to request for downstream use if needed
+        (req as any).user = decoded;
+        next();
+    } catch (err) {
+        return next(new ApiError(401, 'Invalid session', 'Your session has expired or is invalid. Please sign in again.'));
+    }
 };

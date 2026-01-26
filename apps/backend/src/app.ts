@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { imageRouter } from './routes/images';
+import authRouter from './routes/auth';
 import { driveRouter } from './routes/drive';
+import { imageRouter } from './routes/images';
+import stripeRouter from './routes/stripe';
 import { errorHandler } from './middleware/errorHandler';
 
 export const createApp = (): express.Application => {
@@ -40,6 +42,8 @@ export const createApp = (): express.Application => {
         credentials: true,
         optionsSuccessStatus: 200
     }));
+    // Webhook needs raw body, so we mount it before json parser
+    app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
     app.use(express.json());
 
     app.get('/health', (req, res) => {
@@ -49,7 +53,10 @@ export const createApp = (): express.Application => {
             'GOOGLE_CLOUD_PROJECT',
             'GOOGLE_CLIENT_ID',
             'GOOGLE_CLIENT_SECRET',
-            'TOKEN_ENCRYPTION_KEY'
+            'TOKEN_ENCRYPTION_KEY',
+            'JWT_SECRET',
+            'STRIPE_SECRET_KEY',
+            'STRIPE_WEBHOOK_SECRET'
         ];
 
         const missingVars = requiredVars.filter(v => !process.env[v]);
@@ -68,6 +75,8 @@ export const createApp = (): express.Application => {
 
     app.use('/api/images', imageRouter);
     app.use('/api/drive', driveRouter);
+    app.use('/api/auth', authRouter);
+    app.use('/api/stripe', stripeRouter);
 
     app.use(errorHandler);
 

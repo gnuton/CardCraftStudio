@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { UploadTab } from './UploadTab';
 import { SearchTab } from './SearchTab';
 import { GenerateTab } from './GenerateTab';
+import { Lock } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ImageProviderDialogProps {
     isOpen: boolean;
@@ -17,6 +19,8 @@ export const ImageProviderDialog: React.FC<ImageProviderDialogProps> = ({
     onImageSelect
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('upload');
+    const { user } = useAuth();
+    const isPremium = user?.plan === 'premium';
 
     if (!isOpen) return null;
 
@@ -41,8 +45,8 @@ export const ImageProviderDialog: React.FC<ImageProviderDialogProps> = ({
                     <button
                         onClick={() => setActiveTab('upload')}
                         className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-t border-l border-r ${activeTab === 'upload'
-                                ? 'bg-[#1e2025] text-white border-gray-700 border-b-[#1e2025] -mb-px'
-                                : 'bg-transparent text-gray-400 border-transparent hover:text-gray-200'
+                            ? 'bg-[#1e2025] text-white border-gray-700 border-b-[#1e2025] -mb-px'
+                            : 'bg-transparent text-gray-400 border-transparent hover:text-gray-200'
                             }`}
                     >
                         Upload
@@ -50,8 +54,8 @@ export const ImageProviderDialog: React.FC<ImageProviderDialogProps> = ({
                     <button
                         onClick={() => setActiveTab('search')}
                         className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 border-t border-l border-r ${activeTab === 'search'
-                                ? 'bg-[#1e2025] text-blue-400 border-gray-700 border-b-[#1e2025] -mb-px'
-                                : 'bg-transparent text-gray-400 border-transparent hover:text-gray-200'
+                            ? 'bg-[#1e2025] text-blue-400 border-gray-700 border-b-[#1e2025] -mb-px'
+                            : 'bg-transparent text-gray-400 border-transparent hover:text-gray-200'
                             }`}
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -62,13 +66,17 @@ export const ImageProviderDialog: React.FC<ImageProviderDialogProps> = ({
                     <button
                         onClick={() => setActiveTab('generate')}
                         className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-2 border-t border-l border-r ${activeTab === 'generate'
-                                ? 'bg-[#1e2025] text-pink-400 border-gray-700 border-b-[#1e2025] -mb-px'
-                                : 'bg-transparent text-gray-400 border-transparent hover:text-gray-200'
+                            ? 'bg-[#1e2025] text-pink-400 border-gray-700 border-b-[#1e2025] -mb-px'
+                            : 'bg-transparent text-gray-400 border-transparent hover:text-gray-200'
                             }`}
                     >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
+                        {isPremium ? (
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        ) : (
+                            <Lock className="w-3 h-3" />
+                        )}
                         Generate
                     </button>
                 </div>

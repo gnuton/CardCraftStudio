@@ -8,6 +8,6 @@ export default defineConfig({
         // Enable global test APIs (e.g., describe, it, expect)
         globals: true,
         // Include setup files for additional configuration
-        setupFiles: ['./src/test/setup.ts'],
+        setupFiles: ['./src/test/setup.tsx'],
     },
 });

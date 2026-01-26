@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express from 'express';
 import { createApp } from '../src/app';
 import { googleImagenService } from '../src/services/googleImagen';
+import { generateTestToken, JWT_SECRET } from './testUtils';
 
 vi.mock('../src/services/googleImagen', () => ({
     googleImagenService: {
@@ -14,6 +15,7 @@ describe('Image Generation API', () => {
     let app: express.Application;
 
     beforeEach(() => {
+        process.env.JWT_SECRET = JWT_SECRET;
         app = createApp();
         vi.clearAllMocks();
     });
@@ -21,7 +23,7 @@ describe('Image Generation API', () => {
     it('should return 400 if prompt is missing', async () => {
         const response = await request(app)
             .post('/api/images/generate')
-            .set('X-Premium-User', 'true')
+            .set('Authorization', `Bearer ${generateTestToken()}`)
             .send({});
 
         expect(response.status).toBe(400);
@@ -34,7 +36,7 @@ describe('Image Generation API', () => {
 
         const response = await request(app)
             .post('/api/images/generate')
-            .set('X-Premium-User', 'true')
+            .set('Authorization', `Bearer ${generateTestToken()}`)
             .send({ prompt: 'a dragon', style: 'fantasy' });
 
         expect(response.status).toBe(200);
@@ -50,7 +52,7 @@ describe('Image Generation API', () => {
 
         const response = await request(app)
             .post('/api/images/generate')
-            .set('X-Premium-User', 'true')
+            .set('Authorization', `Bearer ${generateTestToken()}`)
             .send({ prompt: 'crash test' });
 
         expect(response.status).toBe(500);

@@ -23,6 +23,9 @@ describe('Server Health Check', () => {
         process.env.GOOGLE_CLIENT_ID = 'test-client-id';
         process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
         process.env.TOKEN_ENCRYPTION_KEY = 'test-encryption-key';
+        process.env.JWT_SECRET = 'test-jwt-secret';
+        process.env.STRIPE_SECRET_KEY = 'test-stripe-key';
+        process.env.STRIPE_WEBHOOK_SECRET = 'test-webhook-secret';
 
         const response = await request(app).get('/health');
         expect(response.status).toBe(200);

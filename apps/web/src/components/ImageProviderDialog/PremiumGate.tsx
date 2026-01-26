@@ -1,18 +1,35 @@
-import React, { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { subscriptionService } from '../../services/subscriptionService';
+import { Loader2 } from 'lucide-react';
+import { ENABLE_PAYMENTS } from '../../config/features';
 
 interface PremiumGateProps {
     feature: 'search' | 'generate';
     children: ReactNode;
-    isPremium?: boolean; // For now, defaults to false (free tier)
 }
 
 export const PremiumGate: React.FC<PremiumGateProps> = ({
     feature,
-    children,
-    isPremium = false // TODO: Connect to actual auth/billing system
+    children
 }) => {
+    const { user } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const isPremium = user?.plan === 'premium';
     // For MVP, we'll allow search for everyone, but gate generate
     const isFeatureAllowed = feature === 'search' || isPremium;
+
+    const handleUpgrade = async () => {
+        try {
+            setLoading(true);
+            const url = await subscriptionService.createCheckoutSession();
+            window.location.href = url;
+        } catch (error) {
+            console.error('Upgrade failed:', error);
+            alert('Failed to start upgrades. Please try again.');
+            setLoading(false);
+        }
+    };
 
     if (isFeatureAllowed) {
         return <>{children}</>;
@@ -38,9 +55,19 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
             </div>
 
             <div className="space-y-3 w-full max-w-sm">
-                <button className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all transform hover:scale-105">
-                    Upgrade to Premium
-                </button>
+                {ENABLE_PAYMENTS ? (
+                    <button
+                        onClick={handleUpgrade}
+                        disabled={loading}
+                        className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-semibold rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
+                    >
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Upgrade to Premium'}
+                    </button>
+                ) : (
+                    <div className="p-3 bg-gray-800 rounded-lg border border-gray-700 text-gray-400 text-sm">
+                        Premium upgrades are currently disabled.
+                    </div>
+                )}
                 <p className="text-xs text-gray-500">
                     Unlock unlimited AI generations, advanced search, and more
                 </p>

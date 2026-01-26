@@ -20,6 +20,7 @@ import { Navigation } from './components/Navigation';
 import { importDeckFromZip } from './utils/deckIO';
 import { healthService, type HealthStatus } from './services/healthService';
 import { BackendHealthDialog } from './components/BackendHealthDialog';
+import { UserProfile } from './components/UserProfile';
 
 
 const APP_VERSION = '1.2.0-drive-sync';
@@ -793,6 +794,10 @@ function App() {
                 <Sun className="w-5 h-5 text-amber-400" />
               )}
             </button>
+
+            <div className="h-6 w-px bg-border mx-2"></div>
+
+            <UserProfile />
           </div>
         </div>
       </nav>
