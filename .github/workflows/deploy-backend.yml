@@ -8,6 +8,11 @@ on:
       - 'apps/backend/**'
       - 'infra/**'
   workflow_dispatch:
+    inputs:
+      force_unlock_id:
+        description: 'Terraform Lock ID to force unlock (LEAVE EMPTY FOR NORMAL DEPLOY)'
+        required: false
+        default: ''
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -39,9 +44,30 @@ jobs:
         working-directory: infra
         run: terraform init
 
+      - name: Terraform Force Unlock (Manual Only)
+        if: github.event.inputs.force_unlock_id != ''
+        working-directory: infra
+        run: terraform force-unlock -force ${{ github.event.inputs.force_unlock_id }}
+
       - name: Terraform Apply
         working-directory: infra
-        run: terraform apply -auto-approve -var="project_id=${{ env.PROJECT_ID }}" -var="google_api_key=${{ secrets.GOOGLE_API_KEY }}" -var="google_custom_search_cx=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }}"
+        run: |
+          # Use lock-timeout to handle transient locks (e.g., overlapping runs)
+          # We also redirect output to a file to capture the Lock ID if it fails
+          terraform apply -auto-approve \
+            -lock-timeout=3m \
+            -var="project_id=${{ env.PROJECT_ID }}" \
+            -var="google_api_key=${{ secrets.GOOGLE_API_KEY }}" \
+            -var="google_custom_search_cx=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }}" \
+            2>&1 | tee terraform_apply.log || EXIT_CODE=$?
+
+          if [ ! -z "$EXIT_CODE" ]; then
+            if grep -q "Error acquiring the state lock" terraform_apply.log; then
+              echo "::error::Terraform Lock detected. If this is a stale lock, run 'terraform force-unlock <ID>' with the ID below."
+              grep -A 5 "Lock Info" terraform_apply.log || true
+            fi
+            exit $EXIT_CODE
+          fi
 
   deploy:
     needs: provision
