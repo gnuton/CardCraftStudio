@@ -43,6 +43,26 @@ export const createApp = (): express.Application => {
     app.use(express.json());
 
     app.get('/health', (req, res) => {
+        const requiredVars = [
+            'GOOGLE_API_KEY',
+            'GOOGLE_CUSTOM_SEARCH_CX',
+            'GOOGLE_CLOUD_PROJECT',
+            'GOOGLE_CLIENT_ID',
+            'GOOGLE_CLIENT_SECRET',
+            'TOKEN_ENCRYPTION_KEY'
+        ];
+
+        const missingVars = requiredVars.filter(v => !process.env[v]);
+
+        if (missingVars.length > 0) {
+            return res.status(200).json({
+                status: 'incomplete',
+                timestamp: new Date().toISOString(),
+                missingVariables: missingVars,
+                message: 'Backend setup is incomplete. Missing required environment variables.'
+            });
+        }
+
         res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
 
