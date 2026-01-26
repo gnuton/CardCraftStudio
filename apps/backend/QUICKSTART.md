@@ -43,7 +43,7 @@ gcloud run deploy cardcraft-backend \
 ```bash
 gcloud run services update cardcraft-backend \
   --region=us-central1 \
-  --set-env-vars="GOOGLE_API_KEY=xxx,GOOGLE_CUSTOM_SEARCH_CX=xxx,GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID"
+  --set-env-vars="GOOGLE_API_KEY=xxx,GOOGLE_CUSTOM_SEARCH_CX=xxx,GOOGLE_CLOUD_PROJECT=$GCP_PROJECT_ID,GOOGLE_CLIENT_ID=xxx,GOOGLE_CLIENT_SECRET=xxx,TOKEN_ENCRYPTION_KEY=xxx"
 ```
 
 ## Test Deployment
@@ -100,3 +100,6 @@ Required secrets:
 - `WIF_SERVICE_ACCOUNT`
 - `GOOGLE_API_KEY`
 - `GOOGLE_CUSTOM_SEARCH_CX`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `TOKEN_ENCRYPTION_KEY`

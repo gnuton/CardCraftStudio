@@ -78,11 +78,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
     const fetchCustomTemplates = async () => {
         if (!driveService.isSignedIn) {
-            try {
-                await driveService.trySilentSignIn();
-            } catch {
-                return;
-            }
+            return;
         }
 
         try {

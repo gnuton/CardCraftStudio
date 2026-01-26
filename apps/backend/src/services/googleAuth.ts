@@ -21,8 +21,11 @@ export class GoogleAuthService {
         );
     }
 
-    async exchangeCodeForTokens(code: string): Promise<TokenPack> {
-        const { tokens } = await this.oauth2Client.getToken(code);
+    async exchangeCodeForTokens(code: string, redirectUri?: string): Promise<TokenPack> {
+        const { tokens } = await this.oauth2Client.getToken({
+            code,
+            redirect_uri: redirectUri || process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5173/oauth-callback.html'
+        });
         return {
             accessToken: tokens.access_token!,
             refreshToken: tokens.refresh_token!,
@@ -32,11 +35,11 @@ export class GoogleAuthService {
 
     async refreshAccessToken(refreshToken: string): Promise<TokenPack> {
         this.oauth2Client.setCredentials({ refresh_token: refreshToken });
-        const { tokens } = await this.oauth2Client.refreshAccessToken();
+        const { credentials } = await this.oauth2Client.refreshAccessToken();
         return {
-            accessToken: tokens.access_token!,
-            refreshToken: tokens.refresh_token || refreshToken,
-            expiryDate: tokens.expiry_date || undefined
+            accessToken: credentials.access_token!,
+            refreshToken: credentials.refresh_token || refreshToken,
+            expiryDate: credentials.expiry_date || undefined
         };
     }
 

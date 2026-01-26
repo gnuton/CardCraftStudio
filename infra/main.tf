@@ -12,7 +12,8 @@ resource "google_project_service" "apis" {
     "customsearch.googleapis.com",
     "aiplatform.googleapis.com",
     "cloudresourcemanager.googleapis.com",
-    "iam.googleapis.com"
+    "iam.googleapis.com",
+    "drive.googleapis.com"
   ])
   service            = each.key
   disable_on_destroy = false
@@ -64,6 +65,16 @@ resource "google_cloud_run_v2_service" "backend" {
       env {
         name  = "GOOGLE_CUSTOM_SEARCH_CX"
         value = var.google_custom_search_cx
+      }
+
+      env {
+        name  = "GOOGLE_CLIENT_ID"
+        value = var.google_client_id
+      }
+
+      env {
+        name  = "GOOGLE_CLIENT_SECRET"
+        value = var.google_client_secret
       }
     }
     

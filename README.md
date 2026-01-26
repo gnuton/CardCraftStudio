@@ -94,20 +94,31 @@ To enable cloud synchronization, you must configure a Google OAuth Client ID:
         *   `http://localhost:5173` (for local development)
     *   Click **Create** and copy your **Client ID**.
 
-#### 2. GitHub Secrets (for Deployment)
-To inject the Client ID into your hosted GitHub Pages site:
-1.  In your GitHub repository, go to **Settings** > **Secrets and variables** > **Actions**.
-2.  Click **New repository secret**.
-3.  Set the Name to `GOOGLE_CLIENT_ID`.
-4.  Set the Value to your copied **Client ID**.
-5.  Click **Add secret**.
-6.  The next deployment will automatically include the ID.
+#### 2. Local Development
 
-#### 3. Local Development
-For local use, create a `.env.local` file in the `apps/web` directory:
+For local use with full synchronization features, you need to configure both the frontend and backend environment variables.
+
+##### Backend (`apps/backend/.env`)
+Create a `.env` file in `apps/backend/` (see `.env.example`):
 ```env
-VITE_GOOGLE_CLIENT_ID=your-client-id-here
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:5173/CardCraftStudio/oauth-callback.html
+TOKEN_ENCRYPTION_KEY=a-random-32-char-string
 ```
+
+##### Frontend (`apps/web/.env`)
+Create a `.env` file in `apps/web/` (see `.env.example`):
+```env
+VITE_GOOGLE_CLIENT_ID=your-client-id
+VITE_API_BASE_URL=http://localhost:3001
+```
+
+#### 3. GitHub Secrets (for Deployment)
+To inject credentials into your production environment:
+1.  **Repo Secrets**: In GitHub, go to **Settings** > **Secrets and variables** > **Actions**.
+2.  Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+3.  The CI/CD pipeline will use these to configure the Cloud Run backend and the static frontend.
 
 ## Usage
 

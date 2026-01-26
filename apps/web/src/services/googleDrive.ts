@@ -71,7 +71,8 @@ export class GoogleDriveService {
         return new Promise((resolve, reject) => {
             if (!CLIENT_ID) return reject('Client ID not configured');
 
-            const redirectUri = `${window.location.origin}${window.location.pathname}oauth-callback.html`.replace(/\/\/oauth/, '/oauth');
+            const baseUrl = import.meta.env.BASE_URL;
+            const redirectUri = `${window.location.origin}${baseUrl}oauth-callback.html`.replace(/([^:])\/\//g, '$1/');
             const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
                 `client_id=${CLIENT_ID}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
@@ -115,10 +116,11 @@ export class GoogleDriveService {
                 } else if (code) {
                     try {
                         // Exchange code for tokens via backend
+                        // Pass the redirectUri used so the backend can correctly verify it
                         const response = await fetch(`${API_BASE_URL}/api/drive/auth/token`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ code })
+                            body: JSON.stringify({ code, redirectUri })
                         });
 
                         if (!response.ok) throw new Error('Failed to exchange auth code');

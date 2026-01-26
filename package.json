@@ -6,6 +6,8 @@
   ],
   "scripts": {
     "dev:web": "npm run dev --workspace=@cardcraft/web",
+    "dev:backend": "npm run dev --workspace=@cardcraft/backend",
+    "dev": "npm run dev:backend & npm run dev:web",
     "build:web": "npm run build --workspace=@cardcraft/web",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces"

@@ -7,10 +7,10 @@ export const driveRouter = Router();
 // 1. Exchange Auth Code for Tokens
 driveRouter.post('/auth/token', async (req, res, next) => {
     try {
-        const { code } = req.body;
+        const { code, redirectUri } = req.body;
         if (!code) return res.status(400).json({ error: 'Code is required' });
 
-        const tokens = await googleAuthService.exchangeCodeForTokens(code);
+        const tokens = await googleAuthService.exchangeCodeForTokens(code, redirectUri);
 
         // Encrypt refresh token for client-side storage
         const encryptedRefreshToken = googleAuthService.encryptToken(tokens.refreshToken);
