@@ -7,12 +7,13 @@
   "scripts": {
     "dev:web": "npm run dev --workspace=@cardcraft/web",
     "dev:backend": "npm run dev --workspace=@cardcraft/backend",
-    "dev": "npm run dev:backend & npm run dev:web",
+    "dev": "concurrently -n \"backend,web\" -c \"magenta,cyan\" \"npm run dev:backend\" \"npm run dev:web\"",
     "build:web": "npm run build --workspace=@cardcraft/web",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "husky": "^9.0.0"
   }
 }
