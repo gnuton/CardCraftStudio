@@ -35,6 +35,40 @@ spec:
             secretKeyRef:
               key: latest
               name: google-search-cx
+        - name: GOOGLE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: google-client-id
+        - name: GOOGLE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: google-client-secret
+        - name: TOKEN_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: token-encryption-key
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: jwt-secret
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: stripe-secret-key
+        - name: STRIPE_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: stripe-webhook-secret
+        - name: GOOGLE_REDIRECT_URI
+          value: https://PROJECT_ID.web.app/oauth-callback.html
+        - name: ALLOWED_ORIGINS
+          value: https://PROJECT_ID.web.app
         - name: GOOGLE_CLOUD_PROJECT
           value: PROJECT_ID
         resources:

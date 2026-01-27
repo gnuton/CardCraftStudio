@@ -115,10 +115,23 @@ VITE_API_BASE_URL=http://localhost:3001
 ```
 
 #### 3. GitHub Secrets (for Deployment)
-To inject credentials into your production environment:
-1.  **Repo Secrets**: In GitHub, go to **Settings** > **Secrets and variables** > **Actions**.
-2.  Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
-3.  The CI/CD pipeline will use these to configure the Cloud Run backend and the static frontend.
+To inject credentials into your production environment, add the following secrets in GitHub (**Settings** > **Secrets and variables** > **Actions**):
+
+| Secret Name | Description |
+| :--- | :--- |
+| `GCP_PROJECT_ID` | Your Google Cloud Project ID |
+| `WIF_PROVIDER` | Workload Identity Federation Provider ID |
+| `WIF_SERVICE_ACCOUNT` | Service Account email for Workload Identity |
+| `GOOGLE_API_KEY` | Google API Key for Custom Search |
+| `GOOGLE_CUSTOM_SEARCH_CX` | Google Custom Search Engine ID |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
+| `TOKEN_ENCRYPTION_KEY` | A random 32-character string (for encrypting refresh tokens) |
+| `JWT_SECRET` | A random string (for signing authentication tokens) |
+| `STRIPE_SECRET_KEY` | Stripe Secret Key (for premium features) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe Webhook Signing Secret |
+
+The CI/CD pipeline will automatically use these to provision infrastructure via Terraform and configure the Cloud Run backend.
 
 ## Usage
 

@@ -1,6 +1,6 @@
 import { getAuthToken } from '../contexts/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 export const subscriptionService = {
     async createCheckoutSession() {
@@ -9,7 +9,7 @@ export const subscriptionService = {
             throw new Error('User not authenticated');
         }
 
-        const response = await fetch(`${API_URL}/stripe/create-checkout-session`, {
+        const response = await fetch(`${API_URL}/api/stripe/create-checkout-session`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,

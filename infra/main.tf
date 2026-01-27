@@ -78,6 +78,36 @@ resource "google_cloud_run_v2_service" "backend" {
         name  = "GOOGLE_CLIENT_SECRET"
         value = var.google_client_secret
       }
+
+      env {
+        name  = "TOKEN_ENCRYPTION_KEY"
+        value = var.token_encryption_key
+      }
+
+      env {
+        name  = "JWT_SECRET"
+        value = var.jwt_secret
+      }
+
+      env {
+        name  = "STRIPE_SECRET_KEY"
+        value = var.stripe_secret_key
+      }
+
+      env {
+        name  = "STRIPE_WEBHOOK_SECRET"
+        value = var.stripe_webhook_secret
+      }
+
+      env {
+        name  = "GOOGLE_REDIRECT_URI"
+        value = var.google_redirect_uri
+      }
+
+      env {
+        name  = "ALLOWED_ORIGINS"
+        value = var.allowed_origins
+      }
     }
     
     scaling {

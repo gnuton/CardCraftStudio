@@ -20,7 +20,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 export const getAuthToken = () => localStorage.getItem('cc_auth_token');
 
