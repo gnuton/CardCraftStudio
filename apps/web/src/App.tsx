@@ -189,7 +189,7 @@ function App() {
         .then(async () => {
           try {
             // Try to reuse stored token or silent sign-in, fallback to explicit consent if needed
-            await driveService.ensureSignedIn();
+            await driveService.ensureSignedIn(true);
             setIsAuthenticated(true);
           } catch {
             setIsAuthenticated(false);

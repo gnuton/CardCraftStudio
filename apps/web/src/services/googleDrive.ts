@@ -145,7 +145,7 @@ export class GoogleDriveService {
         localStorage.setItem('gdrive_token_expires_at', expiry.toString());
     }
 
-    async ensureSignedIn(): Promise<string> {
+    async ensureSignedIn(silent = false): Promise<string> {
         const expiresAt = localStorage.getItem('gdrive_token_expires_at');
         const now = Date.now();
 
@@ -170,6 +170,10 @@ export class GoogleDriveService {
             } catch (e) {
                 console.error('Failed to refresh token', e);
             }
+        }
+
+        if (silent) {
+            throw new Error('Silent sign-in failed');
         }
 
         return await this.signIn();

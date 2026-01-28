@@ -9,20 +9,6 @@ export const UserProfile: React.FC = () => {
     const { user, isAuthenticated, login, logout, isLoading } = useAuth();
     const [isUpgrading, setIsUpgrading] = useState(false);
 
-    const handleUpgrade = async () => {
-        try {
-            setIsUpgrading(true);
-            const url = await subscriptionService.createCheckoutSession();
-            window.location.href = url;
-        } catch (error) {
-            console.error('Upgrade failed:', error);
-            alert('Failed to start upgrade.');
-            setIsUpgrading(false);
-        }
-    };
-
-    if (isLoading) return <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />;
-
     const googleLogin = useGoogleLogin({
         flow: 'auth-code',
         scope: 'https://www.googleapis.com/auth/drive.file',
@@ -42,6 +28,20 @@ export const UserProfile: React.FC = () => {
             console.error('Login Failed');
         }
     });
+
+    const handleUpgrade = async () => {
+        try {
+            setIsUpgrading(true);
+            const url = await subscriptionService.createCheckoutSession();
+            window.location.href = url;
+        } catch (error) {
+            console.error('Upgrade failed:', error);
+            alert('Failed to start upgrade.');
+            setIsUpgrading(false);
+        }
+    };
+
+    if (isLoading) return <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />;
 
     if (!isAuthenticated) {
         return (
