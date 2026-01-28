@@ -13,6 +13,16 @@ on:
         description: 'Terraform Lock ID to force unlock (LEAVE EMPTY FOR NORMAL DEPLOY)'
         required: false
         default: ''
+      skip_provision:
+        description: 'Skip Terraform provisioning'
+        required: false
+        type: boolean
+        default: false
+      skip_build:
+        description: 'Skip Docker build (redeploy existing image)'
+        required: false
+        type: boolean
+        default: false
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -22,6 +32,7 @@ env:
 
 jobs:
   provision:
+    if: ${{ !inputs.skip_provision }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -79,6 +90,7 @@ jobs:
 
   deploy:
     needs: provision
+    if: always() && (needs.provision.result == 'success' || (needs.provision.result == 'skipped' && inputs.skip_provision))
     runs-on: ubuntu-latest
     
     permissions:
@@ -103,6 +115,7 @@ jobs:
           gcloud auth configure-docker ${{ env.REGISTRY }}
 
       - name: Build Docker image
+        if: ${{ !inputs.skip_build }}
         working-directory: apps/backend
         run: |
           docker build \
@@ -111,14 +124,22 @@ jobs:
             .
 
       - name: Push Docker image
+        if: ${{ !inputs.skip_build }}
         run: |
           docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/cardcraft/backend:${{ github.sha }}
           docker push ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/cardcraft/backend:latest
 
       - name: Deploy to Cloud Run
         run: |
+          # Determine image tag to use
+          if [ "${{ inputs.skip_build }}" = "true" ]; then
+            IMAGE_TAG="latest"
+          else
+            IMAGE_TAG="${{ github.sha }}"
+          fi
+
           gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/cardcraft/backend:${{ github.sha }} \
+            --image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/cardcraft/backend:$IMAGE_TAG \
             --region=${{ env.REGION }} \
             --platform=managed \
             --set-env-vars="GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GOOGLE_CUSTOM_SEARCH_CX=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }},GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},TOKEN_ENCRYPTION_KEY=${{ secrets.TOKEN_ENCRYPTION_KEY }},JWT_SECRET=${{ secrets.JWT_SECRET }},STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }},STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }},GOOGLE_REDIRECT_URI=https://${{ github.repository_owner }}.github.io/cardcraft/oauth-callback.html,ALLOWED_ORIGINS=https://${{ github.repository_owner }}.github.io" \
