@@ -21,6 +21,7 @@ import { importDeckFromZip } from './utils/deckIO';
 import { healthService, type HealthStatus } from './services/healthService';
 import { BackendHealthDialog } from './components/BackendHealthDialog';
 import { UserProfile } from './components/UserProfile';
+import { useAuth } from './contexts/AuthContext';
 
 
 const APP_VERSION = '1.2.0-drive-sync';
@@ -116,6 +117,7 @@ const defaultDeckStyle: DeckStyle = {
 };
 
 function App() {
+  const { isAuthenticated: isAppAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   // Theme State
@@ -521,7 +523,7 @@ function App() {
   // Auto-Sync Effect
   useEffect(() => {
     const isEnabled = localStorage.getItem(SYNC_ENABLED_KEY) === 'true';
-    if (!isEnabled || !isAuthenticated || isSyncing) return;
+    if (!isEnabled || !isAppAuthenticated || !isAuthenticated || isSyncing) return;
 
     const timer = setTimeout(() => {
       handleSync(undefined, true);
@@ -529,7 +531,7 @@ function App() {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [decks, isAuthenticated]); // Trigger on deck changes or auth status
+  }, [decks, isAuthenticated, isAppAuthenticated]); // Trigger on deck changes or auth status
 
   const activeDeck = activeDeckId ? decks.find(d => d.id === activeDeckId) : null;
 
@@ -753,6 +755,10 @@ function App() {
             {/* Sync Button */}
             <button
               onClick={() => {
+                if (!isAppAuthenticated) {
+                  addToast('Please sign in to enable sync', 'info');
+                  return;
+                }
                 if (syncError) {
                   setIsErrorDialogOpen(true);
                 } else if (!isAuthenticated) {
