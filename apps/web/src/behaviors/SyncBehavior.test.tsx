@@ -57,9 +57,14 @@ describe('Cloud Sync Behavior', () => {
     });
 
     const waitForLoadingToFinish = async () => {
+        // Wait for loading screen to disappear
         await waitFor(() => {
             expect(screen.queryByText(/Design. Create. Conquer./i)).not.toBeInTheDocument();
         }, { timeout: 6000 });
+
+        // Navigate past Landing Page
+        const enterBtn = await screen.findByText(/Enter Studio/i); // Authenticated in most tests
+        fireEvent.click(enterBtn);
     };
 
     it('Scenario 1: Auto-reconnects if previously enabled and silent sign-in works', async () => {
@@ -78,40 +83,7 @@ describe('Cloud Sync Behavior', () => {
         });
     });
 
-    it('Scenario 2: Shows prompt if previously enabled but silent sign-in fails (Session Lost)', async () => {
-        localStorage.setItem('cardcraftstudio-sync-enabled', 'true');
-        (driveService.ensureSignedIn as any).mockRejectedValue(new Error('Session expired'));
-        (driveService as any).accessToken = null;
-
-        render(<App />);
-        await waitForLoadingToFinish();
-
-        expect(await screen.findByText(/Cloud Sync/i)).toBeInTheDocument();
-        expect(await screen.findByText(/Would you like to store and sync/i)).toBeInTheDocument();
-    });
-
-    it('Scenario 3: Shows prompt for New User (first session)', async () => {
-        localStorage.removeItem('cardcraftstudio-sync-enabled');
-        (driveService.ensureSignedIn as any).mockRejectedValue(new Error('Not signed in'));
-        (driveService as any).accessToken = null;
-
-        render(<App />);
-        await waitForLoadingToFinish();
-
-        expect(await screen.findByText(/Cloud Sync/i)).toBeInTheDocument();
-    });
-
-    it('Scenario 4: Does NOT prompt if prompt was already dismissed in this session', async () => {
-        localStorage.removeItem('cardcraftstudio-sync-enabled');
-        sessionStorage.setItem('cardcraftstudio-sync-prompt-shown', 'true');
-        (driveService.ensureSignedIn as any).mockRejectedValue(new Error('Not signed in'));
-        (driveService as any).accessToken = null;
-
-        render(<App />);
-        await waitForLoadingToFinish();
-
-        expect(screen.queryByText(/Would you like to store and sync/i)).not.toBeInTheDocument();
-    });
+    // Scenarios 2, 3, 4 (Sync Prompt) are removed as the modal was removed in favor of manual login.
 
     it('Scenario 5: Bidirectional Sync - Downloads new decks from cloud', async () => {
         const remoteDeck = { id: 'remote-1', name: 'Cloud Deck', cards: [], updatedAt: Date.now() };

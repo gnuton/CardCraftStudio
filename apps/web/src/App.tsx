@@ -7,7 +7,6 @@ import { DeckStudio } from './components/DeckStudio';
 import { LoadingScreen } from './components/LoadingScreen';
 import { DeckLibrary, type Deck } from './components/DeckLibrary';
 import { SyncErrorDialog } from './components/SyncErrorDialog';
-import { SyncPromptDialog } from './components/SyncPromptDialog';
 import { SyncConflictDialog } from './components/SyncConflictDialog';
 import { NewDeckDialog } from './components/NewDeckDialog';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
@@ -21,6 +20,7 @@ import { importDeckFromZip } from './utils/deckIO';
 import { healthService, type HealthStatus } from './services/healthService';
 import { BackendHealthDialog } from './components/BackendHealthDialog';
 import { UserProfile } from './components/UserProfile';
+import { LandingPage } from './components/LandingPage';
 import { useAuth } from './contexts/AuthContext';
 
 
@@ -33,7 +33,6 @@ interface DriveFile {
 }
 const DECKS_STORAGE_KEY = 'cardcraftstudio-decks';
 const THEME_STORAGE_KEY = 'cardcraftstudio-theme';
-const SYNC_PROMPT_KEY = 'cardcraftstudio-sync-prompt-shown';
 const SYNC_ENABLED_KEY = 'cardcraftstudio-sync-enabled';
 
 import type { DeckStyle } from './types/deck';
@@ -138,7 +137,6 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false);
-  const [isPromptOpen, setIsPromptOpen] = useState(false);
 
   // Conflict resolution state
   const [conflictDeck, setConflictDeck] = useState<Deck | null>(null);
@@ -195,19 +193,6 @@ function App() {
             setIsAuthenticated(true);
           } catch {
             setIsAuthenticated(false);
-
-            // Check if user previously enabled sync
-            const previouslyEnabled = localStorage.getItem(SYNC_ENABLED_KEY) === 'true';
-
-            // Show prompt if:
-            // 1. User previously enabled sync (needs re-auth)
-            // 2. OR prompt hasn't been shown this session
-            const promptShown = sessionStorage.getItem(SYNC_PROMPT_KEY);
-
-            if (previouslyEnabled || !promptShown) {
-              setIsPromptOpen(true);
-              sessionStorage.setItem(SYNC_PROMPT_KEY, 'true');
-            }
           }
         })
         .catch(console.error);
@@ -464,7 +449,7 @@ function App() {
   });
 
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
-  const [view, setView] = useState<'library' | 'deck' | 'editor' | 'style'>('library');
+  const [view, setView] = useState<'landing' | 'library' | 'deck' | 'editor' | 'style'>('landing');
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [isNewDeckDialogOpen, setIsNewDeckDialogOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
@@ -721,6 +706,35 @@ function App() {
     ? activeDeck.cards[activeCardIndex].id
     : 'new';
 
+  const handleLoginRequest = async () => {
+    try {
+      await driveService.ensureSignedIn(true);
+      setIsAuthenticated(true);
+      localStorage.setItem(SYNC_ENABLED_KEY, 'true');
+      setView('library');
+      addToast('Signed in successfully', 'success');
+      setTimeout(() => handleSync(), 500);
+    } catch (error) {
+      console.error('Login failed', error);
+      addToast('Login failed', 'error');
+    }
+  };
+
+  if (view === 'landing') {
+    return (
+      <>
+        <AnimatePresence>
+          {isLoading && <LoadingScreen version={APP_VERSION} />}
+        </AnimatePresence>
+        <LandingPage
+          onEnter={() => setView('library')}
+          onLogin={handleLoginRequest}
+          isAuthenticated={isAuthenticated}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
       <AnimatePresence>
@@ -761,8 +775,6 @@ function App() {
                 }
                 if (syncError) {
                   setIsErrorDialogOpen(true);
-                } else if (!isAuthenticated) {
-                  setIsPromptOpen(true);
                 } else {
                   handleSync();
                 }
@@ -839,11 +851,6 @@ function App() {
                   setIsErrorDialogOpen(false);
                   handleSync();
                 }}
-              />
-              <SyncPromptDialog
-                isOpen={isPromptOpen}
-                onClose={() => setIsPromptOpen(false)}
-                onSync={handleSync}
               />
               <SyncConflictDialog
                 isOpen={!!conflictDeck}

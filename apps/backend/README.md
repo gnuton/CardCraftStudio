@@ -40,6 +40,10 @@ Create a `.env` file based on `.env.example`:
 GOOGLE_API_KEY=your_google_api_key
 GOOGLE_CUSTOM_SEARCH_CX=your_custom_search_engine_id
 GOOGLE_CLOUD_PROJECT=your_gcp_project_id
+GOOGLE_CLIENT_ID=your_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_oauth_client_secret
+TOKEN_ENCRYPTION_KEY=random_32_char_string_for_encryption
+JWT_SECRET=random_string_for_jwt_signing
 PORT=3001
 ```
 
@@ -59,6 +63,14 @@ PORT=3001
 3. **Google Cloud Project ID**:
    - Find it in your GCP Console dashboard
    - Format: `project-name-123456`
+
+4. **Token Encryption Key**:
+   - Generate a random 32-character string
+   - Quick command: `openssl rand -hex 16`
+
+5. **JWT Secret**:
+   - Generate a random string (any length)
+   - Quick command: `openssl rand -hex 32`
 
 ## Running
 
@@ -241,6 +253,10 @@ docker run -p 8080:8080 \
   -e GOOGLE_API_KEY=your_key \
   -e GOOGLE_CUSTOM_SEARCH_CX=your_cx \
   -e GOOGLE_CLOUD_PROJECT=your_project \
+  -e GOOGLE_CLIENT_ID=your_client_id \
+  -e GOOGLE_CLIENT_SECRET=your_client_secret \
+  -e TOKEN_ENCRYPTION_KEY=your_key \
+  -e JWT_SECRET=your_jwt_secret \
   cardcraft-backend
 ```
 

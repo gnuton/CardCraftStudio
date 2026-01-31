@@ -39,12 +39,25 @@ describe('App Component', () => {
         localStorage.clear();
     });
 
+    const enterApp = async () => {
+        // Wait for loading screen to disappear
+        await waitFor(() => {
+            expect(screen.queryByText(/Design. Create. Conquer./i)).not.toBeInTheDocument();
+        }, { timeout: 6000 });
+
+        // Navigate past Landing Page
+        // In tests without mocked Drive Service, we might get 'Try Demo Mode'
+        const enterBtn = await screen.findByText(/Enter Studio|Try Demo Mode/i);
+        fireEvent.click(enterBtn);
+    };
+
     describe('SVG Export', () => {
-        it('triggers toSvg and downloads file when Export SVG is clicked', async () => {
+        it('triggers toSvg and downloads file when Export SVG is clicked', { timeout: 15000 }, async () => {
             const mockDataUrl = 'data:image/svg+xml;base64,fake-svg-content';
             (htmlToImage.toSvg as any).mockResolvedValue(mockDataUrl);
 
             render(<App />);
+            await enterApp();
 
             // Navigate: Library -> Deck Studio (click the Create New Deck placeholder card)
             const createDeckPlaceholder = screen.getByText('Create New Deck');
@@ -72,8 +85,9 @@ describe('App Component', () => {
     });
 
     describe('Deletions', () => {
-        it('shows confirmation dialog when deleting a deck', async () => {
+        it('shows confirmation dialog when deleting a deck', { timeout: 15000 }, async () => {
             render(<App />);
+            await enterApp();
 
             // 1. Create Deck
             const createDeckPlaceholder = screen.getByText('Create New Deck');
@@ -110,8 +124,9 @@ describe('App Component', () => {
             });
         });
 
-        it('shows confirmation dialog when deleting a card', async () => {
+        it('shows confirmation dialog when deleting a card', { timeout: 15000 }, async () => {
             render(<App />);
+            await enterApp();
 
             // 1. Create Deck
             const createDeckPlaceholder = screen.getByText('Create New Deck');
@@ -150,7 +165,7 @@ describe('App Component', () => {
     });
 
     describe('Deck Import', () => {
-        it('imports a deck from a zip file and adds it to the library', async () => {
+        it('imports a deck from a zip file and adds it to the library', { timeout: 15000 }, async () => {
             // Setup mock implementation
             mockImportDeckFromZip.mockResolvedValue({
                 name: 'Imported Deck',
@@ -159,6 +174,7 @@ describe('App Component', () => {
             });
 
             render(<App />);
+            await enterApp();
 
             // Ensure we are on Library screen
             expect(screen.getByText('Decks Library')).toBeInTheDocument();
