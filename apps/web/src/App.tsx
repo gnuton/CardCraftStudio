@@ -717,6 +717,14 @@ function App() {
     } catch (error) {
       console.error('Login failed', error);
       addToast('Login failed', 'error');
+
+      // Clear legacy sync flag
+      localStorage.removeItem(SYNC_ENABLED_KEY);
+
+      // In case of a failure, we might want to ensure the user is seeing a "Logged Out" state
+      // or redirect them to a specific error view if needed, but for now, 
+      // keeping them on the Landing Page (which is likely where they are) is safe.
+      // If we had a specific /login route, we could navigate there.
     }
   };
 
