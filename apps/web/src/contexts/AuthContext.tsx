@@ -56,7 +56,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 body: JSON.stringify(body),
             });
 
-            if (!response.ok) throw new Error('Login failed');
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Login failed: ${response.status} ${errorText}`);
+            }
 
             const data = await response.json();
             setToken(data.token);
