@@ -8,5 +8,8 @@ export default defineConfig({
   plugins: [react()],
   base: '/CardCraftStudio/',
   server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    },
   },
 })

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useGoogleLogin, type CodeResponse } from '@react-oauth/google';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut, User as UserIcon, Crown, Loader2 } from 'lucide-react';
 import { subscriptionService } from '../services/subscriptionService';
@@ -9,25 +8,20 @@ export const UserProfile: React.FC = () => {
     const { user, isAuthenticated, login, logout, isLoading } = useAuth();
     const [isUpgrading, setIsUpgrading] = useState(false);
 
-    const googleLogin = useGoogleLogin({
-        flow: 'auth-code',
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        onSuccess: async (codeResponse: CodeResponse) => {
-            try {
-                // When using flow: 'auth-code' with popup (default), the redirect_uri handling 
-                // is often 'postmessage' or the origin. We pass the code to backend.
-                await login({
-                    code: codeResponse.code,
-                    redirectUri: 'postmessage' // Standard for GSI popup flow
-                });
-            } catch (err) {
-                console.error('Unified Login Failed', err);
-            }
-        },
-        onError: () => {
-            console.error('Login Failed');
+    const handleGoogleLogin = async () => {
+        try {
+            // Use the shared driveService logic to get the auth code manually via popup
+            // This avoids the Cross-Origin-Opener-Policy warning from the GSI library hook
+            const code = await import('../services/googleDrive').then(m => m.driveService.getAuthCode());
+
+            await login({
+                code: code,
+                redirectUri: window.location.origin + '/CardCraftStudio/oauth-callback.html' // Pass expected redirect URI
+            });
+        } catch (err) {
+            console.error('Unified Login Failed', err);
         }
-    });
+    };
 
     const handleUpgrade = async () => {
         try {
@@ -47,7 +41,7 @@ export const UserProfile: React.FC = () => {
         return (
             <div className="flex items-center">
                 <button
-                    onClick={() => googleLogin()}
+                    onClick={handleGoogleLogin}
                     className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 px-4 py-2 rounded-full font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
                 >
                     <UserIcon className="w-4 h-4" />

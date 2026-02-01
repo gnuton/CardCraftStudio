@@ -1,6 +1,6 @@
 /// <reference types="google.accounts" />
 
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file openid email profile';
 
 // Configuration from environment
 let CLIENT_ID = '';
@@ -67,7 +67,7 @@ export class GoogleDriveService {
     /**
      * Trigger the sign-in flow (Auth Code Flow)
      */
-    async signIn(): Promise<string> {
+    async getAuthCode(): Promise<string> {
         return new Promise((resolve, reject) => {
             if (!CLIENT_ID) return reject('Client ID not configured');
 
@@ -95,17 +95,16 @@ export class GoogleDriveService {
 
             const channel = new BroadcastChannel('google_drive_auth');
 
+            // Safety timeout in case the user closes the popup or it hangs
+            const timeoutId = setTimeout(() => {
+                cleanup();
+                reject('Authentication timed out');
+            }, 300000); // 5 minutes
+
             const cleanup = () => {
                 channel.close();
-                if (checkInterval) clearInterval(checkInterval);
+                clearTimeout(timeoutId);
             };
-
-            const checkInterval = setInterval(() => {
-                if (popup.closed) {
-                    cleanup();
-                    reject('Authentication window was closed');
-                }
-            }, 1000);
 
             channel.onmessage = async (event) => {
                 const { code, error } = event.data;
@@ -114,26 +113,37 @@ export class GoogleDriveService {
                 if (error) {
                     reject(error);
                 } else if (code) {
-                    try {
-                        // Exchange code for tokens via backend
-                        // Pass the redirectUri used so the backend can correctly verify it
-                        const response = await fetch(`${API_BASE_URL}/api/drive/auth/token`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ code, redirectUri })
-                        });
-
-                        if (!response.ok) throw new Error('Failed to exchange auth code');
-
-                        const data: AuthResponse = await response.json();
-                        this.saveSession(data);
-                        resolve(data.accessToken);
-                    } catch (e) {
-                        reject(e);
-                    }
+                    resolve(code);
                 }
             };
         });
+    }
+
+    /**
+     * Trigger the sign-in flow (Auth Code Flow)
+     */
+    async signIn(): Promise<string> {
+        try {
+            const code = await this.getAuthCode();
+            const baseUrl = import.meta.env.BASE_URL;
+            const redirectUri = `${window.location.origin}${baseUrl}oauth-callback.html`.replace(/([^:])\/\//g, '$1/');
+
+            // Exchange code for tokens via backend
+            // Pass the redirectUri used so the backend can correctly verify it
+            const response = await fetch(`${API_BASE_URL}/api/drive/auth/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, redirectUri })
+            });
+
+            if (!response.ok) throw new Error('Failed to exchange auth code');
+
+            const data: AuthResponse = await response.json();
+            this.saveSession(data);
+            return data.accessToken;
+        } catch (e) {
+            throw e;
+        }
     }
 
     private saveSession(data: AuthResponse) {
