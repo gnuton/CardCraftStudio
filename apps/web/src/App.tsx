@@ -708,7 +708,7 @@ function App() {
 
   const handleLoginRequest = async () => {
     try {
-      await driveService.ensureSignedIn(true);
+      await driveService.ensureSignedIn(false);
       setIsAuthenticated(true);
       localStorage.setItem(SYNC_ENABLED_KEY, 'true');
       setView('library');
