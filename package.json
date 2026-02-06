@@ -10,7 +10,10 @@
     "dev": "concurrently -n \"backend,web\" -c \"magenta,cyan\" \"npm run dev:backend\" \"npm run dev:web\"",
     "build:web": "npm run build --workspace=@cardcraft/web",
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspaces",
+    "setup:local-env": "node scripts/setup-local-env.js",
+    "setup:cloud-env": "node scripts/setup-cloud-env.js",
+    "setup:github-secrets": "node scripts/setup-github-secrets.js"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

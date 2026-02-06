@@ -56,23 +56,53 @@ A modern web application for designing and printing custom playing cards with ri
 
 ### Setup
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd cardcraftstudio
+**📚 For detailed setup instructions, see [docs/SETUP.md](docs/SETUP.md)**
 
-# Install dependencies for all apps
+#### Quick Start (Automated)
+
+We provide automated scripts to simplify the setup process:
+
+```bash
+# Install dependencies
 npm install
 
-# Start development server
-# For Frontend only
-npm run dev:web
+# Set up local environment (interactive)
+npm run setup:local-env
 
-# For Full Stack (Front + Back)
+# Set up Google Cloud resources (requires gcloud CLI)
+npm run setup:cloud-env
+
+# Configure GitHub Actions secrets (requires gh CLI)
+npm run setup:github-secrets
+
+# Start development server
 npm run dev
 ```
 
+#### Manual Setup
+
+If you prefer manual setup or need more control:
+
+1. **Copy environment files:**
+   ```bash
+   cp apps/backend/.env.example apps/backend/.env
+   cp apps/web/.env.example apps/web/.env
+   ```
+
+2. **Configure credentials:**
+   - See [docs/SETUP.md](docs/SETUP.md) for detailed instructions on obtaining:
+     - Google Cloud credentials (OAuth, API keys, service account)
+     - Stripe credentials (optional, for premium features)
+     - GitHub Actions secrets (for deployment)
+
+3. **Start development:**
+   ```bash
+   npm run dev
+   ```
+
 The application will be available at `http://localhost:5173/`
+
+For troubleshooting and detailed configuration options, refer to the [complete setup guide](docs/SETUP.md).
 
 ### Google Drive Sync Setup
 

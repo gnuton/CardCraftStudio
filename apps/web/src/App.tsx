@@ -783,7 +783,7 @@ function App() {
               title={
                 isSyncing ? 'Syncing...' :
                   syncError ? 'Sync Failed (Click for details)' :
-                    isAuthenticated ? 'Sync with Google Drive' :
+                    isAuthenticated && isAppAuthenticated ? 'Sync with Google Drive' :
                       'Sync is offline'
               }
             >
@@ -791,7 +791,7 @@ function App() {
                 <Cloud className="w-5 h-5 animate-pulse text-indigo-500" />
               ) : syncError ? (
                 <CloudAlert className="w-5 h-5 text-red-500" />
-              ) : isAuthenticated ? (
+              ) : isAuthenticated && isAppAuthenticated ? (
                 <Cloud className="w-5 h-5 text-green-500" />
               ) : (
                 <CloudOff className="w-5 h-5" />

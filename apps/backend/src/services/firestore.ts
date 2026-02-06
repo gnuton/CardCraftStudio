@@ -10,25 +10,25 @@ function getDb(): Firestore | null {
     if (!initializationAttempted) {
         initializationAttempted = true;
 
-        try {
-            // Check if we have credentials for Firebase
-            const hasCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-                process.env.FIREBASE_CONFIG ||
-                // In production (Cloud Run, etc.), default credentials are available
-                process.env.NODE_ENV === 'production';
+        // Only initialize in production or if explicitly configured
+        const isProduction = process.env.NODE_ENV === 'production';
+        const hasExplicitCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIREBASE_CONFIG;
 
-            if (hasCredentials || process.env.NODE_ENV === 'production') {
-                if (!getApps().length) {
-                    app = initializeApp();
-                } else {
-                    app = getApps()[0];
-                }
-                db = getFirestore(app);
-                console.log('[Firestore] Successfully initialized');
+        if (!isProduction && !hasExplicitCredentials) {
+            console.warn('[Firestore] Running in local development mode without Firebase credentials.');
+            console.warn('[Firestore] Firestore features will be disabled.');
+            console.warn('[Firestore] Set GOOGLE_APPLICATION_CREDENTIALS to enable Firestore in local development.');
+            return null;
+        }
+
+        try {
+            if (!getApps().length) {
+                app = initializeApp();
             } else {
-                console.warn('[Firestore] No credentials found. Firestore features will be disabled.');
-                console.warn('[Firestore] Set GOOGLE_APPLICATION_CREDENTIALS to enable Firestore in local development.');
+                app = getApps()[0];
             }
+            db = getFirestore(app);
+            console.log('[Firestore] Successfully initialized');
         } catch (error) {
             console.error('[Firestore] Failed to initialize:', error);
             console.warn('[Firestore] Firestore features will be disabled.');

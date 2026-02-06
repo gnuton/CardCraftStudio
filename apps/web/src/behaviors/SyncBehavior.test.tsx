@@ -3,11 +3,14 @@ import App from '../App';
 import { driveService } from '../services/googleDrive';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Create a mutable mock for isAuthenticated
+const mockIsAuthenticated = vi.fn().mockReturnValue(true);
+
 vi.mock('../contexts/AuthContext', () => ({
     useAuth: () => ({
         user: { uid: 'test-uid', email: 'test@example.com', plan: 'free' },
         token: 'test-token',
-        isAuthenticated: true,
+        isAuthenticated: mockIsAuthenticated(),
         login: vi.fn(),
         logout: vi.fn(),
         isLoading: false,
@@ -56,6 +59,9 @@ describe('Cloud Sync Behavior', () => {
         localStorage.clear();
         sessionStorage.clear();
         vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'test-client-id');
+
+        // Reset Auth Mock
+        mockIsAuthenticated.mockReturnValue(true);
 
         (driveService.init as any).mockResolvedValue(undefined);
         (driveService.listFiles as any).mockResolvedValue([]);
@@ -207,5 +213,26 @@ describe('Cloud Sync Behavior', () => {
             expect(localStorage.getItem('cardcraftstudio-deleted-deck-ids')).toBe('[]');
         });
     });
-});
 
+    it('Scenario 9: Cloud icon appears disconnected when user logs off from App, even if Drive session persists', async () => {
+        // Override mock for this test
+        mockIsAuthenticated.mockReturnValue(false); // User logged off from App
+
+        render(<App />);
+
+        // Wait for loading and enter the studio (this works because Drive IS authenticated in the mock, so "Enter Studio" appears)
+        await waitForLoadingToFinish();
+
+        // Now we should be in 'library' view with the navbar
+        await waitFor(() => {
+            expect(screen.getByText('CardCraft Studio')).toBeInTheDocument();
+        });
+
+        await waitFor(() => {
+            // Should show CloudOff icon because App Auth is false, even if Drive Auth (internal state) is true
+            expect(screen.getByTestId('icon-cloud-off')).toBeInTheDocument();
+            // Should NOT show green Cloud
+            expect(screen.queryByTestId('icon-cloud')).not.toBeInTheDocument();
+        });
+    });
+});

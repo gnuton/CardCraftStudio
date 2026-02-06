@@ -15,6 +15,7 @@ dist-ssr
 .env.*
 !.env.example
 .vite/
+serviceAccountKey.json
 
 
 # Editor directories and files
