@@ -18,7 +18,12 @@ export interface User {
 }
 
 export class UserService {
-    private collection = db.collection('users');
+    private get collection() {
+        if (!db) {
+            throw new Error('Firestore is not initialized. Please configure GOOGLE_APPLICATION_CREDENTIALS for local development.');
+        }
+        return db.collection('users');
+    }
 
     async getOrCreateUser(uid: string, email: string): Promise<User> {
         const userDoc = await this.collection.doc(uid).get();

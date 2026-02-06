@@ -174,7 +174,7 @@ router.get('/users/:userId', requireAdmin, async (req: AuthenticatedRequest, res
  */
 router.post('/users/:userId/grant-admin', requireAdmin, async (req: AuthenticatedRequest, res, next) => {
     try {
-        const userId = req.params.userId;
+        const userId = req.params.userId as string;
         const { notes } = req.body;
         const adminId = req.adminContext!.adminId;
 
@@ -221,7 +221,7 @@ router.post('/users/:userId/grant-admin', requireAdmin, async (req: Authenticate
  */
 router.post('/users/:userId/revoke-admin', requireAdmin, async (req: AuthenticatedRequest, res, next) => {
     try {
-        const userId = req.params.userId;
+        const userId = req.params.userId as string;
         const { notes, previousPlan = 'free' } = req.body;
         const adminId = req.adminContext!.adminId;
 
@@ -274,7 +274,7 @@ router.post('/users/:userId/revoke-admin', requireAdmin, async (req: Authenticat
  */
 router.post('/users/:userId/override-subscription', requireAdmin, async (req: AuthenticatedRequest, res, next) => {
     try {
-        const userId = req.params.userId;
+        const userId = req.params.userId as string;
         const { tier, reason } = req.body;
         const adminId = req.adminContext!.adminId;
 

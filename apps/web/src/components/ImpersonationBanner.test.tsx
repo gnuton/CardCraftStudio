@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ImpersonationBanner } from './ImpersonationBanner';
-import { AuthProvider, type ImpersonationState } from '../contexts/AuthContext';
-import React from 'react';
 
 // Mock the auth context
 const mockExitImpersonation = vi.fn();

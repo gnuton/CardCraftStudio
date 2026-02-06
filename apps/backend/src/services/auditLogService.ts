@@ -39,7 +39,12 @@ export interface UpdateAuditLogParams {
 }
 
 export class AuditLogService {
-    private collection = db.collection('admin_audit_logs');
+    private get collection() {
+        if (!db) {
+            throw new Error('Firestore is not initialized. Please configure GOOGLE_APPLICATION_CREDENTIALS for local development.');
+        }
+        return db.collection('admin_audit_logs');
+    }
 
     /**
      * Create a new audit log entry
