@@ -40,10 +40,11 @@ export interface UpdateAuditLogParams {
 
 export class AuditLogService {
     private get collection() {
-        if (!db) {
+        const database = db();
+        if (!database) {
             throw new Error('Firestore is not initialized. Please configure GOOGLE_APPLICATION_CREDENTIALS for local development.');
         }
-        return db.collection('admin_audit_logs');
+        return database.collection('admin_audit_logs');
     }
 
     /**

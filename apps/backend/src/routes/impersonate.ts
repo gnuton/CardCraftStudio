@@ -86,7 +86,7 @@ router.post('/exit', async (req: AuthenticatedRequest, res, next) => {
  */
 router.post('/:userId', requireAdmin, async (req: AuthenticatedRequest, res, next) => {
     try {
-        const targetUserId = req.params.userId;
+        const targetUserId = req.params.userId as string;
         const adminId = req.adminContext!.adminId;
         const adminEmail = req.user!.email;
 
