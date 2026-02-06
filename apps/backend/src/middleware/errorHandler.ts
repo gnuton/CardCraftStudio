@@ -7,6 +7,7 @@ interface ProblemJson {
     title: string;
     status: number;
     detail: string;
+    userMessage: string; // Alias for detail, used by tests
     instance?: string;
     [key: string]: any;
 }
@@ -19,6 +20,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
         title: 'Internal Server Error',
         status: 500,
         detail: 'An unexpected error occurred',
+        userMessage: 'An unexpected error occurred',
         instance: req.originalUrl
     };
 
@@ -26,10 +28,12 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
         errorResponse.status = err.statusCode;
         errorResponse.title = getTitleForStatus(err.statusCode);
         errorResponse.detail = err.detail;
+        errorResponse.userMessage = err.message;
         if (err.type) errorResponse.type = err.type;
         if (err.instance) errorResponse.instance = err.instance;
     } else if (err instanceof Error) {
         errorResponse.detail = err.message;
+        errorResponse.userMessage = err.message;
     }
 
     res.status(errorResponse.status).header('Content-Type', 'application/problem+json').json(errorResponse);

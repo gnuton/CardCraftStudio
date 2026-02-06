@@ -15,7 +15,8 @@ export const requirePremium = (req: Request, res: Response, next: NextFunction) 
     try {
         const decoded: any = jwt.verify(token, JWT_SECRET);
 
-        if (decoded.plan !== 'premium') {
+        // Allow admins to access premium features
+        if (decoded.plan !== 'premium' && decoded.plan !== 'admin') {
             return next(new ApiError(403, 'Premium subscription required', 'This endpoint requires a premium subscription.', 'https://cardcraft.io/premium'));
         }
 

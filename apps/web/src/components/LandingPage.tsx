@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Cloud, Shield, Search, Wand2, Database, Layout } from 'lucide-react';
+import { ArrowRight, Cloud, Shield, Search, Wand2 } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 interface LandingPageProps {
@@ -52,6 +52,15 @@ export const LandingPage = ({ onEnter, onLogin, isAuthenticated }: LandingPagePr
                         <img src={logo} alt="CardCraft Studio" className="w-24 h-24 object-contain relative z-10 drop-shadow-xl" />
                     </motion.div>
 
+                    {isAuthenticated && (
+                        <motion.div
+                            variants={itemVariants}
+                            className="mb-4 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium"
+                        >
+                            Welcome back!
+                        </motion.div>
+                    )}
+
                     <motion.h1
                         variants={itemVariants}
                         className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent"
@@ -73,7 +82,7 @@ export const LandingPage = ({ onEnter, onLogin, isAuthenticated }: LandingPagePr
                             onClick={onEnter}
                             className="px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold text-lg shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-105 transition-all flex items-center gap-2"
                         >
-                            {isAuthenticated ? "Enter Studio" : "Try Demo Mode"} <ArrowRight className="w-5 h-5" />
+                            {isAuthenticated ? "Enter Studio" : "Continue as Guest"} <ArrowRight className="w-5 h-5" />
                         </button>
 
                         {!isAuthenticated && (
@@ -94,27 +103,27 @@ export const LandingPage = ({ onEnter, onLogin, isAuthenticated }: LandingPagePr
                     animate="visible"
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
                 >
-                    {/* Privacy Feature */}
+                    {/* Guest Tier */}
                     <FeatureCard
                         icon={<Shield className="w-8 h-8 text-green-500" />}
-                        title="Privacy First"
-                        description="We do not store any of your data. All your decks, cards, and images are stored securely on your own Google Drive."
+                        title="Guest Access"
+                        description="Start creating immediately. Store your decks and data locally on your device. No account required."
                         delay={0.2}
                     />
 
-                    {/* Cloud Storage Feature */}
+                    {/* Registered Tier */}
                     <FeatureCard
-                        icon={<Database className="w-8 h-8 text-blue-500" />}
-                        title="Free Cloud Sync"
-                        description="Log in to enable Google Drive synchronization for free. Store your data securely in your own personal cloud space."
+                        icon={<Cloud className="w-8 h-8 text-blue-500" />}
+                        title="Registered Free"
+                        description="Log in with Google to enable Drive synchronization. Access your decks from anywhere across devices."
                         delay={0.3}
                     />
 
-                    {/* Design Tools */}
+                    {/* Premium Tier */}
                     <FeatureCard
-                        icon={<Layout className="w-8 h-8 text-purple-500" />}
-                        title="Pro Design Tools"
-                        description="Customize every aspect of your cards. From layouts to typography, you have full control over the aesthetic."
+                        icon={<Wand2 className="w-8 h-8 text-purple-500" />}
+                        title="Premium"
+                        description="Unlock exclusive AI tools. Generate illustrations and search for images directly within the studio."
                         delay={0.4}
                     />
                 </motion.div>

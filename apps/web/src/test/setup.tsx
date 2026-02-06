@@ -20,6 +20,16 @@ vi.mock('../contexts/AuthContext', () => {
             login: vi.fn(),
             logout: vi.fn(),
             isLoading: false,
+            isAdmin: false,
+            impersonation: {
+                isImpersonating: false,
+                targetUser: null,
+                adminUser: null,
+                sessionId: null,
+                expiresAt: null,
+            },
+            startImpersonation: vi.fn(),
+            exitImpersonation: vi.fn(),
         }),
         AuthProvider: ({ children }: any) => children,
     };

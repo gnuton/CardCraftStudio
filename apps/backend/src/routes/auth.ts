@@ -71,13 +71,40 @@ router.post('/login', async (req, res, next) => {
         // 2. Get or Create User in Firestore
         const user = await userService.getOrCreateUser(googleId, email);
 
-        // 3. Issue JWT
+        // 3. Admin Bootstrap: Check if this user should be granted admin automatically
+        const ADMIN_BOOTSTRAP_EMAIL = process.env.ADMIN_BOOTSTRAP_EMAIL;
+        if (ADMIN_BOOTSTRAP_EMAIL && email === ADMIN_BOOTSTRAP_EMAIL && !user.isAdmin) {
+            // Grant admin privileges
+            await userService.grantAdmin(user.uid, 'SYSTEM_BOOTSTRAP', 'Initial bootstrap admin');
+
+            // Update user object
+            user.isAdmin = true;
+            user.plan = 'admin';
+
+            // Log bootstrap action
+            const { auditLogService } = await import('../services/auditLogService');
+            await auditLogService.createLog({
+                adminId: user.uid,
+                action: 'bootstrap_admin',
+                details: {
+                    method: 'environment_variable',
+                    bootstrapEmail: ADMIN_BOOTSTRAP_EMAIL,
+                },
+                ipAddress: req.ip,
+                userAgent: req.headers['user-agent'],
+            });
+
+            console.log(`✅ Admin bootstrapped: ${email}`);
+        }
+
+        // 4. Issue JWT
         const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
         const sessionToken = jwt.sign(
             {
                 uid: user.uid,
                 email: user.email,
-                plan: user.plan
+                plan: user.plan,
+                isAdmin: user.isAdmin,
             },
             JWT_SECRET,
             { expiresIn: '7d' }
@@ -114,6 +141,7 @@ router.get('/me', async (req, res) => {
             uid: user.uid,
             email: user.email,
             plan: user.plan,
+            isAdmin: user.isAdmin,
         });
     } catch (err) {
         res.status(401).json({ error: 'Invalid token' });

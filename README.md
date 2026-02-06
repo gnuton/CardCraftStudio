@@ -195,15 +195,42 @@ The CI/CD pipeline will automatically use these to provision infrastructure via 
 
 ### Running Tests
 
+### Running Tests
+
+We use Vitest for both frontend and backend testing. You can run tests from the root or within specific workspaces.
+
+#### All Tests
 ```bash
-# Run all tests
+# Run tests for both frontend and backend
+npm test --workspaces
+```
+
+#### Backend Tests
+```bash
+cd apps/backend
+
+# Run all backend tests
 npm test
 
-# Run tests in watch mode
-npm run test:watch
+# Run specific suites
+npm test admin          # Admin routes & logic
+npm test impersonation  # Impersonation flows
+```
 
-# Run tests with coverage
-npm run test:coverage
+#### Frontend Tests
+```bash
+cd apps/web
+
+# Run all frontend tests
+npm test
+
+# Run component tests
+npm test ImpersonationBanner
+```
+
+#### Coverage
+```bash
+npm test -- --coverage
 ```
 
 ### Building for Production
@@ -235,13 +262,13 @@ npm run preview
 
 The project includes comprehensive unit tests for critical functionality:
 
-- ✅ Card rendering
-- ✅ Deck management
-- ✅ PDF generation with mocked dependencies
-- ✅ Google Drive Sync & Conflict Resolution (Bidirectional)
-- ✅ User interactions
+- ✅ Card rendering & Deck management
+- ✅ Google Drive Sync & Conflict Resolution
+- ✅ **Admin Role Management**: User bootstrap, grant/revoke privileges, audit logging
+- ✅ **User Impersonation**: Secure session start/exit, token validation, UI banner
+- ✅ PDF generation & User interactions
 
-Run `npm test` to execute the test suite.
+Run `npm test --workspaces` to execute the full test suite.
 
 ## License
 

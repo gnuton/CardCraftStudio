@@ -17,11 +17,11 @@ import { imageService } from './services/imageService';
 import { GlobalStyleEditor } from './components/GlobalStyleEditor';
 import { Navigation } from './components/Navigation';
 import { importDeckFromZip } from './utils/deckIO';
-import { healthService, type HealthStatus } from './services/healthService';
-import { BackendHealthDialog } from './components/BackendHealthDialog';
+
 import { UserProfile } from './components/UserProfile';
 import { LandingPage } from './components/LandingPage';
 import { useAuth } from './contexts/AuthContext';
+import { ImpersonationBanner } from './components/ImpersonationBanner';
 
 
 const APP_VERSION = '1.2.0-drive-sync';
@@ -146,9 +146,7 @@ function App() {
   // Toast State
   const [toasts, setToasts] = useState<{ id: string; message: string; type?: ToastType }[]>([]);
 
-  // Backend Health State
-  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
-  const [isHealthDialogOpen, setIsHealthDialogOpen] = useState(false);
+
 
   const addToast = (message: string, type: ToastType = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -169,17 +167,7 @@ function App() {
     localStorage.setItem(DELETED_DECKS_KEY, JSON.stringify(pendingDeletions));
   }, [pendingDeletions]);
 
-  // Check Backend Health
-  useEffect(() => {
-    const checkBackend = async () => {
-      const status = await healthService.checkHealth();
-      setHealthStatus(status);
-      if (status.status !== 'ok') {
-        setIsHealthDialogOpen(true);
-      }
-    };
-    checkBackend();
-  }, []);
+
 
   // Init Drive Service & Session Check
   useEffect(() => {
@@ -745,6 +733,9 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
+      {/* Impersonation Banner - Always on top */}
+      <ImpersonationBanner />
+
       <AnimatePresence>
         {isLoading && <LoadingScreen version={APP_VERSION} />}
       </AnimatePresence>
@@ -969,15 +960,7 @@ function App() {
 
       <ToastContainer toasts={toasts} onClose={removeToast} />
 
-      {healthStatus && (
-        <BackendHealthDialog
-          isOpen={isHealthDialogOpen}
-          status={healthStatus.status as 'incomplete' | 'error'}
-          message={healthStatus.message}
-          missingVariables={healthStatus.missingVariables}
-          onClose={() => setIsHealthDialogOpen(false)}
-        />
-      )}
+
     </div>
   );
 }

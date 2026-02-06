@@ -4,6 +4,8 @@ import authRouter from './routes/auth';
 import { driveRouter } from './routes/drive';
 import { imageRouter } from './routes/images';
 import stripeRouter from './routes/stripe';
+import adminRouter from './routes/admin';
+import impersonateRouter from './routes/impersonate';
 import { errorHandler } from './middleware/errorHandler';
 
 export const createApp = (): express.Application => {
@@ -78,6 +80,8 @@ export const createApp = (): express.Application => {
     app.use('/api/drive', driveRouter);
     app.use('/api/auth', authRouter);
     app.use('/api/stripe', stripeRouter);
+    app.use('/api/admin/impersonate', impersonateRouter);
+    app.use('/api/admin', adminRouter);
 
     app.use(errorHandler);
 
