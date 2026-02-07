@@ -1,3 +1,5 @@
+import { getAuthToken } from '../contexts/AuthContext';
+
 export interface ImageResult {
     url: string;
     thumbnail: string;
@@ -26,16 +28,27 @@ class ImageProviderService {
     }
 
     async generateImage(prompt: string, style?: string): Promise<string> {
+        const token = getAuthToken();
+
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+        };
+
+        // Add authorization header if token is available
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`${this.baseUrl}/api/images/generate`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify({ prompt, style }),
         });
 
         if (!response.ok) {
-            throw new Error('Failed to generate image');
+            const errorData = await response.json().catch(() => ({}));
+            const message = errorData.userMessage || errorData.error || 'Failed to generate image';
+            throw new Error(message);
         }
 
         const data = await response.json();

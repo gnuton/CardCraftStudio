@@ -13,7 +13,9 @@
     "test": "npm run test --workspaces",
     "setup:local-env": "node scripts/setup-local-env.js",
     "setup:cloud-env": "node scripts/setup-cloud-env.js",
-    "setup:github-secrets": "node scripts/setup-github-secrets.js"
+    "setup:github-secrets": "node scripts/setup-github-secrets.js",
+    "fill-env": "node scripts/fill-env.js",
+    "fill-env:auto": "node scripts/fill-env.js --auto"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

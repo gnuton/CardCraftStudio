@@ -72,12 +72,37 @@ npm run setup:local-env
 # Set up Google Cloud resources (requires gcloud CLI)
 npm run setup:cloud-env
 
+# Auto-fill missing environment variables from Google Cloud
+npm run fill-env              # Interactive mode
+npm run fill-env:auto         # Automatic mode (non-interactive)
+
 # Configure GitHub Actions secrets (requires gh CLI)
 npm run setup:github-secrets
 
 # Start development server
 npm run dev
 ```
+
+**New: Auto-Fill Environment Variables** 🎯
+
+The `fill-env` script automatically detects missing environment variables and attempts to fetch them from Google Cloud:
+
+- **GOOGLE_API_KEY**: Finds existing API keys or creates a new one
+- **GOOGLE_CLOUD_PROJECT**: Uses your active gcloud project
+- **GOOGLE_CUSTOM_SEARCH_CX**: Guides you to create a Custom Search Engine
+- **OAuth Credentials**: Provides instructions for manual setup
+
+```bash
+# Interactive mode - prompts for manual input when needed
+npm run fill-env
+
+# Auto mode - fills what it can without prompts
+npm run fill-env:auto
+```
+
+**Requirements:**
+- `gcloud` CLI installed and authenticated
+- Active Google Cloud project set (`gcloud config set project YOUR_PROJECT_ID`)
 
 #### Manual Setup
 

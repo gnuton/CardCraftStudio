@@ -39,6 +39,16 @@ npm run dev
 
 That's it! Your local environment and cloud infrastructure are ready.
 
+### Safety Features
+
+All setup scripts include built-in safety checks to prevent accidental overwrites:
+
+- **`setup:local-env`**: Checks if `.env` files already exist and prompts for confirmation before overwriting
+- **`setup:cloud-env`**: Automatically detects existing resources (service accounts, databases, etc.) and skips creation
+- **`setup:github-secrets`**: Warns that existing secrets will be overwritten and requires confirmation to proceed
+
+You can safely re-run these scripts without losing your existing configuration.
+
 ---
 
 ## Prerequisites
@@ -73,6 +83,7 @@ npm run setup:local-env
 ```
 
 This script will:
+- Check if `.env` files exist and ask for confirmation before overwriting
 - Prompt you for all required credentials
 - Generate random encryption keys automatically
 - Create `.env` files for both backend and frontend
@@ -188,10 +199,12 @@ This script will:
 - Authenticate with Google Cloud
 - Create or select a GCP project
 - Enable all required APIs
-- Create service accounts
+- Create service accounts (skips if already exist)
 - Set up Workload Identity Federation for GitHub Actions
-- Create Firestore database
-- Download service account credentials
+- Create Firestore database (skips if already exists)
+- Download service account credentials (skips if file exists)
+
+**Note:** This script is idempotent and safe to re-run. It will detect existing resources and skip their creation.
 
 ### Option 2: Manual Setup
 
@@ -322,7 +335,11 @@ This script will:
 - Authenticate with GitHub CLI
 - Detect your repository
 - Read values from your local `.env` files
+- Warn you that existing secrets will be overwritten
+- Prompt for confirmation before proceeding
 - Set all required secrets in your GitHub repository
+
+**Warning:** This script will overwrite existing secrets with the same name. Make sure you have the correct values before running.
 
 ### Option 2: Manual Setup
 

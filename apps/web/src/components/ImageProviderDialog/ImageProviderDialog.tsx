@@ -20,7 +20,7 @@ export const ImageProviderDialog: React.FC<ImageProviderDialogProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('upload');
     const { user } = useAuth();
-    const isPremium = user?.plan === 'premium';
+    const isPremium = user?.plan === 'premium' || user?.plan === 'admin';
 
     if (!isOpen) return null;
 

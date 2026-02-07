@@ -170,7 +170,24 @@ async function getAdminConfig() {
     return { adminEmail };
 }
 
-function createBackendEnv(config) {
+async function checkSafeToWrite(filePath) {
+    if (fs.existsSync(filePath)) {
+        displayWarning(`File already exists: ${filePath}`);
+        const overwrite = await confirmAction('Overwrite this file with new configuration?');
+        return overwrite;
+    }
+    return true;
+}
+
+async function createBackendEnv(config) {
+    const backendEnvPath = path.join(__dirname, '..', 'apps', 'backend', '.env');
+
+    const shouldWrite = await checkSafeToWrite(backendEnvPath);
+    if (!shouldWrite) {
+        displayWarning(`Skipped creating ${backendEnvPath}`);
+        return;
+    }
+
     const envContent = `# Google API Credentials (for Image Search & Generation)
 GOOGLE_API_KEY=${config.google.apiKey}
 GOOGLE_CUSTOM_SEARCH_CX=${config.google.searchCx}
@@ -205,12 +222,19 @@ STRIPE_PRICE_ID=${config.stripe.priceId}
 ADMIN_BOOTSTRAP_EMAIL=${config.admin.adminEmail}
 `;
 
-    const backendEnvPath = path.join(__dirname, '..', 'apps', 'backend', '.env');
     fs.writeFileSync(backendEnvPath, envContent);
     displaySuccess(`Created ${backendEnvPath}`);
 }
 
-function createFrontendEnv(config) {
+async function createFrontendEnv(config) {
+    const frontendEnvPath = path.join(__dirname, '..', 'apps', 'web', '.env');
+
+    const shouldWrite = await checkSafeToWrite(frontendEnvPath);
+    if (!shouldWrite) {
+        displayWarning(`Skipped creating ${frontendEnvPath}`);
+        return;
+    }
+
     const envContent = `# Google Client ID (from Google Cloud Console)
 VITE_GOOGLE_CLIENT_ID=${config.oauth.clientId}
 
@@ -218,7 +242,6 @@ VITE_GOOGLE_CLIENT_ID=${config.oauth.clientId}
 VITE_API_BASE_URL=http://localhost:${config.server.port}
 `;
 
-    const frontendEnvPath = path.join(__dirname, '..', 'apps', 'web', '.env');
     fs.writeFileSync(frontendEnvPath, envContent);
     displaySuccess(`Created ${frontendEnvPath}`);
 }
@@ -251,8 +274,8 @@ async function main() {
 
         displaySection('Creating Environment Files');
 
-        createBackendEnv(config);
-        createFrontendEnv(config);
+        await createBackendEnv(config);
+        await createFrontendEnv(config);
 
         displaySection('Setup Complete! 🎉');
 

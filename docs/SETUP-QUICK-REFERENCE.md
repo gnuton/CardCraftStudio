@@ -19,6 +19,8 @@ npm run dev                    # Start development server
 | `npm run setup:cloud-env` | Provision GCP resources | gcloud CLI |
 | `npm run setup:github-secrets` | Set GitHub secrets | gh CLI |
 
+**Safety:** All scripts include checks to prevent accidental overwrites. You can safely re-run them.
+
 ## 🔑 Required Credentials
 
 ### Must Obtain Manually

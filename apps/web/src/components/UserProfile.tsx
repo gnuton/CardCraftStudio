@@ -57,11 +57,17 @@ export const UserProfile: React.FC = () => {
                 <span className="text-sm font-medium">{user?.email.split('@')[0]}</span>
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider ${user?.plan === 'premium'
                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                    : user?.plan === 'admin'
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                     }`}>
                     {user?.plan === 'premium' ? (
                         <span className="flex items-center gap-1">
                             <Crown className="w-2.5 h-2.5" /> PRO
+                        </span>
+                    ) : user?.plan === 'admin' ? (
+                        <span className="flex items-center gap-1">
+                            <Crown className="w-2.5 h-2.5" /> ADMIN
                         </span>
                     ) : 'Free'}
                 </span>
@@ -77,7 +83,7 @@ export const UserProfile: React.FC = () => {
                         <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                     <div className="p-1">
-                        {user?.plan !== 'premium' && ENABLE_PAYMENTS && (
+                        {user?.plan !== 'premium' && user?.plan !== 'admin' && ENABLE_PAYMENTS && (
                             <button
                                 onClick={handleUpgrade}
                                 disabled={isUpgrading}

@@ -39,7 +39,7 @@ We need a place to store the "Premium" status.
     email: string;
     displayName: string;
     photoURL?: string;
-    plan: 'free' | 'premium';
+    plan: 'free' | 'premium' | 'admin';
     subscriptionStatus?: 'active' | 'canceled';
     createdAt: number;
   }
@@ -47,7 +47,7 @@ We need a place to store the "Premium" status.
 
 ### 3. Feature Gating (RBAC)
 We will introduce a `FeatureGate` component or hook.
-- **AI Features**: Locked behind `plan === 'premium'`.
+- **AI Features**: Locked behind `plan === 'premium'` or `plan === 'admin'`.
 - **GDrive**: Available to `plan === 'free' || 'premium'`.
 
 ### 4. AI Service Architecture

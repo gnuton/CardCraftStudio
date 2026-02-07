@@ -188,7 +188,20 @@ async function main() {
 
     displayInfo('This script will configure GitHub Actions secrets for your repository.');
     displayWarning('You need GitHub CLI (gh) installed and authenticated.');
+    displayWarning('This will OVERWRITE any existing secrets with the same name.');
     console.log('');
+
+    const proceed = await new Promise(resolve => {
+        rl.question(`${colors.cyan}Do you want to continue? (y/n): ${colors.reset}`, answer => {
+            resolve(answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes');
+        });
+    });
+
+    if (!proceed) {
+        displayWarning('Setup cancelled.');
+        rl.close();
+        return;
+    }
 
     // Check if gh is installed
     try {

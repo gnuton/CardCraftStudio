@@ -15,7 +15,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
 }) => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
-    const isPremium = user?.plan === 'premium';
+    const isPremium = user?.plan === 'premium' || user?.plan === 'admin';
     // For MVP, we'll allow search for everyone, but gate generate
     const isFeatureAllowed = feature === 'search' || isPremium;
 
