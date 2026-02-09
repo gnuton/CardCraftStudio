@@ -1,5 +1,5 @@
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { CardStudio } from './CardStudio';
 import type { CardConfig } from './CardStudio';
@@ -42,8 +42,14 @@ vi.mock('../services/imageService', () => ({
 vi.mock('../services/assetService', () => ({
     assetService: {
         getAssetImageUrl: vi.fn((asset) => `data:${asset.mimeType};base64,${asset.driveFileId}`),
+        fetchAssetData: vi.fn((asset) => Promise.resolve(`data:${asset.mimeType};base64,${asset.driveFileId}`)),
         createAsset: vi.fn()
     }
+}));
+
+vi.mock('../utils/color', () => ({
+    getDominantColor: vi.fn().mockResolvedValue('#ffffff'),
+    isLightColor: vi.fn().mockReturnValue(true)
 }));
 
 
@@ -75,7 +81,7 @@ const mockCard: CardConfig = {
 };
 
 describe('CardStudio', () => {
-    it('opens AssetManager when an image element is selected', () => {
+    it('opens AssetManager when "Choose Image" is clicked in ImageControls', () => {
         const onUpdate = vi.fn();
         render(
             <CardStudio
@@ -91,6 +97,10 @@ describe('CardStudio', () => {
 
         // Select Image Element
         fireEvent.click(screen.getByTestId('select-image'));
+
+        // Sidebar should appear with "Choose Image" button (since art data is empty)
+        const chooseBtn = screen.getByText('Choose Image');
+        fireEvent.click(chooseBtn);
 
         // Dialog should open
         expect(screen.getByTestId('asset-manager-dialog')).toBeInTheDocument();
@@ -116,7 +126,7 @@ describe('CardStudio', () => {
         expect(screen.getByTestId('selected-element')).toHaveTextContent('title');
     });
 
-    it('updates card config when asset is selected from dialog', () => {
+    it('updates card config when asset is selected from dialog', async () => {
         const onUpdate = vi.fn();
         render(
             <CardStudio
@@ -127,14 +137,17 @@ describe('CardStudio', () => {
             />
         );
 
-        // Open Dialog
+        // Open Dialog via Sidebar
         fireEvent.click(screen.getByTestId('select-image'));
+        fireEvent.click(screen.getByText('Choose Image'));
 
         // Select asset in dialog
         fireEvent.click(screen.getByTestId('dialog-select'));
 
         // Dialog should close
-        expect(screen.queryByTestId('asset-manager-dialog')).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByTestId('asset-manager-dialog')).not.toBeInTheDocument();
+        });
 
         // onUpdate should be called with new data (data URL from mocked assetService)
         expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
