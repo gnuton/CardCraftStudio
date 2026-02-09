@@ -36,7 +36,8 @@ describe('GoogleImagenService', () => {
         mockedFetch.mockResolvedValueOnce({
             ok: false,
             status: 403,
-            statusText: 'Forbidden'
+            statusText: 'Forbidden',
+            text: async () => 'Forbidden'
         });
 
         await expect(googleImagenService.generateImage('test', 'fantasy'))
