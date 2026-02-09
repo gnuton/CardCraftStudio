@@ -55,38 +55,74 @@ class AssetService {
     }
 
     /**
-   * Upload file data to Firestore (stores base64 in document)
-   * For MVP, we store images directly in Firestore
-   * Future: Move to Cloud Storage or Drive
-   */
+    * Upload file data to Firestore (stores base64 in document)
+    * For MVP, we store images directly in Firestore
+    * If file is large (>900KB), we chunk it into subcollections
+    * Future: Move to Cloud Storage or Drive
+    */
     private async uploadToStorage(
         fileName: string,
         buffer: Buffer,
         mimeType: string,
         userId: string
     ): Promise<{ storageId: string; dataUrl: string }> {
-        // Store base64 data directly in a separate Firestore collection
-        // This keeps asset metadata separate from large binary data
-        const storageId = this.collection.doc().id;
-        const base64Data = buffer.toString('base64');
-        const dataUrl = `data:${mimeType};base64,${base64Data}`;
-
         const database = db();
         if (!database) {
             throw new ApiError(500, 'Database unavailable', 'Firestore is not configured');
         }
 
-        // Store in separate collection to avoid document size limits
-        await database.collection('assetData').doc(storageId).set({
+        const storageId = this.collection.doc().id;
+        const base64Full = buffer.toString('base64');
+        const MAX_SIZE = 900 * 1024; // 900KB safety limit for document size
+
+        // If simple base64 is small enough, store directly
+        if (base64Full.length < MAX_SIZE) {
+            const dataUrl = `data:${mimeType};base64,${base64Full}`;
+            await database.collection('assetData').doc(storageId).set({
+                userId,
+                dataUrl,
+                mimeType,
+                size: buffer.length,
+                createdAt: Date.now(),
+            });
+            console.log(`[AssetService] Stored image data: ${storageId} (${buffer.length} bytes)`);
+            return { storageId, dataUrl };
+        }
+
+        // Function to chunk large files
+        const CHUNK_SIZE = 900 * 1024;
+        const totalChunks = Math.ceil(base64Full.length / CHUNK_SIZE);
+        const batch = database.batch();
+
+        // Create main document
+        const mainDocRef = database.collection('assetData').doc(storageId);
+        batch.set(mainDocRef, {
             userId,
-            dataUrl,
+            isChunked: true,
+            chunkCount: totalChunks,
             mimeType,
             size: buffer.length,
             createdAt: Date.now(),
         });
 
-        console.log(`[AssetService] Stored image data: ${storageId} (${buffer.length} bytes)`);
-        return { storageId, dataUrl };
+        // Create chunks
+        for (let i = 0; i < totalChunks; i++) {
+            const start = i * CHUNK_SIZE;
+            const end = start + CHUNK_SIZE;
+            const chunkData = base64Full.substring(start, end);
+
+            const chunkRef = mainDocRef.collection('chunks').doc(i.toString());
+            batch.set(chunkRef, {
+                data: chunkData,
+                index: i
+            });
+        }
+
+        await batch.commit();
+        console.log(`[AssetService] Stored chunked image data: ${storageId} (${buffer.length} bytes, ${totalChunks} chunks)`);
+
+        // Return constructed data URL (though unused by createAsset, maintains interface)
+        return { storageId, dataUrl: `data:${mimeType};base64,${base64Full}` };
     }
 
     /**
@@ -99,9 +135,24 @@ class AssetService {
         }
 
         // Verify ownership before deleting
-        const doc = await database.collection('assetData').doc(storageId).get();
+        const docRef = database.collection('assetData').doc(storageId);
+        const doc = await docRef.get();
+
         if (doc.exists && doc.data()?.userId === userId) {
-            await database.collection('assetData').doc(storageId).delete();
+            const data = doc.data();
+
+            // If chunked, delete all chunks first
+            if (data?.isChunked) {
+                const chunksSnapshot = await docRef.collection('chunks').get();
+                const batch = database.batch();
+                chunksSnapshot.docs.forEach(chunkDoc => {
+                    batch.delete(chunkDoc.ref);
+                });
+                await batch.commit();
+            }
+
+            // Delete main document
+            await docRef.delete();
             console.log(`[AssetService] Deleted image data: ${storageId}`);
         }
     }
@@ -115,7 +166,8 @@ class AssetService {
             throw new ApiError(500, 'Database unavailable', 'Firestore is not configured');
         }
 
-        const doc = await database.collection('assetData').doc(storageId).get();
+        const docRef = database.collection('assetData').doc(storageId);
+        const doc = await docRef.get();
 
         if (!doc.exists) {
             throw new ApiError(404, 'Asset data not found', 'The asset image data does not exist');
@@ -124,6 +176,13 @@ class AssetService {
         const data = doc.data();
         if (data?.userId !== userId) {
             throw new ApiError(403, 'Forbidden', 'You do not have permission to access this asset');
+        }
+
+        // Handle chunked data
+        if (data?.isChunked) {
+            const chunksSnapshot = await docRef.collection('chunks').orderBy('index').get();
+            const base64Full = chunksSnapshot.docs.map(d => d.data().data).join('');
+            return `data:${data.mimeType};base64,${base64Full}`;
         }
 
         return data.dataUrl;
@@ -258,8 +317,8 @@ class AssetService {
             mimeType,
             fileSize,
             source: input.source,
-            prompt: input.prompt,
-            style: input.style,
+            ...(input.prompt ? { prompt: input.prompt } : {}),
+            ...(input.style ? { style: input.style } : {}),
             tags: input.tags || [],
             createdAt: now,
             updatedAt: now,
@@ -418,6 +477,7 @@ class AssetService {
         }
 
         await this.collection.doc(assetId).update({
+            // @ts-ignore
             usageCount: FieldValue.increment(1) as any,
             lastUsedAt: Date.now(),
         });

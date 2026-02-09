@@ -6,9 +6,10 @@ interface AssetCardProps {
     asset: Asset;
     onClick: () => void;
     onDelete: (id: string) => void;
+    selectionMode?: boolean;
 }
 
-export const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick, onDelete }) => {
+export const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick, onDelete, selectionMode = false }) => {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [imageLoading, setImageLoading] = useState(true);
     const [showActions, setShowActions] = useState(false);
@@ -25,7 +26,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick, onDelete }
                 }
 
                 const response = await fetch(
-                    `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/assets/${asset.id}/data`,
+                    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/assets/${asset.id}/data`,
                     {
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -139,15 +140,17 @@ export const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick, onDelete }
             </div>
 
             {/* Quick Add Button */}
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onClick();
-                }}
-                className="w-full py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium hover:from-pink-600 hover:to-purple-700 transition-all"
-            >
-                Add to Card
-            </button>
+            {selectionMode && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onClick();
+                    }}
+                    className="w-full py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium hover:from-pink-600 hover:to-purple-700 transition-all"
+                >
+                    Add to Card
+                </button>
+            )}
         </div>
     );
 };

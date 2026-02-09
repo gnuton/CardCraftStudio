@@ -16,24 +16,36 @@ vi.mock('./Card', () => ({
     )
 }));
 
-vi.mock('./ImageProviderDialog/ImageProviderDialog', () => ({
-    ImageProviderDialog: ({ isOpen, onClose, onImageSelect }: any) => (
+vi.mock('./AssetManager', () => ({
+    AssetManager: ({ isOpen, onClose, onAssetSelect }: any) => (
         isOpen ? (
-            <div data-testid="image-provider-dialog">
-                Dialog Open
+            <div data-testid="asset-manager-dialog">
+                Asset Manager Open
                 <button data-testid="dialog-close" onClick={onClose}>Close</button>
-                <button data-testid="dialog-select" onClick={() => onImageSelect('ref:new-image')}>Select Image Ref</button>
+                <button data-testid="dialog-select" onClick={() => onAssetSelect({
+                    id: 'test-asset',
+                    mimeType: 'image/png',
+                    driveFileId: 'base64data'
+                })}>Select Asset</button>
             </div>
         ) : null
     )
 }));
 
-// Mock other dependencies
+// Mock services
 vi.mock('../services/imageService', () => ({
     imageService: {
         processImage: vi.fn()
     }
 }));
+
+vi.mock('../services/assetService', () => ({
+    assetService: {
+        getAssetImageUrl: vi.fn((asset) => `data:${asset.mimeType};base64,${asset.driveFileId}`),
+        createAsset: vi.fn()
+    }
+}));
+
 
 const mockDeckStyle: DeckStyle = {
     elements: [
@@ -63,7 +75,7 @@ const mockCard: CardConfig = {
 };
 
 describe('CardStudio', () => {
-    it('opens ImageProviderDialog when an image element is selected', () => {
+    it('opens AssetManager when an image element is selected', () => {
         const onUpdate = vi.fn();
         render(
             <CardStudio
@@ -75,16 +87,16 @@ describe('CardStudio', () => {
         );
 
         // Dialog should be closed initially
-        expect(screen.queryByTestId('image-provider-dialog')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('asset-manager-dialog')).not.toBeInTheDocument();
 
         // Select Image Element
         fireEvent.click(screen.getByTestId('select-image'));
 
         // Dialog should open
-        expect(screen.getByTestId('image-provider-dialog')).toBeInTheDocument();
+        expect(screen.getByTestId('asset-manager-dialog')).toBeInTheDocument();
     });
 
-    it('does NOT open ImageProviderDialog when a text element is selected', () => {
+    it('does NOT open AssetManager when a text element is selected', () => {
         const onUpdate = vi.fn();
         render(
             <CardStudio
@@ -99,12 +111,12 @@ describe('CardStudio', () => {
         fireEvent.click(screen.getByTestId('select-text'));
 
         // Dialog should NOT open
-        expect(screen.queryByTestId('image-provider-dialog')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('asset-manager-dialog')).not.toBeInTheDocument();
         // But element should be selected
         expect(screen.getByTestId('selected-element')).toHaveTextContent('title');
     });
 
-    it('updates card config when image is selected from dialog', () => {
+    it('updates card config when asset is selected from dialog', () => {
         const onUpdate = vi.fn();
         render(
             <CardStudio
@@ -118,16 +130,16 @@ describe('CardStudio', () => {
         // Open Dialog
         fireEvent.click(screen.getByTestId('select-image'));
 
-        // Select image in dialog
+        // Select asset in dialog
         fireEvent.click(screen.getByTestId('dialog-select'));
 
         // Dialog should close
-        expect(screen.queryByTestId('image-provider-dialog')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('asset-manager-dialog')).not.toBeInTheDocument();
 
-        // onUpdate should be called with new data
+        // onUpdate should be called with new data (data URL from mocked assetService)
         expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
             data: expect.objectContaining({
-                art: 'ref:new-image'
+                art: 'data:image/png;base64,base64data'
             })
         }));
     });

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ImageProviderDialog } from './ImageProviderDialog/ImageProviderDialog';
+import { AssetManager } from './AssetManager';
+import { assetService } from '../services/assetService';
 import { templateService } from '../services/templateService';
 import { driveService } from '../services/googleDrive';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1181,11 +1182,12 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                 customTemplates={customTemplates}
                 isFlipped={isFlipped}
             />
-            <ImageProviderDialog
+            <AssetManager
                 isOpen={isImageDialogOpen}
                 onClose={() => setIsImageDialogOpen(false)}
-                onImageSelect={(ref) => {
-                    handleStyleChange(isFlipped ? { cardBackImage: ref } : { backgroundImage: ref });
+                onAssetSelect={(asset) => {
+                    const url = assetService.getAssetImageUrl(asset);
+                    handleStyleChange(isFlipped ? { cardBackImage: url } : { backgroundImage: url });
                     setIsImageDialogOpen(false);
                 }}
             />

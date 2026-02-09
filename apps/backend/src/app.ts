@@ -3,6 +3,7 @@ import cors from 'cors';
 import authRouter from './routes/auth';
 import { driveRouter } from './routes/drive';
 import { imageRouter } from './routes/images';
+import { assetRouter } from './routes/assets';
 import stripeRouter from './routes/stripe';
 import adminRouter from './routes/admin';
 import impersonateRouter from './routes/impersonate';
@@ -77,6 +78,7 @@ export const createApp = (): express.Application => {
     });
 
     app.use('/api/images', imageRouter);
+    app.use('/api/assets', assetRouter);
     app.use('/api/drive', driveRouter);
     app.use('/api/auth', authRouter);
     app.use('/api/stripe', stripeRouter);

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { ResolvedImage } from './ResolvedImage';
 import { Upload, X, Type, Image as ImageIcon, FileText } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
-import { ImageProviderDialog } from './ImageProviderDialog/ImageProviderDialog';
+import { AssetManager } from './AssetManager';
+import { assetService } from '../services/assetService';
 import type { DeckStyle } from '../types/deck';
 import type { CardConfig } from './CardStudio';
 
@@ -43,9 +44,10 @@ export const Controls: React.FC<ControlsProps> = ({
         setIsImageDialogOpen(true);
     };
 
-    const handleImageSelect = (ref: string) => {
+    const handleImageSelect = (asset: any) => {
         if (activeImageField) {
-            onChange(activeImageField, ref);
+            const url = assetService.getAssetImageUrl(asset);
+            onChange(activeImageField, url);
             setIsImageDialogOpen(false);
             setActiveImageField(null);
         }
@@ -160,10 +162,10 @@ export const Controls: React.FC<ControlsProps> = ({
                 </div>
             </div>
 
-            <ImageProviderDialog
+            <AssetManager
                 isOpen={isImageDialogOpen}
                 onClose={() => setIsImageDialogOpen(false)}
-                onImageSelect={handleImageSelect}
+                onAssetSelect={handleImageSelect}
             />
         </div>
     );

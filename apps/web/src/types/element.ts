@@ -31,6 +31,14 @@ export interface CardElement {
     side: 'front' | 'back';
 }
 
+export interface ImageTransform {
+    x: number;
+    y: number;
+    scale: number;
+    rotate?: number;
+    backgroundColor?: string;
+}
+
 export const createDefaultElement = (type: CardElement['type'], side: 'front' | 'back' = 'front'): CardElement => {
     const base = {
         id: crypto.randomUUID(),

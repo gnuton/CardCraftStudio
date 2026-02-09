@@ -3,16 +3,17 @@ import { Card } from './Card';
 import { toSvg } from 'html-to-image';
 import { Undo, Redo, Download, ArrowLeft, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2 } from 'lucide-react';
 import type { DeckStyle } from '../types/deck';
-import { imageService } from '../services/imageService';
+import type { ImageTransform } from '../types/element';
+import { assetService } from '../services/assetService';
 import { cn } from '../utils/cn';
-import { ImageProviderDialog } from './ImageProviderDialog/ImageProviderDialog';
-
-
+import { AssetManager } from './AssetManager';
+import { ImageControls } from './ImageControls';
 
 export interface CardConfig {
     id: string;
     name: string; // Internal name for the card in list
     data: Record<string, string>; // Map element ID to content
+    transforms?: Record<string, ImageTransform>;
 
     // Global overrides
     borderColor?: string;
@@ -91,6 +92,21 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
         }
 
         pushToHistory();
+        setConfig(newConfig);
+        onUpdate(newConfig);
+    };
+
+    const handleTransformChange = (id: string, transform: ImageTransform) => {
+        const newConfig = {
+            ...config,
+            transforms: {
+                ...config.transforms,
+                [id]: transform
+            }
+        };
+        // We probably don't need to push to history for every micro-movement if it causes performance issues,
+        // but for now let's keep it simple. If drag is laggy, we might need a separate local state that commits on mouse up.
+        // For sliders/buttons it's fine.
         setConfig(newConfig);
         onUpdate(newConfig);
     };
@@ -200,14 +216,132 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
         if (id) {
             const element = deckStyle.elements.find(e => e.id === id);
             if (element && element.type === 'image') {
-                setIsImageDialogOpen(true);
+                // setIsImageDialogOpen(true); // Don't auto-open, allow selecting to show controls
             }
         }
     };
 
-    const handleImageProviderSelect = (ref: string) => {
+    const [loadingElementIds, setLoadingElementIds] = useState<string[]>([]);
+    const [isPickingColor, setIsPickingColor] = useState(false);
+
+    const handleColorPick = async (elementId: string, x: number, y: number, width: number, _height: number) => {
+        setIsPickingColor(false);
+        const imageUrl = config.data[elementId];
+        if (!imageUrl) return;
+
+        try {
+            // Resolve if ref
+            let urlToAnalyze = imageUrl;
+            if (urlToAnalyze.startsWith('ref:')) {
+                const { imageService } = await import('../services/imageService');
+                const resolved = await imageService.resolveImage(urlToAnalyze);
+                if (resolved) {
+                    urlToAnalyze = resolved;
+                }
+            }
+
+            // Apply inverse transform to coordinates
+            // Normalize to logical card coordinates (remove viewport zoom)
+            const logicalWidth = deckStyle.cardWidth || 375;
+            const logicalHeight = deckStyle.cardHeight || 525;
+
+            const scaleFactor = width / logicalWidth; // Current viewport scale
+
+            const logicalX = x / scaleFactor;
+            const logicalY = y / scaleFactor;
+
+            const currentTransform = config.transforms?.[elementId] || { x: 0, y: 0, scale: 1 };
+
+            const centerX = logicalWidth / 2;
+            const centerY = logicalHeight / 2;
+
+            const adjustedX = centerX + (logicalX - centerX - currentTransform.x) / currentTransform.scale;
+            const adjustedY = centerY + (logicalY - centerY - currentTransform.y) / currentTransform.scale;
+
+            const { getPixelColor } = await import('../utils/color');
+            const color = await getPixelColor(urlToAnalyze, adjustedX, adjustedY, logicalWidth, logicalHeight);
+
+            // Update transform
+            handleTransformChange(elementId, {
+                ...currentTransform,
+                backgroundColor: color
+            });
+
+            showStatus('Background color updated');
+        } catch (e) {
+            console.error("Failed to pick color", e);
+            showStatus('Failed to pick color');
+        }
+    };
+
+    // Keep a ref to config for async updates
+    const configRef = useRef(config);
+    useEffect(() => {
+        configRef.current = config;
+    }, [config]);
+
+    const handleAssetSelect = async (asset: any) => {
         if (selectedElement) {
-            handleConfigChange(selectedElement, ref);
+            try {
+                // Start loading
+                setLoadingElementIds(prev => [...prev, selectedElement]);
+                showStatus('Loading image...');
+
+                // Fetch URL
+                const imageUrl = await assetService.fetchAssetData(asset);
+
+                // Get Color (async)
+                let color = '#ffffff';
+                try {
+                    const { getDominantColor } = await import('../utils/color');
+                    let urlToAnalyze = imageUrl;
+
+                    if (urlToAnalyze.startsWith('ref:')) {
+                        const { imageService } = await import('../services/imageService');
+                        const resolved = await imageService.resolveImage(urlToAnalyze);
+                        if (resolved) {
+                            urlToAnalyze = resolved;
+                        }
+                    }
+
+                    color = await getDominantColor(urlToAnalyze);
+                } catch (e) {
+                    console.error("Color extraction failed", e);
+                }
+
+                // Use ref to get latest config without stale closures
+                const prevConfig = configRef.current;
+
+                const newTransforms = { ...prevConfig.transforms };
+                const currentTransform = newTransforms[selectedElement] || { x: 0, y: 0, scale: 1 };
+
+                newTransforms[selectedElement] = {
+                    ...currentTransform,
+                    backgroundColor: color
+                };
+
+                const newData = {
+                    ...prevConfig.data,
+                    [selectedElement]: imageUrl
+                };
+
+                const newConfig = {
+                    ...prevConfig,
+                    data: newData,
+                    transforms: newTransforms
+                };
+
+                setConfig(newConfig);
+                onUpdate(newConfig);
+
+                showStatus('Image applied');
+            } catch (err) {
+                console.error('Failed to load asset image:', err);
+                showStatus('Failed to load image');
+            } finally {
+                // Stop loading
+                setLoadingElementIds(prev => prev.filter(id => id !== selectedElement));
+            }
         }
         setIsImageDialogOpen(false);
     };
@@ -246,118 +380,168 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                 </div>
             </div>
 
-            {/* Canvas Area */}
-            <div
-                className={cn(
-                    "flex-1 relative overflow-hidden bg-muted/20 flex items-center justify-center select-none",
-                    (isDraggingPan || isPanMode) ? "cursor-grab active:cursor-grabbing" : "cursor-default"
-                )}
-                onWheel={handleWheel}
-                onMouseDown={handlePanMouseDown}
-                onMouseMove={handlePanMouseMove}
-                onMouseUp={() => setIsDraggingPan(false)}
-                onMouseLeave={() => setIsDraggingPan(false)}
-                onContextMenu={(e) => e.preventDefault()}
-                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    const file = e.dataTransfer.files[0];
-                    if (file && file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = async () => {
-                            try {
-                                const processed = await imageService.processImage(reader.result as string);
-                                handleConfigChange('centerImage', processed);
-                            } catch (error) {
-                                console.error("Image processing failed", error);
-                                // Fallback to raw if processing fails (though risky for storage)
-                                handleConfigChange('centerImage', reader.result as string);
-                            }
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                }}
-            >
-                {/* Grid Pattern */}
-                <div className="absolute inset-0 bg-[radial-gradient(#88888820_1px,transparent_1px)] [background-size:20px_20px]" />
-
-                {/* Status Toast */}
-                {status && (
-                    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-foreground/80 text-background px-4 py-1.5 rounded-full text-sm font-medium animate-in fade-in slide-in-from-top-4">
-                        {status}
-                    </div>
-                )}
-
-                {/* Card Container */}
+            {/* Main Content Area */}
+            <div className="flex-1 flex overflow-hidden relative">
+                {/* Canvas Area */}
                 <div
-                    className={cn("relative transition-transform duration-100 ease-out will-change-transform shadow-2xl rounded-[16px]", (isPanMode || isDraggingPan) && "pointer-events-none")}
-                    style={{ transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${zoom})` }}
+                    className={cn(
+                        "flex-1 relative overflow-hidden bg-muted/20 flex items-center justify-center select-none",
+                        (isDraggingPan || isPanMode) ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+                    )}
+                    onWheel={handleWheel}
+                    onMouseDown={handlePanMouseDown}
+                    onMouseMove={handlePanMouseMove}
+                    onMouseUp={() => setIsDraggingPan(false)}
+                    onMouseLeave={() => setIsDraggingPan(false)}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files[0];
+                        if (file && file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = async () => {
+                                try {
+                                    showStatus('Uploading image...');
+                                    const asset = await assetService.createAsset({
+                                        imageData: reader.result as string,
+                                        fileName: file.name,
+                                        mimeType: file.type,
+                                        source: 'uploaded',
+                                        tags: ['quick-upload']
+                                    });
+                                    const url = assetService.getAssetImageUrl(asset);
+                                    handleConfigChange('centerImage', url);
+                                    showStatus('Image uploaded');
+                                } catch (error) {
+                                    console.error("Image upload failed", error);
+                                    showStatus('Upload failed');
+                                }
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    }}
                 >
-                    <Card
-                        ref={cardRef}
-                        {...config}
-                        deckStyle={deckStyle}
-                        isInteractive={!isPanMode} // Disable editing when panning
-                        isLayoutEditable={false} // Disable layout handles in content editor
-                        onContentChange={handleConfigChange}
-                        selectedElement={selectedElement}
+                    {/* Grid Pattern */}
+                    <div className="absolute inset-0 bg-[radial-gradient(#88888820_1px,transparent_1px)] [background-size:20px_20px]" />
 
-                        onSelectElement={handleElementSelect}
-                    />
-                </div>
+                    {/* Status Toast */}
+                    {status && (
+                        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-foreground/80 text-background px-4 py-1.5 rounded-full text-sm font-medium animate-in fade-in slide-in-from-top-4">
+                            {status}
+                        </div>
+                    )}
 
-                {/* Floating Viewport Controls */}
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-2 py-1.5 bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg z-50">
-                    <div className="flex items-center border-r border-border pr-2 mr-1">
-                        <button
-                            onClick={() => setIsPanMode(false)}
-                            className={cn(
-                                "p-2 rounded-full transition-all",
-                                !isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                            )}
-                            title="Select Mode"
-                        >
-                            <MousePointer2 className="w-4 h-4" />
+                    {/* Card Container */}
+                    <div
+                        className={cn("relative transition-transform duration-100 ease-out will-change-transform shadow-2xl rounded-[16px]", (isPanMode || isDraggingPan) && "pointer-events-none")}
+                        style={{ transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${zoom})` }}
+                    >
+                        <Card
+                            ref={cardRef}
+                            {...config}
+                            deckStyle={deckStyle}
+                            isInteractive={!isPanMode} // Disable editing when panning
+                            isLayoutEditable={false} // Disable layout handles in content editor
+                            onContentChange={handleConfigChange}
+                            onElementUpdate={() => {
+                                // If element is image, we might receive transform/content updates here too potentially
+                                // But currently we handle it via handleTransformChange or handleConfigChange.
+                                // Just a placeholder if we unify update paths.
+                            }}
+                            selectedElement={selectedElement}
+                            onSelectElement={handleElementSelect}
+                            loadingElementIds={loadingElementIds}
+                            isPickingColor={isPickingColor}
+                            onColorPick={handleColorPick}
+                            // Pass transform update handler to Card for direct manipulation
+                            onTransformChange={handleTransformChange}
+                            onDoubleClickElement={(id) => {
+                                const element = deckStyle.elements.find(e => e.id === id);
+                                if (element?.type === 'image') {
+                                    handleElementSelect(id);
+                                    setIsImageDialogOpen(true);
+                                }
+                            }}
+                        />
+                    </div>
+
+                    {/* Floating Viewport Controls */}
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-2 py-1.5 bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg z-50">
+                        <div className="flex items-center border-r border-border pr-2 mr-1">
+                            <button
+                                onClick={() => setIsPanMode(false)}
+                                className={cn(
+                                    "p-2 rounded-full transition-all",
+                                    !isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                )}
+                                title="Select Mode"
+                            >
+                                <MousePointer2 className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setIsPanMode(true)}
+                                className={cn(
+                                    "p-2 rounded-full transition-all",
+                                    isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                )}
+                                title="Pan Mode"
+                            >
+                                <Hand className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <button onClick={handleZoomOut} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+                            <ZoomOut className="w-4 h-4" />
                         </button>
-                        <button
-                            onClick={() => setIsPanMode(true)}
-                            className={cn(
-                                "p-2 rounded-full transition-all",
-                                isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                            )}
-                            title="Pan Mode"
-                        >
-                            <Hand className="w-4 h-4" />
+                        <span className="text-xs font-mono font-medium min-w-[3ch] text-center">
+                            {Math.round(zoom * 100)}%
+                        </span>
+                        <button onClick={handleZoomIn} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+                            <ZoomIn className="w-4 h-4" />
+                        </button>
+
+                        <div className="w-px h-4 bg-border mx-1" />
+
+                        <button onClick={handleResetView} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors" title="Reset View">
+                            <RotateCcw className="w-3 h-3" />
                         </button>
                     </div>
 
-                    <button onClick={handleZoomOut} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
-                        <ZoomOut className="w-4 h-4" />
-                    </button>
-                    <span className="text-xs font-mono font-medium min-w-[3ch] text-center">
-                        {Math.round(zoom * 100)}%
-                    </span>
-                    <button onClick={handleZoomIn} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
-                        <ZoomIn className="w-4 h-4" />
-                    </button>
-
-                    <div className="w-px h-4 bg-border mx-1" />
-
-                    <button onClick={handleResetView} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors" title="Reset View">
-                        <RotateCcw className="w-3 h-3" />
-                    </button>
+                    {/* Instructions Hint */}
+                    <div className="absolute bottom-6 right-6 text-xs text-muted-foreground bg-background/50 backdrop-blur px-3 py-1.5 rounded text-center pointer-events-none">
+                        Double-click text to edit • Drag & drop images
+                    </div>
                 </div>
 
-                {/* Instructions Hint */}
-                <div className="absolute bottom-6 right-6 text-xs text-muted-foreground bg-background/50 backdrop-blur px-3 py-1.5 rounded text-center pointer-events-none">
-                    Double-click text to edit • Drag & drop images
+                {/* Image Controls */}
+                <div className="absolute top-0 right-0 h-full z-40">
+                    {selectedElement && deckStyle.elements.find(e => e.id === selectedElement)?.type === 'image' && (
+                        <ImageControls
+                            transform={config.transforms?.[selectedElement] || { x: 0, y: 0, scale: 1 }}
+                            onChange={(t) => handleTransformChange(selectedElement, t)}
+                            onReset={() => handleTransformChange(selectedElement, { x: 0, y: 0, scale: 1 })}
+                            content={config.data[selectedElement]}
+                            onSelectAsset={() => setIsImageDialogOpen(true)}
+                            onRemove={() => {
+                                if (window.confirm("Remove this image?")) {
+                                    handleConfigChange(selectedElement, ''); // Clear content
+                                    handleTransformChange(selectedElement, { x: 0, y: 0, scale: 1 }); // Reset transform
+                                    // Keep selected to show empty state
+                                }
+                            }}
+                            isPickingColor={isPickingColor}
+                            onPickColor={() => setIsPickingColor(true)}
+                            onClose={() => handleElementSelect(null)}
+                        />
+                    )}
                 </div>
             </div>
 
-            <ImageProviderDialog
+            <AssetManager
                 isOpen={isImageDialogOpen}
                 onClose={() => setIsImageDialogOpen(false)}
-                onImageSelect={handleImageProviderSelect}
+                onAssetSelect={handleAssetSelect}
             />
         </div>
     );

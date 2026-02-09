@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, User as UserIcon, Crown, Loader2 } from 'lucide-react';
+import { LogOut, User as UserIcon, Crown, Loader2, Folder } from 'lucide-react';
 import { subscriptionService } from '../services/subscriptionService';
 import { ENABLE_PAYMENTS } from '../config/features';
+import { AssetManager } from './AssetManager';
 
 export const UserProfile: React.FC = () => {
     const { user, isAuthenticated, login, logout, isLoading } = useAuth();
     const [isUpgrading, setIsUpgrading] = useState(false);
+    const [isAssetManagerOpen, setIsAssetManagerOpen] = useState(false);
 
     const handleGoogleLogin = async () => {
         try {
@@ -83,6 +85,13 @@ export const UserProfile: React.FC = () => {
                         <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                     <div className="p-1">
+                        <button
+                            onClick={() => setIsAssetManagerOpen(true)}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <Folder className="w-4 h-4" />
+                            Asset Manager
+                        </button>
                         {user?.plan !== 'premium' && user?.plan !== 'admin' && ENABLE_PAYMENTS && (
                             <button
                                 onClick={handleUpgrade}
@@ -102,6 +111,12 @@ export const UserProfile: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Asset Manager Modal */}
+            <AssetManager
+                isOpen={isAssetManagerOpen}
+                onClose={() => setIsAssetManagerOpen(false)}
+            />
         </div>
     );
 };

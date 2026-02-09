@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import type { DeckStyle } from '../types/deck';
-import type { CardElement } from '../types/element';
+import type { CardElement, ImageTransform } from '../types/element';
 import { ResolvedImage } from './ResolvedImage';
 
 import { getGoogleFontUrl } from '../utils/fonts';
@@ -10,6 +11,7 @@ import { motion } from 'framer-motion';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
     data?: Record<string, string>;
+    transforms?: Record<string, ImageTransform>;
     deckStyle?: DeckStyle;
 
     // Global overrides
@@ -25,18 +27,29 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
     onSelectElement?: (element: string | null) => void;
     onElementUpdate?: (element: string | null, updates: Record<string, unknown>) => void;
     onDeleteElement?: (elementId: string) => void;
+    onTransformChange?: (elementId: string, transform: ImageTransform) => void;
+    onDoubleClickElement?: (elementId: string) => void;
+    loadingElementIds?: string[];
     allowTextEditing?: boolean;
     parentScale?: number;
 
-    // Legacy props support (optional, can be ignored if we fully migrate)
     // But maintaining signature prevents immediate breaks in parent, though we ignore them
     renderMode?: '3d' | 'front' | 'back';
+
+    isPickingColor?: boolean;
+    onColorPick?: (elementId: string, x: number, y: number, width: number, height: number) => void;
 }
+
+// SVG Data URI for a Pipette Cursor (Hotspot at bottom left tip: x=0, y=32 approx)
+// Simple pipette icon with white fill and black stroke for visibility
+// Using Base64 encoded SVG to avoid URL encoding issues
+const PIPETTE_CURSOR = `url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yIDIybDUtNSIvPjxwYXRoIGQ9Ik0xMSAxMWw0IDQiLz48cGF0aCBkPSJNOCAxN2w5LTkgMiAyLTkgOS01IDN6Ii8+PC9zdmc+') 0 32, crosshair`;
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     (
         {
             data = {},
+            transforms,
             deckStyle,
             borderColor,
             borderWidth,
@@ -51,9 +64,14 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             onSelectElement,
             onElementUpdate,
             onDeleteElement,
+            onTransformChange,
             allowTextEditing = true,
             parentScale = 1,
             renderMode = '3d',
+            loadingElementIds,
+            isPickingColor,
+            onColorPick,
+            onDoubleClickElement,
             ...props
         },
         ref
@@ -100,7 +118,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         };
 
         const renderElementContent = (element: CardElement) => {
-            const content = data[element.id] || element.defaultContent || '';
+            // detailed comment: when removing an image, we set data[element.id] to ''.
+            // The previous logic `data[element.id] || element.defaultContent` would treat '' as falsey
+            // and fall back to defaultContent, preventing removal. We must check for undefined.
+            const content = data[element.id] !== undefined ? data[element.id] : (element.defaultContent || '');
 
             const isEditing = editingElement === element.id;
 
@@ -124,30 +145,135 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             };
 
             if (element.type === 'image') {
-                const imgSrc = content || element.url;
+                // Fix for Remove bug: If content is an empty string, we should respect it and NOT fall back to element.url
+                // Only fall back if content is undefined
+                const imgSrc = content !== undefined ? content : element.url;
+
+                const transform = transforms?.[element.id] || { x: 0, y: 0, scale: 1 };
+                const isLoading = loadingElementIds?.includes(element.id);
+
+                // Interaction Handlers
+                const handleWheel = (e: React.WheelEvent) => {
+                    if (!isInteractive || !onTransformChange) return;
+                    e.stopPropagation();
+                    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                    const newScale = Math.min(Math.max(0.1, transform.scale + delta), 5);
+                    onTransformChange(element.id, { ...transform, scale: newScale });
+                };
+
+                const handleMouseDown = (e: React.MouseEvent) => {
+                    if (!isInteractive || !onTransformChange) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const startX = e.clientX;
+                    const startY = e.clientY;
+                    const startTransformX = transform.x;
+                    const startTransformY = transform.y;
+
+                    const handleMouseMove = (moveEvent: MouseEvent) => {
+                        const deltaX = (moveEvent.clientX - startX) / parentScale; // Adjust for parent scale if needed
+                        const deltaY = (moveEvent.clientY - startY) / parentScale;
+
+                        onTransformChange(element.id, {
+                            ...transform,
+                            x: startTransformX + deltaX,
+                            y: startTransformY + deltaY
+                        });
+                    };
+
+                    const handleMouseUp = () => {
+                        window.removeEventListener('mousemove', handleMouseMove);
+                        window.removeEventListener('mouseup', handleMouseUp);
+                    };
+
+                    window.addEventListener('mousemove', handleMouseMove);
+                    window.addEventListener('mouseup', handleMouseUp);
+
+                    onSelectElement?.(element.id); // Select on drag start
+                };
+
                 return (
                     <div
                         className={cn(
                             "w-full h-full relative overflow-hidden",
-                            !imgSrc && "bg-slate-100 flex items-center justify-center border border-dashed border-slate-300"
+                            !imgSrc && "bg-slate-100 flex items-center justify-center border border-dashed border-slate-300",
+                            isPickingColor && "cursor-crosshair ring-2 ring-primary ring-offset-2"
                         )}
-                        style={{ ...styleProps, padding: 0 }}
+                        style={{
+                            ...styleProps,
+                            padding: 0,
+                            backgroundColor: transform.backgroundColor || 'transparent',
+                            cursor: isPickingColor ? PIPETTE_CURSOR : undefined
+                        }}
                         onClick={(e) => {
+                            // Click handler for direct image interaction if needed
                             if (isInteractive) {
                                 e.stopPropagation();
                                 onSelectElement?.(element.id);
                             }
                         }}
+                        onDoubleClick={(e) => {
+                            if (isInteractive) {
+                                e.stopPropagation();
+                                onDoubleClickElement?.(element.id);
+                            }
+                        }}
+                        onWheel={handleWheel}
                     >
+                        {isLoading && (
+                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
+                                <Loader2 className="w-8 h-8 animate-spin text-white drop-shadow-md" />
+                            </div>
+                        )}
+
                         {imgSrc ? (
-                            <ResolvedImage
-                                src={imgSrc}
-                                alt={element.name}
-                                className="w-full h-full object-cover pointer-events-none"
-                            />
+                            <div
+                                className={cn(
+                                    "w-full h-full flex items-center justify-center pointer-events-auto",
+                                    isPickingColor ? "cursor-none" : "cursor-move"
+                                )}
+                                onMouseDown={handleMouseDown}
+                                onClick={(e) => {
+                                    if (isPickingColor && onColorPick) {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const x = e.clientX - rect.left;
+                                        const y = e.clientY - rect.top;
+                                        onColorPick(element.id, x, y, rect.width, rect.height);
+                                    }
+                                }}
+                                style={{
+                                    cursor: isPickingColor ? PIPETTE_CURSOR : undefined
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                                        transformOrigin: 'center',
+                                        transition: 'transform 0.05s linear', // Faster transition for drag
+                                        maxWidth: 'none', // Allow image to be larger than container
+                                        maxHeight: 'none',
+                                    }}
+                                >
+                                    <ResolvedImage
+                                        src={imgSrc}
+                                        alt={element.name}
+                                        className="max-w-none max-h-none pointer-events-none select-none"
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'contain',
+                                            display: 'block'
+                                        }}
+                                        draggable={false}
+                                    />
+                                </div>
+                            </div>
                         ) : (
-                            <div className="text-xs text-slate-400">
-                                {isInteractive ? "Drag image" : "No Content"}
+                            <div className="text-xs text-slate-400 text-center px-2 select-none">
+                                {isInteractive ? "Double-click to add image" : "No Content"}
                             </div>
                         )}
                     </div>
@@ -253,7 +379,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             return (
                 <div key={element.id} style={interactiveWrapperStyle}>
                     <TransformWrapper
-                        isActive={isInteractive && isSelected}
+                        isActive={isInteractive && isSelected && !isPickingColor}
                         isSelected={isSelected}
                         values={{
                             x: element.x,
@@ -284,7 +410,24 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                         hideControls={!isLayoutEditable}
                         style={{ pointerEvents: 'auto' }} // Enable pointer events on the actual element
                     >
-                        {renderElementContent(element)}
+                        <div
+                            className="w-full h-full"
+                            style={{
+                                cursor: isPickingColor ? PIPETTE_CURSOR : undefined
+                            }}
+                            onClick={(e) => {
+                                if (isPickingColor) {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    const x = e.clientX - rect.left;
+                                    const y = e.clientY - rect.top;
+                                    onColorPick?.(element.id, x, y, rect.width, rect.height);
+                                }
+                            }}
+                        >
+                            {renderElementContent(element)}
+                        </div>
                     </TransformWrapper>
                 </div>
             );

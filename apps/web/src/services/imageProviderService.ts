@@ -27,7 +27,11 @@ class ImageProviderService {
         return data.results;
     }
 
-    async generateImage(prompt: string, style?: string): Promise<string> {
+    async generateImage(
+        prompt: string,
+        style?: string,
+        options?: { saveToAssets?: boolean; assetMetadata?: any }
+    ): Promise<{ imageBase64: string; asset?: any }> {
         const token = getAuthToken();
 
         const headers: HeadersInit = {
@@ -42,7 +46,12 @@ class ImageProviderService {
         const response = await fetch(`${this.baseUrl}/api/images/generate`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ prompt, style }),
+            body: JSON.stringify({
+                prompt,
+                style,
+                saveToAssets: options?.saveToAssets,
+                assetMetadata: options?.assetMetadata
+            }),
         });
 
         if (!response.ok) {
@@ -52,7 +61,7 @@ class ImageProviderService {
         }
 
         const data = await response.json();
-        return data.imageBase64;
+        return data;
     }
 }
 

@@ -100,4 +100,28 @@ describe('AssetCard', () => {
 
         expect(mockedFetch).not.toHaveBeenCalled();
     });
+
+    it('should show "Add to Card" button only in selection mode', () => {
+        const { queryByText, rerender } = render(
+            <AssetCard
+                asset={mockAsset}
+                onClick={vi.fn()}
+                onDelete={vi.fn()}
+                selectionMode={false}
+            />
+        );
+
+        expect(queryByText('Add to Card')).toBeNull();
+
+        rerender(
+            <AssetCard
+                asset={mockAsset}
+                onClick={vi.fn()}
+                onDelete={vi.fn()}
+                selectionMode={true}
+            />
+        );
+
+        expect(queryByText('Add to Card')).toBeInTheDocument();
+    });
 });

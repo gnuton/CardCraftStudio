@@ -1,6 +1,6 @@
 import type { Asset, AssetFilters, AssetListResponse, CreateAssetInput, UpdateAssetInput } from '../types/asset';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 class AssetService {
     private readonly BASE_URL = `${API_BASE_URL}/api/assets`;
@@ -196,10 +196,34 @@ class AssetService {
      * Get asset image URL
      * Returns the base64 data URL for display
      */
+    async fetchAssetData(asset: Asset): Promise<string> {
+        const token = this.getAuthToken();
+        const response = await fetch(`${this.BASE_URL}/${asset.id}/data`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch asset data');
+        }
+
+        const data = await response.json();
+        return data.dataUrl;
+    }
+
+    /**
+     * Get asset image URL
+     * Returns the base64 data URL for display
+     * @deprecated Use fetchAssetData instead for async loading
+     */
     getAssetImageUrl(asset: Asset): string {
-        // For now, we'll use the driveFileId
-        // In production, this would fetch from Drive or use cached data
-        return `data:${asset.mimeType};base64,${asset.driveFileId}`;
+        // For backwards compatibility or provisional URL construction
+        // If driveFileId happens to be base64 (legacy), use it
+        if (asset.driveFileId && asset.driveFileId.length > 100) {
+            return `data:${asset.mimeType};base64,${asset.driveFileId}`;
+        }
+        return '';
     }
 
     /**
