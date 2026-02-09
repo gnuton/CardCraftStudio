@@ -59,6 +59,7 @@ describe('ImageControls Integration', () => {
         renderControls();
         const removeBtn = screen.getByText('Remove');
         fireEvent.click(removeBtn);
+        // window.confirm is no longer called in ImageControls, it just calls onRemove
         expect(mockOnRemove).toHaveBeenCalled();
     });
 

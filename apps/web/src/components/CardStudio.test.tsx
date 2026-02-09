@@ -155,5 +155,61 @@ describe('CardStudio', () => {
                 art: 'data:image/png;base64,base64data'
             })
         }));
+
+    });
+
+    it('removes image and resets transform when confirmed in dialog', async () => {
+        const onUpdate = vi.fn();
+        const cardWithImage = {
+            ...mockCard,
+            data: { art: 'image-content' },
+            transforms: { art: { x: 10, y: 10, scale: 2 } }
+        };
+
+        render(
+            <CardStudio
+                initialCard={cardWithImage}
+                deckStyle={mockDeckStyle}
+                onUpdate={onUpdate}
+                onDone={() => { }}
+            />
+        );
+
+        // Select Image Element
+        fireEvent.click(screen.getByTestId('select-image'));
+
+        // "Remove" button should be visible (ImageControls renders "Remove" button when hasContent or content is truthy)
+        const removeBtn = screen.getByText('Remove');
+        fireEvent.click(removeBtn);
+
+        // Confirmation Dialog should appear
+        // Since ConfirmationDialog is not mocked and renders into document body via portal or just div...
+        // Wait, current implementation is just a div in the component tree.
+        expect(screen.getByText('Remove Image')).toBeInTheDocument();
+        expect(screen.getByText('Are you sure you want to remove this image? This action cannot be undone.')).toBeInTheDocument();
+
+        // Click a button with text "Remove"
+        // There are two "Remove" texts: one on the button in ImageControls (still visible?), and one in Dialog confirmation button.
+        // ImageControls might be covered by Dialog overlay (z-index).
+        // Let's use getByRole or verify specific container.
+        // The Dialog has a "Remove" button.
+        // Or simpler: getByText('Remove', { selector: 'button' }) might return multiple.
+
+        // Let's try finding by role within dialog if we can target dialog.
+        // But dialog doesn't have testid.
+        // However, "confirmLabel" is "Remove".
+
+        const buttons = screen.getAllByText('Remove', { selector: 'button' });
+        // Expected: ImageControls button, Dialog confirm button.
+        // The last one should be the dialog button (rendered later).
+        const confirmBtn = buttons[buttons.length - 1];
+
+        fireEvent.click(confirmBtn);
+
+        // Verify onUpdate called with empty string and reset transform
+        expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({ art: '' }),
+            transforms: expect.objectContaining({ art: expect.objectContaining({ x: 0, y: 0, scale: 1 }) })
+        }));
     });
 });

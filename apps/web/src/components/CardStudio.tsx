@@ -7,6 +7,7 @@ import type { ImageTransform } from '../types/element';
 import { assetService } from '../services/assetService';
 import { cn } from '../utils/cn';
 import { AssetManager } from './AssetManager';
+import { ConfirmationDialog } from './ConfirmationDialog';
 import { ImageControls } from './ImageControls';
 
 export interface CardConfig {
@@ -223,6 +224,28 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
 
     const [loadingElementIds, setLoadingElementIds] = useState<string[]>([]);
     const [isPickingColor, setIsPickingColor] = useState(false);
+    const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+
+    const handleConfirmRemove = () => {
+        if (!selectedElement) return;
+
+        // combined update to avoid stale state overwrite
+        const newConfig = {
+            ...config,
+            data: {
+                ...config.data,
+                [selectedElement]: ''
+            },
+            transforms: {
+                ...config.transforms,
+                [selectedElement]: { x: 0, y: 0, scale: 1 }
+            }
+        };
+        setConfig(newConfig);
+        onUpdate(newConfig);
+        setIsRemoveDialogOpen(false);
+        showStatus('Image removed');
+    };
 
     const handleColorPick = async (elementId: string, x: number, y: number, width: number, _height: number) => {
         setIsPickingColor(false);
@@ -523,24 +546,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                             onReset={() => handleTransformChange(selectedElement, { x: 0, y: 0, scale: 1 })}
                             content={config.data[selectedElement]}
                             onSelectAsset={() => setIsImageDialogOpen(true)}
-                            onRemove={() => {
-                                if (window.confirm("Remove this image?")) {
-                                    // combined update to avoid stale state overwrite
-                                    const newConfig = {
-                                        ...config,
-                                        data: {
-                                            ...config.data,
-                                            [selectedElement]: ''
-                                        },
-                                        transforms: {
-                                            ...config.transforms,
-                                            [selectedElement]: { x: 0, y: 0, scale: 1 }
-                                        }
-                                    };
-                                    setConfig(newConfig);
-                                    onUpdate(newConfig);
-                                }
-                            }}
+                            onRemove={() => setIsRemoveDialogOpen(true)}
                             isPickingColor={isPickingColor}
                             onPickColor={() => setIsPickingColor(true)}
                             onClose={() => handleElementSelect(null)}
@@ -553,6 +559,17 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                 isOpen={isImageDialogOpen}
                 onClose={() => setIsImageDialogOpen(false)}
                 onAssetSelect={handleAssetSelect}
+            />
+
+            <ConfirmationDialog
+                isOpen={isRemoveDialogOpen}
+                title="Remove Image"
+                message="Are you sure you want to remove this image? This action cannot be undone."
+                confirmLabel="Remove"
+                cancelLabel="Cancel"
+                isDestructive={true}
+                onConfirm={handleConfirmRemove}
+                onCancel={() => setIsRemoveDialogOpen(false)}
             />
         </div>
     );
