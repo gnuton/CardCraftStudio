@@ -525,9 +525,20 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                             onSelectAsset={() => setIsImageDialogOpen(true)}
                             onRemove={() => {
                                 if (window.confirm("Remove this image?")) {
-                                    handleConfigChange(selectedElement, ''); // Clear content
-                                    handleTransformChange(selectedElement, { x: 0, y: 0, scale: 1 }); // Reset transform
-                                    // Keep selected to show empty state
+                                    // combined update to avoid stale state overwrite
+                                    const newConfig = {
+                                        ...config,
+                                        data: {
+                                            ...config.data,
+                                            [selectedElement]: ''
+                                        },
+                                        transforms: {
+                                            ...config.transforms,
+                                            [selectedElement]: { x: 0, y: 0, scale: 1 }
+                                        }
+                                    };
+                                    setConfig(newConfig);
+                                    onUpdate(newConfig);
                                 }
                             }}
                             isPickingColor={isPickingColor}
