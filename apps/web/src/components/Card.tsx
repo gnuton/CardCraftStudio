@@ -483,6 +483,52 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
             );
         }
 
+        const backFaceContent = (
+            <div
+                className={cn("w-full h-full bg-white rounded-[18px] shadow-sm relative overflow-hidden", isInteractive ? "overflow-visible" : "overflow-hidden")}
+                style={{
+                    backgroundColor: deckStyle?.cardBackBackgroundColor || '#312e81',
+                    borderColor: borderColor || deckStyle?.borderColor || '#000000',
+                    borderWidth: `${borderWidth ?? deckStyle?.borderWidth ?? 12}px`,
+                    borderStyle: 'solid',
+                    borderRadius: '18px'
+                }}
+            >
+                {/* Background Image Layer */}
+                {deckStyle?.cardBackImage && (
+                    <ResolvedImage
+                        src={getBgImageSrc(deckStyle.cardBackImage)}
+                        alt="Background"
+                        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    />
+                )}
+                {/* Render BACK elements */}
+                {elements.filter((e: CardElement) => e.side === 'back').map(renderTransformableElement)}
+            </div>
+        );
+
+        if (renderMode === 'back') {
+            const cardWidth = deckStyle?.cardWidth || 375;
+            const cardHeight = deckStyle?.cardHeight || 525;
+            return (
+                <div
+                    ref={ref}
+                    id={id}
+                    className={cn("relative", className)}
+                    style={{
+                        width: `${cardWidth}px`,
+                        height: `${cardHeight}px`,
+                        ...style
+                    }}
+                    {...props}
+                >
+                    <div className={cn("w-full h-full bg-white rounded-[18px] shadow-sm flex flex-col font-sans select-none", isInteractive ? "overflow-visible" : "overflow-hidden")}>
+                        {backFaceContent}
+                    </div>
+                </div>
+            );
+        }
+
         const cardWidth = deckStyle?.cardWidth || 375;
         const cardHeight = deckStyle?.cardHeight || 525;
         return (
@@ -533,31 +579,12 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                             pointerEvents: isFlipped ? 'auto' : 'none'
                         }}
                     >
-                        <div
-                            className={cn("w-full h-full bg-white rounded-[18px] shadow-sm relative overflow-hidden", isInteractive ? "overflow-visible" : "overflow-hidden")}
-                            style={{
-                                backgroundColor: deckStyle?.cardBackBackgroundColor || '#312e81',
-                                borderColor: borderColor || deckStyle?.borderColor || '#000000',
-                                borderWidth: `${borderWidth ?? deckStyle?.borderWidth ?? 12}px`,
-                                borderStyle: 'solid',
-                                borderRadius: '18px'
-                            }}
-                        >
-                            {/* Background Image Layer */}
-                            {deckStyle?.cardBackImage && (
-                                <ResolvedImage
-                                    src={getBgImageSrc(deckStyle.cardBackImage)}
-                                    alt="Background"
-                                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                                />
-                            )}
-                            {/* Render BACK elements */}
-                            {elements.filter((e: CardElement) => e.side === 'back').map(renderTransformableElement)}
-                        </div>
+                        {backFaceContent}
                     </div>
                 </motion.div>
             </div>
         );
+
     }
 );
 
