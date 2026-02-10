@@ -75,6 +75,7 @@ gcloud run deploy ${SERVICE_NAME} \
     --cpu=1 \
     --min-instances=${MIN_INSTANCES} \
     --max-instances=${MAX_INSTANCES} \
+    --set-env-vars=GOOGLE_CLOUD_PROJECT=${PROJECT_ID},NODE_ENV=production \
     --concurrency=80 \
     --timeout=60s \
     --port=8080 \
