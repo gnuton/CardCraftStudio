@@ -35,6 +35,9 @@ RUN addgroup -g 1001 -S nodejs && \
 # Change ownership
 RUN chown -R nodejs:nodejs /app
 
+# Set environment to production
+ENV NODE_ENV=production
+
 # Switch to non-root user
 USER nodejs
 

@@ -12,9 +12,10 @@ function getDb(): Firestore | null {
 
         // Only initialize in production or if explicitly configured
         const isProduction = process.env.NODE_ENV === 'production';
+        const isGcp = !!process.env.GOOGLE_CLOUD_PROJECT;
         const hasExplicitCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIREBASE_CONFIG;
 
-        if (!isProduction && !hasExplicitCredentials) {
+        if (!isProduction && !isGcp && !hasExplicitCredentials) {
             console.warn('[Firestore] Running in local development mode without Firebase credentials.');
             console.warn('[Firestore] Firestore features will be disabled.');
             console.warn('[Firestore] Set GOOGLE_APPLICATION_CREDENTIALS to enable Firestore in local development.');

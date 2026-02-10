@@ -31,9 +31,16 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
         errorResponse.userMessage = err.message;
         if (err.type) errorResponse.type = err.type;
         if (err.instance) errorResponse.instance = err.instance;
-    } else if (err instanceof Error) {
-        errorResponse.detail = err.message;
-        errorResponse.userMessage = err.message;
+    } else {
+        // Handle external errors (like Google API errors) that have a status/code
+        const status = (err as any).status || (err as any).statusCode || (err as any).code;
+        if (typeof status === 'number' && status >= 400 && status < 600) {
+            errorResponse.status = status;
+            errorResponse.title = getTitleForStatus(status);
+        }
+
+        errorResponse.detail = err.message || 'An unexpected error occurred';
+        errorResponse.userMessage = err.message || 'An unexpected error occurred';
     }
 
     res.status(errorResponse.status).header('Content-Type', 'application/problem+json').json(errorResponse);
