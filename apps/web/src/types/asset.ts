@@ -1,3 +1,5 @@
+export type AssetCategory = 'front-background' | 'back-background' | 'main-illustration' | 'icon' | 'other';
+
 export interface Asset {
     id: string;
     userId: string;
@@ -7,6 +9,7 @@ export interface Asset {
     mimeType: string;
     fileSize: number;
     source: 'generated' | 'uploaded' | 'searched';
+    category: AssetCategory;
 
     // For AI-generated images
     prompt?: string;
@@ -24,6 +27,7 @@ export interface Asset {
 
 export interface AssetFilters {
     source?: 'generated' | 'uploaded' | 'searched';
+    category?: AssetCategory;
     search?: string;
     tags?: string[];
     sortBy?: 'createdAt' | 'updatedAt' | 'usageCount';
@@ -46,6 +50,7 @@ export interface CreateAssetInput {
     imageData: string;
     fileName: string;
     source: 'uploaded' | 'searched';
+    category?: AssetCategory;
     tags?: string[];
     mimeType?: string;
 }
@@ -53,4 +58,5 @@ export interface CreateAssetInput {
 export interface UpdateAssetInput {
     fileName?: string;
     tags?: string[];
+    category?: AssetCategory;
 }

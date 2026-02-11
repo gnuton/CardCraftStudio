@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import type { Asset, AssetFilters } from '../../types/asset';
+import type { Asset, AssetFilters, AssetCategory } from '../../types/asset';
 import { assetService } from '../../services/assetService';
 import { AssetGrid } from '../AssetGrid';
 
 interface AssetLibraryProps {
     onAssetSelect?: (asset: Asset) => void;
+    category: AssetCategory;
 }
 
-export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect }) => {
+export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, category }) => {
     const [assets, setAssets] = useState<Asset[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeFilter, setActiveFilter] = useState<'all' | 'generated' | 'uploaded' | 'searched'>('all');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [error, setError] = useState<string | null>(null);
@@ -28,11 +28,8 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect }) => 
                 limit: 20,
                 sortBy: 'createdAt',
                 sortOrder: 'desc',
+                category
             };
-
-            if (activeFilter !== 'all') {
-                filters.source = activeFilter;
-            }
 
             if (searchQuery.trim()) {
                 filters.search = searchQuery;
@@ -52,12 +49,12 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect }) => 
     // Load assets when filters change
     useEffect(() => {
         loadAssets();
-    }, [page, activeFilter, searchQuery]);
+    }, [page, category, searchQuery]);
 
     // Reset page when filters change
     useEffect(() => {
         setPage(1);
-    }, [activeFilter, searchQuery]);
+    }, [category, searchQuery]);
 
     const handleAssetClick = (asset: Asset) => {
         if (onAssetSelect) {
@@ -94,21 +91,6 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect }) => 
                         />
                     </div>
 
-                    {/* Filter Tabs */}
-                    <div className="flex gap-2 text-sm overflow-x-auto">
-                        {(['all', 'generated', 'uploaded', 'searched'] as const).map(filter => (
-                            <button
-                                key={filter}
-                                onClick={() => setActiveFilter(filter)}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors capitalize whitespace-nowrap ${activeFilter === filter
-                                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
-                                    : 'bg-[#25282e] text-gray-300 hover:bg-gray-700'
-                                    }`}
-                            >
-                                {filter === 'all' ? 'All Assets' : filter}
-                            </button>
-                        ))}
-                    </div>
                 </div>
             </div>
 

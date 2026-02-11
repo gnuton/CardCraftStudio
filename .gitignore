@@ -31,3 +31,5 @@ serviceAccountKey.json
 .gemini
 infra/.terraform
 *.tfvars
+*_output.txt
+coverage

@@ -1,13 +1,14 @@
 import React, { useRef, useState } from 'react';
 import { assetService } from '../../services/assetService';
-import type { Asset } from '../../types/asset';
+import type { Asset, AssetCategory } from '../../types/asset';
 import { Upload, Loader2 } from 'lucide-react';
 
 interface AssetUploadProps {
     onUploadSuccess: (asset: Asset) => void;
+    category: AssetCategory;
 }
 
-export const AssetUpload: React.FC<AssetUploadProps> = ({ onUploadSuccess }) => {
+export const AssetUpload: React.FC<AssetUploadProps> = ({ onUploadSuccess, category }) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,16 +25,23 @@ export const AssetUpload: React.FC<AssetUploadProps> = ({ onUploadSuccess }) => 
             reader.onload = async (e) => {
                 const dataURL = e.target?.result as string;
 
-                const asset = await assetService.createAsset({
-                    imageData: dataURL,
-                    fileName: file.name,
-                    source: 'uploaded',
-                    tags: ['uploaded'],
-                    mimeType: file.type
-                });
+                try {
+                    const asset = await assetService.createAsset({
+                        imageData: dataURL,
+                        fileName: file.name,
+                        source: 'uploaded',
+                        category,
+                        tags: ['uploaded'],
+                        mimeType: file.type
+                    });
 
-                onUploadSuccess(asset);
-                setLoading(false);
+                    onUploadSuccess(asset);
+                } catch (err) {
+                    console.error('Error creating asset:', err);
+                    alert('Failed to upload asset');
+                } finally {
+                    setLoading(false);
+                }
             };
             reader.onerror = () => {
                 console.error('Error reading file');
@@ -64,6 +72,11 @@ export const AssetUpload: React.FC<AssetUploadProps> = ({ onUploadSuccess }) => 
 
     return (
         <div className="h-full flex flex-col items-center justify-center p-6 bg-[#1a1d23]">
+            {/* Category is now selected globally in AssetManager */}
+            <div className="w-full max-w-xl text-center mb-6">
+                <p className="text-gray-400 text-sm">Uploading to: <span className="text-white font-medium capitalize">{category.replace('-', ' ')}</span></p>
+            </div>
+
             <div
                 className={`w-full max-w-xl h-80 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${isDragOver
                     ? 'border-pink-500 bg-pink-500/10'

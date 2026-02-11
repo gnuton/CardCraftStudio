@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { imageProviderService, type ImageResult } from '../../services/imageProviderService';
 import { assetService } from '../../services/assetService';
-import type { Asset } from '../../types/asset';
+import type { Asset, AssetCategory } from '../../types/asset';
 import { Loader2, Search } from 'lucide-react';
 
 interface AssetSearchProps {
     onAssetImported: (asset: Asset) => void;
+    category: AssetCategory;
 }
 
-export const AssetSearch: React.FC<AssetSearchProps> = ({ onAssetImported }) => {
+export const AssetSearch: React.FC<AssetSearchProps> = ({ onAssetImported, category }) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<ImageResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -25,6 +26,8 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({ onAssetImported }) => 
             setLoading(true);
             setError(null);
             try {
+                // Determine if we should filter search by category context (optional enhancement)
+                // For now just search
                 const searchResults = await imageProviderService.searchImages(query, 1);
                 setResults(searchResults);
             } catch {
@@ -42,6 +45,7 @@ export const AssetSearch: React.FC<AssetSearchProps> = ({ onAssetImported }) => 
         setImportingUrl(result.url);
         try {
             const asset = await assetService.importAsset(result.url, 'searched', {
+                category,
                 tags: ['searched', query],
                 fileName: result.title
             });

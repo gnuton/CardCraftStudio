@@ -13,6 +13,7 @@ import type { DeckStyle } from '../types/deck';
 import { FontPicker } from './FontPicker';
 import type { CardElement } from '../types/element';
 import { createDefaultElement } from '../types/element';
+// import type { AssetCategory } from '../types/asset'; // Removed unused import
 
 import { TEMPLATES, type Template } from '../constants/templates';
 import { TemplatePickerModal } from './TemplatePickerModal';
@@ -259,59 +260,67 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
             try {
                 const layout = await templateService.parseSvgLayout(svgUrl);
-                if (layout && layout.elements && finalStyle.elements) {
-                    // Update elements based on SVG layout matches
-                    // Update existing elements based on SVG layout matches
-                    finalStyle.elements = finalStyle.elements.map(el => {
-                        // Match element by ID (e.g. 'title', 'description', 'art')
-                        const layoutEl = layout.elements?.[el.id];
+                if (layout) {
+                    // NEW: Update card dimensions if present in SVG
+                    if (layout.width && layout.height) {
+                        finalStyle.cardWidth = layout.width;
+                        finalStyle.cardHeight = layout.height;
+                    }
 
-                        if (layoutEl) {
-                            return {
-                                ...el,
-                                x: Math.round(layoutEl.offsetX),
-                                y: Math.round(layoutEl.offsetY),
-                                width: Math.round(layoutEl.width),
-                                height: Math.round(layoutEl.height),
-                                rotate: layoutEl.rotation || 0,
-                                scale: layoutEl.scale ?? el.scale,
-                                opacity: layoutEl.opacity ?? el.opacity,
-                                ...(layoutEl.fill ? { color: layoutEl.fill } : {}),
-                                ...(layoutEl.fontFamily ? { fontFamily: layoutEl.fontFamily } : {}),
-                                ...(layoutEl.fontSize ? { fontSize: layoutEl.fontSize } : {})
-                            };
-                        }
-                        return el;
-                    });
+                    if (layout.elements && finalStyle.elements) {
+                        // Update elements based on SVG layout matches
+                        // Update existing elements based on SVG layout matches
+                        finalStyle.elements = finalStyle.elements.map(el => {
+                            // Match element by ID (e.g. 'title', 'description', 'art')
+                            const layoutEl = layout.elements?.[el.id];
 
-                    // Create NEW elements from SVG if they don't exist
-                    const matchedIds = new Set(finalStyle.elements.map(e => e.id));
-                    Object.entries(layout.elements).forEach(([id, layoutEl]) => {
-                        if (!matchedIds.has(id)) {
-                            // Use explicit type or fallback to 'text' if undefined
-                            const type = layoutEl.elementType || 'text';
-                            const newEl = createDefaultElement(type, 'front');
+                            if (layoutEl) {
+                                return {
+                                    ...el,
+                                    x: Math.round(layoutEl.offsetX),
+                                    y: Math.round(layoutEl.offsetY),
+                                    width: Math.round(layoutEl.width),
+                                    height: Math.round(layoutEl.height),
+                                    rotate: layoutEl.rotation || 0,
+                                    scale: layoutEl.scale ?? el.scale,
+                                    opacity: layoutEl.opacity ?? el.opacity,
+                                    ...(layoutEl.fill ? { color: layoutEl.fill } : {}),
+                                    ...(layoutEl.fontFamily ? { fontFamily: layoutEl.fontFamily } : {}),
+                                    ...(layoutEl.fontSize ? { fontSize: layoutEl.fontSize } : {})
+                                };
+                            }
+                            return el;
+                        });
 
-                            // Override defaults with SVG layout
-                            const elWithLayout = {
-                                ...newEl,
-                                id: id,
-                                name: id.charAt(0).toUpperCase() + id.slice(1), // Capitalize ID for name
-                                x: Math.round(layoutEl.offsetX),
-                                y: Math.round(layoutEl.offsetY),
-                                width: Math.round(layoutEl.width),
-                                height: Math.round(layoutEl.height),
-                                rotate: layoutEl.rotation || 0,
-                                scale: layoutEl.scale ?? 1,
-                                opacity: layoutEl.opacity ?? 1,
-                                ...(layoutEl.fill ? { color: layoutEl.fill } : {}),
-                                ...(layoutEl.fontFamily ? { fontFamily: layoutEl.fontFamily } : {}),
-                                ...(layoutEl.fontSize ? { fontSize: layoutEl.fontSize } : {})
-                            };
+                        // Create NEW elements from SVG if they don't exist
+                        const matchedIds = new Set(finalStyle.elements.map(e => e.id));
+                        Object.entries(layout.elements).forEach(([id, layoutEl]) => {
+                            if (!matchedIds.has(id)) {
+                                // Use explicit type or fallback to 'text' if undefined
+                                const type = layoutEl.elementType || 'text';
+                                const newEl = createDefaultElement(type, 'front');
 
-                            finalStyle.elements!.push(elWithLayout);
-                        }
-                    });
+                                // Override defaults with SVG layout
+                                const elWithLayout = {
+                                    ...newEl,
+                                    id: id,
+                                    name: id.charAt(0).toUpperCase() + id.slice(1), // Capitalize ID for name
+                                    x: Math.round(layoutEl.offsetX),
+                                    y: Math.round(layoutEl.offsetY),
+                                    width: Math.round(layoutEl.width),
+                                    height: Math.round(layoutEl.height),
+                                    rotate: layoutEl.rotation || 0,
+                                    scale: layoutEl.scale ?? 1,
+                                    opacity: layoutEl.opacity ?? 1,
+                                    ...(layoutEl.fill ? { color: layoutEl.fill } : {}),
+                                    ...(layoutEl.fontFamily ? { fontFamily: layoutEl.fontFamily } : {}),
+                                    ...(layoutEl.fontSize ? { fontSize: layoutEl.fontSize } : {})
+                                };
+
+                                finalStyle.elements!.push(elWithLayout);
+                            }
+                        });
+                    }
                 }
             } catch (e) {
                 console.warn("Failed to parse SVG layout", e);
@@ -1185,10 +1194,19 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
             <AssetManager
                 isOpen={isImageDialogOpen}
                 onClose={() => setIsImageDialogOpen(false)}
-                onAssetSelect={(asset) => {
-                    const url = assetService.getAssetImageUrl(asset);
-                    handleStyleChange(isFlipped ? { cardBackImage: url } : { backgroundImage: url });
-                    setIsImageDialogOpen(false);
+                initialCategory={isFlipped ? 'back-background' : 'front-background'}
+                cardElements={currentStyle.elements}
+                cardWidth={currentStyle.cardWidth || 375}
+                cardHeight={currentStyle.cardHeight || 525}
+                onAssetSelect={async (asset) => {
+                    try {
+                        const url = await assetService.fetchAssetData(asset);
+                        handleStyleChange(isFlipped ? { cardBackImage: url } : { backgroundImage: url });
+                        setIsImageDialogOpen(false);
+                    } catch (error) {
+                        console.error("Failed to load asset for background:", error);
+                        // Optionally show a toast here
+                    }
                 }}
             />
         </>

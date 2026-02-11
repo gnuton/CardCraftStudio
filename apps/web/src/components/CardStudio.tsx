@@ -559,6 +559,23 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                 isOpen={isImageDialogOpen}
                 onClose={() => setIsImageDialogOpen(false)}
                 onAssetSelect={handleAssetSelect}
+                cardElements={deckStyle.elements}
+                selectedElementId={selectedElement}
+                initialCategory={(() => {
+                    if (!selectedElement) return 'main-illustration';
+                    if (selectedElement === 'art') return 'main-illustration';
+
+                    const el = deckStyle.elements.find(e => e.id === selectedElement);
+                    if (el) {
+                        if (el.side === 'back' && el.id.includes('background')) return 'back-background';
+                        if (el.side === 'front' && el.id.includes('background')) return 'front-background';
+                        if (el.id.includes('icon')) return 'icon';
+                    }
+
+                    return 'other';
+                })()}
+                cardWidth={deckStyle.cardWidth}
+                cardHeight={deckStyle.cardHeight}
             />
 
             <ConfirmationDialog

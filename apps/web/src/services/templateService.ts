@@ -26,6 +26,8 @@ export interface MarkerLayout {
 
 export interface ExtractedLayout {
     elements: Record<string, MarkerLayout>;
+    width?: number;
+    height?: number;
 }
 
 class TemplateService {
@@ -45,9 +47,30 @@ class TemplateService {
         try {
             const parser = new DOMParser();
             const doc = parser.parseFromString(svgText, 'image/svg+xml');
+            const svgEl = doc.documentElement;
 
-            const cardWidth = 300;
-            const cardHeight = 420;
+            // 1. Determine Card Dimensions from SVG
+            // Priority: width/height attributes -> viewBox -> default (300x420 is fallback but we want dynamic)
+            let cardWidth = 300;
+            let cardHeight = 420;
+
+            const attrWidth = parseFloat(svgEl.getAttribute('width') || '0');
+            const attrHeight = parseFloat(svgEl.getAttribute('height') || '0');
+
+            if (attrWidth > 0 && attrHeight > 0) {
+                cardWidth = attrWidth;
+                cardHeight = attrHeight;
+            } else {
+                const viewBox = svgEl.getAttribute('viewBox');
+                if (viewBox) {
+                    const [, , vbW, vbH] = viewBox.split(/[ ,]+/).map(parseFloat);
+                    if (vbW > 0 && vbH > 0) {
+                        cardWidth = vbW;
+                        cardHeight = vbH;
+                    }
+                }
+            }
+
             const centerX = cardWidth / 2;
             const centerY = cardHeight / 2;
 
@@ -139,6 +162,7 @@ class TemplateService {
                 }
 
                 // Center Relative Offset Calculation
+                // Important: Use the parsed Card Dimensions logic
                 marker.offsetX = marker.x + marker.width / 2 - centerX;
                 marker.offsetY = marker.y + marker.height / 2 - centerY;
 
@@ -208,8 +232,11 @@ class TemplateService {
             });
 
             return {
-                elements
+                elements,
+                width: cardWidth,
+                height: cardHeight
             };
+
 
         } catch (error) {
             console.error('Error parsing SVG content:', error);

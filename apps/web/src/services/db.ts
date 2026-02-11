@@ -8,11 +8,13 @@ export interface CardImage {
 
 export class CardCraftDatabase extends Dexie {
     images!: Table<CardImage>;
+    decks!: Table<any>; // Using any to avoid importing Deck type here, or I can import it.
 
     constructor() {
         super('CardCraftStudioDB');
         this.version(1).stores({
-            images: 'id' // Primary key
+            images: 'id', // Primary key
+            decks: 'id'    // Primary key
         });
     }
 }

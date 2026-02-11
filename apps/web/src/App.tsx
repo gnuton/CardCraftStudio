@@ -14,6 +14,7 @@ import { ToastContainer, type ToastType } from './components/Toast';
 import { driveService } from './services/googleDrive';
 import { calculateHash } from './utils/hash';
 import { imageService } from './services/imageService';
+import { db } from './services/db';
 import { GlobalStyleEditor } from './components/GlobalStyleEditor';
 import { Navigation } from './components/Navigation';
 import { importDeckFromZip } from './utils/deckIO';
@@ -409,32 +410,68 @@ function App() {
   }, []);
 
   // Decks State
-  const [decks, setDecks] = useState<Deck[]>(() => {
-    const saved = localStorage.getItem(DECKS_STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse decks", e);
-      }
-    }
+  const [decks, setDecks] = useState<Deck[]>([]);
 
-    // Migration for legacy single-deck data
-    const legacyCards = localStorage.getItem('cardcraftstudio-deck');
-    if (legacyCards) {
+  // Load decks from IndexedDB & Migration from localStorage
+  useEffect(() => {
+    const initDecks = async () => {
       try {
-        const style = localStorage.getItem('cardcraftstudio-style');
-        return [{
-          id: crypto.randomUUID(),
-          name: localStorage.getItem('cardcraftstudio-deck-name') || "My First Deck",
-          cards: JSON.parse(legacyCards),
-          style: style ? JSON.parse(style) : defaultDeckStyle,
-          updatedAt: Date.now()
-        }];
-      } catch (e) { console.error("Migration failed", e); }
-    }
-    return [];
-  });
+        // 1. Try IndexedDB
+        let localDecks = await db.decks.toArray();
+
+        // 2. If nothing in IDB, try migration from localStorage
+        if (localDecks.length === 0) {
+          const saved = localStorage.getItem(DECKS_STORAGE_KEY);
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                localDecks = parsed;
+                // Save to IDB immediately
+                await db.decks.bulkPut(localDecks);
+              }
+            } catch (e) {
+              console.error("Failed to parse localStorage decks", e);
+            }
+          }
+
+          // Migration for legacy single-deck data
+          const legacyCards = localStorage.getItem('cardcraftstudio-deck');
+          if (legacyCards && localDecks.length === 0) {
+            try {
+              const style = localStorage.getItem('cardcraftstudio-style');
+              const newDeck = {
+                id: crypto.randomUUID(),
+                name: localStorage.getItem('cardcraftstudio-deck-name') || "My First Deck",
+                cards: JSON.parse(legacyCards),
+                style: style ? JSON.parse(style) : defaultDeckStyle,
+                updatedAt: Date.now()
+              };
+              localDecks = [newDeck];
+              await db.decks.put(newDeck);
+            } catch (e) { console.error("Migration failed", e); }
+          }
+        }
+
+        setDecks(localDecks);
+
+        // CLEANUP: If we have migrated or simply to prevent future errors, 
+        // we slowly clear localStorage after we're sure we have the data.
+        if (localDecks.length > 0) {
+          setTimeout(() => {
+            localStorage.removeItem(DECKS_STORAGE_KEY);
+            localStorage.removeItem('cardcraftstudio-deck');
+            localStorage.removeItem('cardcraftstudio-style');
+            localStorage.removeItem('cardcraftstudio-deck-name');
+          }, 2000);
+        }
+      } catch (err) {
+        console.error("Failed to initialize decks from DB", err);
+      }
+    };
+
+    initDecks();
+  }, []);
 
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const [view, setView] = useState<'landing' | 'library' | 'deck' | 'editor' | 'style'>('landing');
@@ -443,9 +480,13 @@ function App() {
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
 
-  // Persistence
+  // Persistence to IndexedDB
   useEffect(() => {
-    localStorage.setItem(DECKS_STORAGE_KEY, JSON.stringify(decks));
+    if (decks.length > 0) {
+      db.decks.bulkPut(decks).catch(err => {
+        console.error("Failed to save decks to IndexedDB", err);
+      });
+    }
   }, [decks]);
 
   // Image Migration Effect
@@ -536,6 +577,9 @@ function App() {
     if (deckToDelete) {
       const id = deckToDelete;
       setDecks(prev => prev.filter(d => d.id !== id));
+
+      // Delete from IndexedDB
+      db.decks.delete(id).catch(err => console.error("Failed to delete deck from DB", err));
 
       // Add to pending deletions for sync
       setPendingDeletions(prev => [...prev, id]);

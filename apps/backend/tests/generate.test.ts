@@ -32,7 +32,11 @@ describe('Image Generation API', () => {
 
     it('should generate image successfully', async () => {
         const mockBase64 = 'data:image/png;base64,iVBORw0KGgo...';
-        (googleImagenService.generateImage as any).mockResolvedValue(mockBase64);
+        const mockFinalPrompt = 'a dragon, fantasy art style';
+        (googleImagenService.generateImage as any).mockResolvedValue({
+            imageBase64: mockBase64,
+            finalPrompt: mockFinalPrompt
+        });
 
         const response = await request(app)
             .post('/api/images/generate')
@@ -42,9 +46,9 @@ describe('Image Generation API', () => {
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
             imageBase64: mockBase64,
-            prompt: 'a dragon'
+            prompt: mockFinalPrompt
         });
-        expect(googleImagenService.generateImage).toHaveBeenCalledWith('a dragon', 'fantasy');
+        expect(googleImagenService.generateImage).toHaveBeenCalledWith('a dragon', 'fantasy', expect.anything());
     });
 
     it('should handle generation errors', async () => {

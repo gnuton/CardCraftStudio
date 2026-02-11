@@ -34,13 +34,16 @@ router.post('/search', async (req, res, next) => {
 
 router.post('/generate', requirePremium, async (req, res, next) => {
     try {
-        const { prompt, style, saveToAssets, assetMetadata } = req.body;
+        const { prompt, style, saveToAssets, assetMetadata, aspectRatio, layout } = req.body;
 
         if (!prompt) {
             throw new ApiError(400, 'Prompt is required', 'The "prompt" field is missing in the request body.');
         }
 
-        const imageBase64 = await googleImagenService.generateImage(prompt, style);
+        const { imageBase64, finalPrompt } = await googleImagenService.generateImage(prompt, style, {
+            aspectRatio,
+            layout
+        });
 
         // If saveToAssets is requested, save to Asset Manager
         let asset;
@@ -53,7 +56,8 @@ router.post('/generate', requirePremium, async (req, res, next) => {
                     imageData,
                     fileName: assetMetadata?.fileName || `Generated: ${prompt.substring(0, 50)}`,
                     source: 'generated',
-                    prompt,
+                    category: assetMetadata?.category || 'main-illustration', // Pass category
+                    prompt: finalPrompt,
                     style,
                     tags: assetMetadata?.tags || ['ai-generated', style || 'general'],
                     mimeType: 'image/png',
@@ -68,7 +72,7 @@ router.post('/generate', requirePremium, async (req, res, next) => {
 
         res.json({
             imageBase64,
-            prompt,
+            prompt: finalPrompt,
             asset // Include asset if it was created
         });
     } catch (error) {

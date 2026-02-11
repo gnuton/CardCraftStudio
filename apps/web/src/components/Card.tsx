@@ -275,8 +275,24 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                             <div className="text-xs text-slate-400 text-center px-2 select-none">
                                 {isInteractive ? "Double-click to add image" : "No Content"}
                             </div>
-                        )}
-                    </div>
+                        )
+                        }
+
+                        {/* Overlay / Frame */}
+                        {
+                            element.overlayUrl && (
+                                <div
+                                    className="absolute inset-0 z-20 pointer-events-none"
+                                    style={{
+                                        backgroundImage: `url(${element.overlayUrl})`,
+                                        backgroundSize: '100% 100%',
+                                        backgroundPosition: 'center',
+                                        backgroundRepeat: 'no-repeat'
+                                    }}
+                                />
+                            )
+                        }
+                    </div >
                 );
             }
 

@@ -26,17 +26,17 @@ export const TEMPLATES: Template[] = [
             elements: [
                 {
                     id: 'title', type: 'text', name: 'Title', side: 'front',
-                    x: 0, y: -160, width: 240, height: 30, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: 0, y: -160, width: 240, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'Outfit, sans-serif', fontSize: 20, color: '#1e293b', textAlign: 'center', defaultContent: 'Card Title'
                 },
                 {
                     id: 'art', type: 'image', name: 'Illustration', side: 'front',
-                    x: 0, y: -25, width: 250, height: 190, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
+                    x: 0, y: -30, width: 250, height: 180, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
                     url: ''
                 },
                 {
                     id: 'description', type: 'multiline', name: 'Description', side: 'front',
-                    x: 0, y: 140, width: 240, height: 70, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: 0, y: 130, width: 240, height: 80, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#475569', textAlign: 'left', defaultContent: 'Card description...'
                 },
                 {
@@ -46,12 +46,12 @@ export const TEMPLATES: Template[] = [
                 },
                 {
                     id: 'corner', type: 'text', name: 'Cost', side: 'front',
-                    x: -135, y: -195, width: 20, height: 20, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
+                    x: -125, y: -185, width: 25, height: 25, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
                     fontFamily: 'sans-serif', fontSize: 12, color: '#000000', textAlign: 'center', defaultContent: '1'
                 },
                 {
                     id: 'reversedCorner', type: 'text', name: 'Rarity', side: 'front',
-                    x: 135, y: 195, width: 20, height: 20, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
+                    x: 125, y: 185, width: 25, height: 25, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
                     fontFamily: 'sans-serif', fontSize: 12, color: '#000000', textAlign: 'center', defaultContent: '•'
                 }
             ]
@@ -74,17 +74,17 @@ export const TEMPLATES: Template[] = [
             elements: [
                 {
                     id: 'title', type: 'text', name: 'Title', side: 'front',
-                    x: 0, y: -157.5, width: 220, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: 0, y: -160, width: 230, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'Georgia, serif', fontSize: 22, color: '#78350f', textAlign: 'center', defaultContent: 'Ancient Wisdom'
                 },
                 {
                     id: 'art', type: 'image', name: 'Illustration', side: 'front',
-                    x: 0, y: -35, width: 240, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
+                    x: 0, y: -30, width: 250, height: 180, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
                     url: ''
                 },
                 {
                     id: 'description', type: 'multiline', name: 'Description', side: 'front',
-                    x: 0, y: 115, width: 230, height: 80, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: 0, y: 130, width: 230, height: 80, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'Georgia, serif', fontSize: 13, color: '#451a03', textAlign: 'left', defaultContent: 'Knowledge from a forgotten time.'
                 },
                 {
@@ -124,12 +124,12 @@ export const TEMPLATES: Template[] = [
             elements: [
                 {
                     id: 'title', type: 'text', name: 'Title', side: 'front',
-                    x: 0, y: -155, width: 240, height: 40, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: 0, y: -160, width: 240, height: 40, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'Outfit, sans-serif', fontSize: 20, color: '#f8fafc', textAlign: 'center', defaultContent: 'CYBER UNIT X'
                 },
                 {
                     id: 'art', type: 'image', name: 'Illustration', side: 'front',
-                    x: 0, y: -25, width: 260, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
+                    x: 0, y: -30, width: 260, height: 180, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
                     url: ''
                 },
                 {
@@ -174,17 +174,17 @@ export const TEMPLATES: Template[] = [
             elements: [
                 {
                     id: 'title', type: 'text', name: 'Title', side: 'front',
-                    x: 0, y: -162.5, width: 230, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: 0, y: -160, width: 230, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'serif', fontSize: 20, color: '#e1bee7', textAlign: 'center', defaultContent: 'The Unspeakable'
                 },
                 {
                     id: 'art', type: 'image', name: 'Illustration', side: 'front',
-                    x: 0, y: -35, width: 240, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
+                    x: 0, y: -30, width: 250, height: 180, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
                     url: ''
                 },
                 {
                     id: 'description', type: 'multiline', name: 'Description', side: 'front',
-                    x: 0, y: 132.5, width: 240, height: 75, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: 0, y: 130, width: 240, height: 80, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'serif', fontSize: 13, color: '#ce93d8', textAlign: 'left', defaultContent: 'What lies beyond the veil is not meant for mortal eyes.'
                 },
                 {
@@ -224,12 +224,12 @@ export const TEMPLATES: Template[] = [
             elements: [
                 {
                     id: 'title', type: 'text', name: 'Title', side: 'front',
-                    x: -15, y: -170, width: 210, height: 30, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: -15, y: -160, width: 210, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'monospace', fontSize: 18, color: '#00f0ff', textAlign: 'left', defaultContent: 'DATA_GHOST'
                 },
                 {
                     id: 'art', type: 'image', name: 'Illustration', side: 'front',
-                    x: 0, y: -35, width: 260, height: 180, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
+                    x: 0, y: -30, width: 260, height: 180, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
                     url: ''
                 },
                 {
@@ -244,7 +244,7 @@ export const TEMPLATES: Template[] = [
                 },
                 {
                     id: 'reversedCorner', type: 'text', name: 'Core', side: 'front',
-                    x: 127.5, y: 177.5, width: 25, height: 35, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
+                    x: 125, y: 180, width: 25, height: 35, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
                     fontFamily: 'monospace', fontSize: 14, color: '#7000ff', textAlign: 'center', defaultContent: 'A'
                 },
                 {
@@ -274,27 +274,27 @@ export const TEMPLATES: Template[] = [
             elements: [
                 {
                     id: 'title', type: 'text', name: 'Title', side: 'front',
-                    x: -30, y: -172.5, width: 180, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: -30, y: -165, width: 180, height: 35, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'sans-serif', fontSize: 20, color: '#1e293b', textAlign: 'left', defaultContent: 'Pikabolt'
                 },
                 {
                     id: 'art', type: 'image', name: 'Illustration', side: 'front',
-                    x: 0, y: -50, width: 260, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
+                    x: 0, y: -40, width: 260, height: 170, rotate: 0, scale: 1, zIndex: 5, opacity: 1,
                     url: ''
                 },
                 {
                     id: 'description', type: 'multiline', name: 'Description', side: 'front',
-                    x: 0, y: 122.5, width: 250, height: 95, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
+                    x: 0, y: 130, width: 250, height: 95, rotate: 0, scale: 1, zIndex: 10, opacity: 1,
                     fontFamily: 'sans-serif', fontSize: 13, color: '#1e293b', textAlign: 'left', defaultContent: 'Thunder Shock: Flip a coin.'
                 },
                 {
                     id: 'corner', type: 'text', name: 'HP', side: 'front',
-                    x: 110, y: -173, width: 30, height: 30, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
+                    x: 110, y: -165, width: 30, height: 30, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
                     fontFamily: 'sans-serif', fontSize: 14, color: '#ffffff', textAlign: 'center', defaultContent: '60'
                 },
                 {
                     id: 'reversedCorner', type: 'text', name: 'Footer', side: 'front',
-                    x: -100, y: 192.5, width: 60, height: 15, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
+                    x: -100, y: 190, width: 100, height: 15, rotate: 0, scale: 1, zIndex: 15, opacity: 1,
                     fontFamily: 'sans-serif', fontSize: 10, color: '#000000', textAlign: 'left', defaultContent: 'Basic Monster'
                 },
                 {

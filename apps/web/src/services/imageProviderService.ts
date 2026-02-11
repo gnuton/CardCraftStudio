@@ -30,8 +30,13 @@ class ImageProviderService {
     async generateImage(
         prompt: string,
         style?: string,
-        options?: { saveToAssets?: boolean; assetMetadata?: any }
-    ): Promise<{ imageBase64: string; asset?: any }> {
+        options?: {
+            saveToAssets?: boolean;
+            assetMetadata?: any;
+            aspectRatio?: string;
+            layout?: { elements: any[]; dimensions: { width: number; height: number; } }
+        }
+    ): Promise<{ imageBase64: string; prompt: string; asset?: any }> {
         const token = getAuthToken();
 
         const headers: HeadersInit = {
@@ -50,7 +55,9 @@ class ImageProviderService {
                 prompt,
                 style,
                 saveToAssets: options?.saveToAssets,
-                assetMetadata: options?.assetMetadata
+                assetMetadata: options?.assetMetadata,
+                aspectRatio: options?.aspectRatio,
+                layout: options?.layout
             }),
         });
 

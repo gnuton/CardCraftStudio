@@ -23,6 +23,7 @@ class AssetService {
         const params = new URLSearchParams();
 
         if (filters.source) params.append('source', filters.source);
+        if (filters.category) params.append('category', filters.category);
         if (filters.search) params.append('search', filters.search);
         if (filters.tags?.length) params.append('tags', filters.tags.join(','));
         if (filters.sortBy) params.append('sortBy', filters.sortBy);
@@ -234,7 +235,8 @@ class AssetService {
         prompt: string,
         style: string,
         fileName?: string,
-        tags?: string[]
+        tags?: string[],
+        category: import('../types/asset').AssetCategory = 'main-illustration'
     ): Promise<Asset> {
         return this.createAsset({
             imageData,
@@ -242,6 +244,7 @@ class AssetService {
             source: 'uploaded', // We use 'uploaded' since it's from memory
             tags: tags || ['ai-generated', style],
             mimeType: 'image/png',
+            category,
         });
     }
 }

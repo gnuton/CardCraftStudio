@@ -25,7 +25,9 @@ export interface CardElement {
     // Specifics
     defaultContent?: string; // Placeholder or default text
     url?: string | null; // For images
+    overlayUrl?: string | null; // Optional frame/overlay image (PNG/SVG) to render on top
     isLocked?: boolean; // If true, position is locked (maybe?)
+    isVisible?: boolean;
 
     // Layer
     side: 'front' | 'back';

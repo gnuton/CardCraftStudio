@@ -16,6 +16,7 @@ router.get('/', async (req: AuthenticatedRequest, res, next) => {
         const userId = req.user!.uid;
         const filters = {
             source: req.query.source as any,
+            category: req.query.category as any,
             search: req.query.search as string,
             tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
             sortBy: (req.query.sortBy as any) || 'createdAt',
@@ -77,7 +78,7 @@ router.post('/import', async (req: AuthenticatedRequest, res, next) => {
 router.post('/', async (req: AuthenticatedRequest, res, next) => {
     try {
         const userId = req.user!.uid;
-        const { imageData, fileName, source, mimeType, tags } = req.body;
+        const { imageData, fileName, source, mimeType, tags, category } = req.body;
 
         if (!imageData || !fileName || !source) {
             throw new ApiError(
@@ -102,6 +103,7 @@ router.post('/', async (req: AuthenticatedRequest, res, next) => {
             source,
             mimeType,
             tags,
+            category,
         });
 
         res.status(201).json({
@@ -119,11 +121,12 @@ router.post('/', async (req: AuthenticatedRequest, res, next) => {
 router.put('/:id', async (req: AuthenticatedRequest, res, next) => {
     try {
         const userId = req.user!.uid;
-        const { fileName, tags } = req.body;
+        const { fileName, tags, category } = req.body;
 
         const updates: any = {};
         if (fileName !== undefined) updates.fileName = fileName;
         if (tags !== undefined) updates.tags = tags;
+        if (category !== undefined) updates.category = category;
 
         const assetId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
         const asset = await assetService.updateAsset(

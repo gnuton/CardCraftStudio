@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { templateService } from './templateService';
 
@@ -99,5 +100,41 @@ describe('TemplateService', () => {
         expect(generatedSvg).toContain('opacity="0.5"');
         expect(generatedSvg).toContain('fill="blue"');
         expect(generatedSvg).toContain('font-family="Arial"');
+    });
+
+    it('parses custom dimensions from width/height attributes', () => {
+        const svg = `
+            <svg width="400" height="600" xmlns="http://www.w3.org/2000/svg">
+                <rect data-ref="center" x="150" y="250" width="100" height="100" />
+            </svg>
+        `;
+        const layout = templateService.parseSvgContent(svg);
+        expect(layout?.width).toBe(400);
+        expect(layout?.height).toBe(600);
+
+        // Center of Card: 200, 300
+        // Element Center: 150 + 50 = 200, 250 + 50 = 300
+        // Offset: 0, 0
+        const el = layout?.elements['center'];
+        expect(el?.offsetX).toBe(0);
+        expect(el?.offsetY).toBe(0);
+    });
+
+    it('parses dimensions from viewBox if width/height missing', () => {
+        const svg = `
+            <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+                <rect data-ref="top-left" x="0" y="0" width="50" height="50" />
+            </svg>
+        `;
+        const layout = templateService.parseSvgContent(svg);
+        expect(layout?.width).toBe(500);
+        expect(layout?.height).toBe(500);
+
+        // Center of Card: 250, 250
+        // Element Center: 25, 25
+        // Offset: 25 - 250 = -225
+        const el = layout?.elements['top-left'];
+        expect(el?.offsetX).toBe(-225);
+        expect(el?.offsetY).toBe(-225);
     });
 });
