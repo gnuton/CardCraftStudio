@@ -228,6 +228,21 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
             <div className="flex flex-col h-full bg-[#1a1d23] overflow-hidden">
                 <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
 
+                    {/* Hidden capture target & Test detection */}
+                    <div style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', zIndex: -1 }}>
+                        {isLayoutMode && (
+                            <WireframePreview
+                                ref={wireframeRef}
+                                elements={cardElements}
+                                width={cardWidth}
+                                height={cardHeight}
+                                targetSide={category === 'front-background' ? 'front' : 'back'}
+                                minimal={true}
+                                forcedAspectRatio={aspectRatio}
+                            />
+                        )}
+                    </div>
+
                     {/* Header */}
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex items-center gap-3">
