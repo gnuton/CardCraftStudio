@@ -48,7 +48,7 @@ describe('Image Generation API', () => {
             imageBase64: mockBase64,
             prompt: mockFinalPrompt
         });
-        expect(googleImagenService.generateImage).toHaveBeenCalledWith('a dragon', 'fantasy', expect.anything());
+        expect(googleImagenService.generateImage).toHaveBeenCalledWith('a dragon', undefined, expect.anything());
     });
 
     it('should handle generation errors', async () => {

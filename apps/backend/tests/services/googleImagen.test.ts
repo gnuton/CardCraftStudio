@@ -27,7 +27,7 @@ describe('GoogleImagenService', () => {
             })
         });
 
-        const result = await googleImagenService.generateImage('a dragon', 'fantasy');
+        const result = await googleImagenService.generateImage('a dragon', undefined);
 
         expect(mockedFetch).toHaveBeenCalledTimes(1);
         expect(result.imageBase64).toBe(`data:image/png;base64,${mockImageBytes}`);
@@ -42,7 +42,7 @@ describe('GoogleImagenService', () => {
             text: async () => 'Forbidden'
         });
 
-        await expect(googleImagenService.generateImage('test', 'fantasy'))
+        await expect(googleImagenService.generateImage('test', undefined))
             .rejects.toThrow('Imagen API error: 403 Forbidden');
     });
 
