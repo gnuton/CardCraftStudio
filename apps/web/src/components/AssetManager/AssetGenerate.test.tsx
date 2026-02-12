@@ -30,31 +30,22 @@ describe('AssetGenerate', () => {
         expect(screen.getByText('AI Image Generator')).toBeDefined();
     });
 
-    it('appends category suffix to prompt', () => {
-        const { rerender } = render(<AssetGenerate {...defaultProps} category="front-background" />);
+    it('starts with empty prompt', () => {
+        render(<AssetGenerate {...defaultProps} />);
 
-        // Check if initial prompt contains the suffix
         const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
-        expect(textarea.value).toContain('background texture');
-
-        // Change category
-        rerender(<AssetGenerate {...defaultProps} category="icon" />);
-
-        // Check if suffix updated
-        expect(textarea.value).toContain('game icon');
-        expect(textarea.value).not.toContain('background texture');
+        expect(textarea.value).toBe('');
     });
 
     it('preserves user input when switching categories', () => {
-        const { rerender } = render(<AssetGenerate {...defaultProps} category="front-background" />);
-        const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
+        const { rerender } = render(<AssetGenerate {...defaultProps} />);
 
+        const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
         fireEvent.change(textarea, { target: { value: 'My custom prompt' } });
 
         rerender(<AssetGenerate {...defaultProps} category="icon" />);
 
-        expect(textarea.value).toContain('My custom prompt');
-        expect(textarea.value).toContain('game icon');
+        expect(textarea.value).toBe('My custom prompt');
     });
 
     it('renders wireframe preview for background categories', () => {

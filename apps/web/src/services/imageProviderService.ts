@@ -29,12 +29,13 @@ class ImageProviderService {
 
     async generateImage(
         prompt: string,
-        style?: string,
+        _style?: string, // Legacy, kept for backward compatibility but ignored
         options?: {
             saveToAssets?: boolean;
             assetMetadata?: any;
             aspectRatio?: string;
-            layout?: { elements: any[]; dimensions: { width: number; height: number; } }
+            layout?: { elements: any[]; dimensions: { width: number; height: number; } };
+            layoutImage?: string;
         }
     ): Promise<{ imageBase64: string; prompt: string; asset?: any }> {
         const token = getAuthToken();
@@ -53,11 +54,12 @@ class ImageProviderService {
             headers,
             body: JSON.stringify({
                 prompt,
-                style,
+                // style parameter removed from body
                 saveToAssets: options?.saveToAssets,
                 assetMetadata: options?.assetMetadata,
                 aspectRatio: options?.aspectRatio,
-                layout: options?.layout
+                layout: options?.layout,
+                layoutImage: options?.layoutImage
             }),
         });
 
