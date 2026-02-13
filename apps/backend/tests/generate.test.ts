@@ -2,11 +2,11 @@ import request from 'supertest';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express from 'express';
 import { createApp } from '../src/app';
-import { googleImagenService } from '../src/services/googleImagen';
+import { googleAiService } from '../src/services/googleAiService';
 import { generateTestToken, JWT_SECRET } from './testUtils';
 
-vi.mock('../src/services/googleImagen', () => ({
-    googleImagenService: {
+vi.mock('../src/services/googleAiService', () => ({
+    googleAiService: {
         generateImage: vi.fn(),
     },
 }));
@@ -33,7 +33,7 @@ describe('Image Generation API', () => {
     it('should generate image successfully', async () => {
         const mockBase64 = 'data:image/png;base64,iVBORw0KGgo...';
         const mockFinalPrompt = 'a dragon, fantasy art style';
-        (googleImagenService.generateImage as any).mockResolvedValue({
+        (googleAiService.generateImage as any).mockResolvedValue({
             imageBase64: mockBase64,
             finalPrompt: mockFinalPrompt
         });
@@ -46,13 +46,14 @@ describe('Image Generation API', () => {
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
             imageBase64: mockBase64,
-            prompt: mockFinalPrompt
+            prompt: mockFinalPrompt,
+            model: 'gemini'
         });
-        expect(googleImagenService.generateImage).toHaveBeenCalledWith('a dragon', undefined, expect.anything());
+        expect(googleAiService.generateImage).toHaveBeenCalledWith('a dragon', undefined, expect.anything(), 'gemini');
     });
 
     it('should handle generation errors', async () => {
-        (googleImagenService.generateImage as any).mockRejectedValue(new Error('Imagen API Error'));
+        (googleAiService.generateImage as any).mockRejectedValue(new Error('Imagen API Error'));
 
         const response = await request(app)
             .post('/api/images/generate')

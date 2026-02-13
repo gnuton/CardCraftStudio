@@ -36,8 +36,9 @@ class ImageProviderService {
             aspectRatio?: string;
             layout?: { elements: any[]; dimensions: { width: number; height: number; } };
             layoutImage?: string;
+            model?: 'imagen' | 'gemini';
         }
-    ): Promise<{ imageBase64: string; prompt: string; asset?: any }> {
+    ): Promise<{ imageBase64: string; prompt: string; asset?: any; model?: string }> {
         const token = getAuthToken();
 
         const headers: HeadersInit = {
@@ -59,7 +60,8 @@ class ImageProviderService {
                 assetMetadata: options?.assetMetadata,
                 aspectRatio: options?.aspectRatio,
                 layout: options?.layout,
-                layoutImage: options?.layoutImage
+                layoutImage: options?.layoutImage,
+                model: options?.model
             }),
         });
 

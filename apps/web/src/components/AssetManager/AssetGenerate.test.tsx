@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { AssetGenerate } from './AssetGenerate';
 import { vi, describe, it, expect, afterEach } from 'vitest';
 
@@ -19,6 +19,10 @@ vi.mock('../common/PremiumGate', () => ({
     PremiumGate: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock('html-to-image', () => ({
+    toPng: vi.fn().mockResolvedValue('data:image/png;base64,mock-wireframe'),
+}));
+
 describe('AssetGenerate', () => {
     const defaultProps = {
         onAssetGenerated: vi.fn(),
@@ -30,11 +34,11 @@ describe('AssetGenerate', () => {
         expect(screen.getByText('AI Image Generator')).toBeDefined();
     });
 
-    it('starts with empty prompt', () => {
+    it('starts with a non-empty default prompt for backgrounds', () => {
         render(<AssetGenerate {...defaultProps} />);
 
         const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
-        expect(textarea.value).toBe('');
+        expect(textarea.value).toContain('wireframe');
     });
 
     it('preserves user input when switching categories', () => {
@@ -63,8 +67,11 @@ describe('AssetGenerate', () => {
             />
         );
 
-        expect(screen.getByText('Layout Preview (Coordinates will be sent to AI)')).toBeDefined();
-        expect(screen.getByText('text')).toBeDefined();
+        // Show preview to see the layout preview
+        const toggle = screen.getByText(/Comparison Preview/i);
+        fireEvent.click(toggle);
+
+        expect(screen.getByText(/Wireframe will be sent to AI/i)).toBeDefined();
 
         // Should not show for icon
         rerender(
@@ -74,7 +81,7 @@ describe('AssetGenerate', () => {
                 cardElements={elements}
             />
         );
-        expect(screen.queryByText('Layout Preview (Coordinates will be sent to AI)')).toBeNull();
+        expect(screen.queryByText(/Wireframe will be sent to AI/i)).toBeNull();
     });
 
     it('sends layout data to API for background categories', async () => {
@@ -99,15 +106,17 @@ describe('AssetGenerate', () => {
         const button = screen.getByText(/Generate Image/i);
         fireEvent.click(button);
 
-        expect(imageProviderService.generateImage).toHaveBeenCalledWith(
-            expect.stringContaining('test prompt'),
-            undefined,
-            expect.objectContaining({
-                layout: {
-                    elements: elements,
-                    dimensions: { width: 375, height: 525 }
-                }
-            })
-        );
+        await waitFor(() => {
+            expect(imageProviderService.generateImage).toHaveBeenCalledWith(
+                expect.stringContaining('test prompt'),
+                undefined,
+                expect.objectContaining({
+                    layout: {
+                        elements: elements,
+                        dimensions: { width: 375, height: 525 }
+                    }
+                })
+            );
+        }, { timeout: 2000 });
     });
 });

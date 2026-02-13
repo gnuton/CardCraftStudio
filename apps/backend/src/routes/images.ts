@@ -1,6 +1,6 @@
 import express from 'express';
 import { googleSearchService } from '../services/googleSearch';
-import { googleImagenService } from '../services/googleImagen';
+import { googleAiService } from '../services/googleAiService';
 import { assetService } from '../services/assetService';
 import { requirePremium } from '../middleware/requirePremium';
 import { ApiError } from '../utils/ApiError';
@@ -34,26 +34,31 @@ router.post('/search', async (req, res, next) => {
 
 router.post('/generate', requirePremium, async (req, res, next) => {
     try {
-        const { prompt, saveToAssets, assetMetadata, aspectRatio, layout, layoutImage } = req.body;
+        const { prompt, saveToAssets, assetMetadata, aspectRatio, layout, layoutImage, model } = req.body;
 
         if (!prompt) {
             throw new ApiError(400, 'Prompt is required', 'The "prompt" field is missing in the request body.');
         }
 
-        const { imageBase64, finalPrompt, debugData } = await googleImagenService.generateImage(prompt, undefined, {
+        // Determine model: non-admin users are forced to 'gemini'
+        const user = (req as any).user;
+        const isAdmin = user?.plan === 'admin';
+        const resolvedModel = isAdmin && model === 'imagen' ? 'imagen' : 'gemini';
+
+        const { imageBase64, finalPrompt, debugData } = await googleAiService.generateImage(prompt, undefined, {
             aspectRatio,
             layout,
             layoutImage
-        });
+        }, resolvedModel);
 
         // If saveToAssets is requested, save to Asset Manager
         let asset;
-        if (saveToAssets && (req as any).user) {
+        if (saveToAssets && user) {
             try {
                 const imageData = imageBase64.includes(',') ? imageBase64 : `data:image/png;base64,${imageBase64}`;
 
                 asset = await assetService.createAsset({
-                    userId: (req as any).user.uid,
+                    userId: user.uid,
                     imageData,
                     fileName: assetMetadata?.fileName || `Generated: ${prompt.substring(0, 50)}`,
                     source: 'generated',
@@ -75,7 +80,8 @@ router.post('/generate', requirePremium, async (req, res, next) => {
             imageBase64,
             prompt: finalPrompt,
             asset, // Include asset if it was created
-            debugData
+            debugData,
+            model: resolvedModel // Tell the frontend which model was actually used
         });
     } catch (error) {
         next(error);
