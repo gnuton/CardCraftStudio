@@ -63,7 +63,7 @@ const WireframePreview = React.forwardRef<HTMLDivElement, {
         return (
             <div
                 ref={ref}
-                className={`relative mx-auto overflow-hidden selection-none flex items-center justify-center ${minimal ? 'bg-black border-4 border-white rounded-none' : 'bg-white border border-gray-200 rounded-lg shadow-sm'
+                className={`relative mx-auto overflow-hidden selection-none flex items-center justify-center ${minimal ? 'bg-white border-4 border-black rounded-none' : 'bg-white border border-gray-200 rounded-lg shadow-sm'
                     }`}
                 style={useExplicitPx ? {
                     width: `${outerWidth}px`,
@@ -85,16 +85,14 @@ const WireframePreview = React.forwardRef<HTMLDivElement, {
                     {relevantElements.map(el => (
                         <div
                             key={el.id}
-                            className={`absolute flex items-center justify-center overflow-hidden ${minimal ? 'border-[3px] border-white' : 'border-2 border-black opacity-50'
-                                }`} // Reduced border width slightly for better precision, explicit border-white
+                            className={`absolute flex items-center justify-center overflow-hidden ${minimal ? 'border-[3px] border-black' : 'border-2 border-black opacity-50'
+                                }`} // Reduced border width slightly for better precision, explicit border-black
                             style={{
                                 left: `${((width / 2 + el.x - el.width / 2) / width) * 100}%`,
                                 top: `${((height / 2 + el.y - el.height / 2) / height) * 100}%`,
                                 width: `${(el.width / width) * 100}%`,
                                 height: `${(el.height / height) * 100}%`,
                                 transform: `rotate(${el.rotate}deg)`,
-                                fontSize: minimal ? '1px' : '10px',
-                                color: minimal ? 'transparent' : 'inherit'
                             }}
                         />
                     ))}
@@ -142,7 +140,7 @@ export const AssetGenerate: React.FC<AssetGenerateProps> = ({
     cardHeight = 525
 }) => {
     const { isAdmin } = useAuth();
-    const [prompt, setPrompt] = useState(`I am uploading a black-and-white wireframe of a UI card. The outer boundary represents the card edges, and the inner boxes represent where functional elements (text, buttons, icons) will live.
+    const [prompt, setPrompt] = useState(`I am uploading a white background wireframe of a UI card. The outer boundary represents the card edges, and the inner boxes represent where functional elements (text, buttons, icons) will live.
 
 Your task: Create a high-quality background image for this card that frames the internal elements without obscuring them. The design should feel integrated, using the inner boxes as a guide for where to place visual flourishes, borders, or negative space.
 
@@ -196,10 +194,12 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                     if (wireframeRef.current) {
                         try {
                             console.log('[AssetGenerate] Capturing wireframe...');
+                            // Wait for paint
+                            await new Promise(resolve => setTimeout(resolve, 100));
                             layoutImage = await toPng(wireframeRef.current, {
                                 cacheBust: true,
                                 pixelRatio: 2, // Increased for sharper edge detection
-                                backgroundColor: '#000000', // Ensure black background
+                                backgroundColor: '#ffffff', // Ensure white background
                             });
                             console.log('[AssetGenerate] Wireframe captured, length:', layoutImage.length);
                             setCapturedWireframe(layoutImage);
@@ -257,8 +257,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
             <div className="relative flex flex-col h-full bg-[#1a1d23] overflow-hidden">
                 <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
 
-                    {/* Hidden wrapper for capture - keeps element in DOM for html-to-image but hides it from UI */}
-                    <div style={{ height: 0, overflow: 'hidden' }}>
+                    {/* Hidden wrapper for capture - moved to absolute 0,0 but transparent to ensure rendering */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -50, opacity: 0, pointerEvents: 'none' }}>
                         {isLayoutMode && (
                             <WireframePreview
                                 ref={wireframeRef}
