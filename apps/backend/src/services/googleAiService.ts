@@ -43,7 +43,7 @@ export class GoogleAiService {
     }
 
     /**
-     * Generate an image using Gemini 2.0 Flash (generateContent API).
+     * Generate an image using Gemini (generateContent API).
      * Uses responseModalities to request image output.
      */
     private async generateWithGemini(
@@ -53,12 +53,12 @@ export class GoogleAiService {
             aspectRatio?: string,
             layout?: { elements: any[]; dimensions: { width: number; height: number; } },
             layoutImage?: string
-        }
+        },
+        modelId: string = 'gemini-2.0-flash-exp'
     ): Promise<{ imageBase64: string; finalPrompt: string; debugData?: any }> {
         const projectId = this.getProjectId();
         const headers = await this.getAuthHeaders();
 
-        const modelId = 'gemini-2.0-flash-exp';
         const endpoint = `${this.baseUrl}/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:generateContent`;
 
         // Build the parts array: include wireframe image if available
@@ -111,7 +111,7 @@ export class GoogleAiService {
             ]
         };
 
-        console.log(`Using Gemini Flash model: ${endpoint}`);
+        console.log(`Using Gemini model: ${endpoint}`);
         const response = await fetch(endpoint, {
             method: 'POST',
             headers,
@@ -176,7 +176,7 @@ export class GoogleAiService {
     }
 
     /**
-     * Generate an image using Imagen 3.0 (predict API).
+     * Generate an image using Imagen (predict API).
      */
     private async generateWithImagen(
         prompt: string,
@@ -185,12 +185,16 @@ export class GoogleAiService {
             aspectRatio?: string,
             layout?: { elements: any[]; dimensions: { width: number; height: number; } },
             layoutImage?: string
-        }
+        },
+        modelId: string = 'imagen-3.0-fast-generate-001'
     ): Promise<{ imageBase64: string; finalPrompt: string; debugData?: any }> {
         const projectId = this.getProjectId();
         const headers = await this.getAuthHeaders();
 
-        let endpoint = `${this.baseUrl}/projects/${projectId}/locations/us-central1/publishers/google/models/imagen-3.0-fast-generate-001:predict`;
+        // Use passed modelId or default if 'imagen' is passed generically
+        const actualModelId = modelId === 'imagen' ? 'imagen-3.0-fast-generate-001' : modelId;
+        const endpoint = `${this.baseUrl}/projects/${projectId}/locations/us-central1/publishers/google/models/${actualModelId}:predict`;
+
         let requestBody: any = {
             instances: [{
                 prompt: finalPrompt
@@ -203,9 +207,21 @@ export class GoogleAiService {
             }
         };
 
-        // 1. Try Image Model if layout image is available
+        // 1. Try Capability Model if specifically requested or if standard model is used with layout
+        // Note: For now, we only use capability model logic if specifically hardcoded or requested?
+        // Let's keep the existing logic: if layoutImage is present, force specific capability endpoint usage unless overridden?
+        // Actually, if the user selects a specific Imagen model, we should probably respect it.
+        // BUT, if they provide a layoutImage, only specific models might support it.
+        // For simplicity, if layoutImage is present, we try the capability model first ONLY IF the user hasn't forced a specific other model?
+        // Or better: Let's assume the user knows what they are doing if they select a model.
+
+        // Retaining original logic for 'capability' automatic switch only if using standard generation?
+        // To be safe, let's keep the distinct block for layoutImage but make sure it uses the correct endpoint structure.
+
         if (options?.layoutImage) {
-            const capabilityModelEndpoint = `${this.baseUrl}/projects/${projectId}/locations/us-central1/publishers/google/models/imagen-3.0-capability-001:predict`;
+            // Capability model specific endpoint
+            const capabilityModelId = 'imagen-3.0-capability-001';
+            const capabilityModelEndpoint = `${this.baseUrl}/projects/${projectId}/locations/us-central1/publishers/google/models/${capabilityModelId}:predict`;
 
             const base64Image = options.layoutImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
 
@@ -244,6 +260,14 @@ export class GoogleAiService {
                 }
             };
 
+            // Only switch to capability model if the selected model ISN'T explicitly something else preventing it?
+            // For now, let's allow the 'layout' option to override with capability model if strictly needed,
+            // or just log that we are using it.
+            // If the user selected 'imagen-3.0-generate-001', they might not get layout support.
+            // Let's check if the selected actualModelId supports it?
+            // For safety: If layoutImage is present, we prefer capability model endpoint, unless user selected a specific non-capability one?
+            // Let's keep the original behavior: if layoutImage is present, TRY capability model.
+
             try {
                 console.log(`Attempting to use capability model: ${capabilityModelEndpoint}`);
                 const response = await fetch(capabilityModelEndpoint, {
@@ -259,7 +283,7 @@ export class GoogleAiService {
                             imageBase64: `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`,
                             finalPrompt: finalPrompt,
                             debugData: {
-                                model: 'imagen-3.0-capability-001',
+                                model: capabilityModelId,
                                 endpoint: capabilityModelEndpoint,
                                 requestBody: capabilityRequestBody,
                                 response: data
@@ -268,15 +292,15 @@ export class GoogleAiService {
                     }
                 } else {
                     const errorText = await response.text();
-                    console.warn(`Capability model failed with status ${response.status}: ${errorText}. Falling back to text-only model.`);
+                    console.warn(`Capability model failed with status ${response.status}: ${errorText}. Falling back to selected text-only model ${actualModelId}.`);
                 }
             } catch (e) {
                 console.warn('Capability model generation failed, falling back to text-only:', e);
             }
         }
 
-        // 2. Fallback or Default to Fast Text Model
-        console.log(`Using text-only model: ${endpoint}`);
+        // 2. Use the selected model (or default fast)
+        console.log(`Using Imagen model: ${endpoint}`);
         const response = await fetch(endpoint, {
             method: 'POST',
             headers,
@@ -300,7 +324,7 @@ export class GoogleAiService {
             imageBase64: `data:image/png;base64,${imageBytes}`,
             finalPrompt,
             debugData: {
-                model: 'imagen-3.0-fast-generate-001',
+                model: actualModelId,
                 endpoint,
                 requestBody,
                 response: data
@@ -310,7 +334,7 @@ export class GoogleAiService {
 
     /**
      * Main entry point for image generation.
-     * @param model - 'imagen' for Imagen 3.0, 'gemini' for Gemini 2.0 Flash. Defaults to 'gemini'.
+     * @param model - Specific model string (e.g. 'gemini-2.0-flash-exp', 'imagen-3.0-generate-001') or generic 'gemini'/'imagen'.
      */
     async generateImage(
         prompt: string,
@@ -320,17 +344,20 @@ export class GoogleAiService {
             layout?: { elements: any[]; dimensions: { width: number; height: number; } },
             layoutImage?: string
         },
-        model: ImageModel = 'gemini'
+        model: string = 'gemini-2.0-flash-exp'
     ): Promise<{ imageBase64: string; finalPrompt: string; debugData?: any }> {
         this.getProjectId(); // Validate early
 
         const finalPrompt = this.buildLayoutPrompt(prompt, options);
+        const lowerModel = model.toLowerCase();
 
         try {
-            if (model === 'gemini') {
-                return await this.generateWithGemini(prompt, finalPrompt, options);
+            if (lowerModel.includes('imagen')) {
+                return await this.generateWithImagen(prompt, finalPrompt, options, model);
             } else {
-                return await this.generateWithImagen(prompt, finalPrompt, options);
+                // Default to Gemini for 'gemini' or any specific gemini model
+                const modelId = lowerModel === 'gemini' ? 'gemini-2.0-flash-exp' : model;
+                return await this.generateWithGemini(prompt, finalPrompt, options, modelId);
             }
         } catch (error) {
             console.error(`Error generating image with ${model}:`, error);

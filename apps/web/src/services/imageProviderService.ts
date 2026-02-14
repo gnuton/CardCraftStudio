@@ -36,7 +36,7 @@ class ImageProviderService {
             aspectRatio?: string;
             layout?: { elements: any[]; dimensions: { width: number; height: number; } };
             layoutImage?: string;
-            model?: 'imagen' | 'gemini';
+            model?: string;
         }
     ): Promise<{ imageBase64: string; prompt: string; asset?: any; model?: string }> {
         const token = getAuthToken();

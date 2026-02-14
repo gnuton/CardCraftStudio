@@ -63,7 +63,7 @@ const WireframePreview = React.forwardRef<HTMLDivElement, {
         return (
             <div
                 ref={ref}
-                className={`relative mx-auto overflow-hidden selection-none flex items-center justify-center ${minimal ? 'bg-white border-4 border-black rounded-none' : 'bg-white border border-gray-200 rounded-lg shadow-sm'
+                className={`relative overflow-hidden selection-none flex items-center justify-center ${minimal ? 'm-0 bg-white border-4 border-black rounded-none' : 'mx-auto bg-white border border-gray-200 rounded-lg shadow-sm'
                     }`}
                 style={useExplicitPx ? {
                     width: `${outerWidth}px`,
@@ -93,6 +93,8 @@ const WireframePreview = React.forwardRef<HTMLDivElement, {
                                 width: `${(el.width / width) * 100}%`,
                                 height: `${(el.height / height) * 100}%`,
                                 transform: `rotate(${el.rotate}deg)`,
+                                fontSize: minimal ? '1px' : '10px',
+                                color: minimal ? 'transparent' : 'inherit'
                             }}
                         />
                     ))}
@@ -152,9 +154,18 @@ Composition: Ensure the center of the inner boxes remains relatively clean/legib
 No text nor numbers must be present in the final image.
 Color the areas inside the inner boxes in pink with 70% transparency`);
     const [aspectRatio, setAspectRatio] = useState('3:4');
-    const [selectedModel, setSelectedModel] = useState<'imagen' | 'gemini'>('gemini');
+    const [selectedModel, setSelectedModel] = useState<string>('gemini-2.0-flash-exp');
     const [showDebug, setShowDebug] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+
+    const AVAILABLE_MODELS = [
+        { id: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Experimental' },
+        { id: 'gemini-2.0-flash-001', label: 'Gemini 2.0 Flash' },
+        { id: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image (Nano Banana)' },
+        { id: 'imagen-3.0-generate-001', label: 'Imagen 3.0 Generate' },
+        { id: 'imagen-3.0-fast-generate-001', label: 'Imagen 3.0 Fast Generate' },
+        { id: 'imagen-3.0-capability-001', label: 'Imagen 3.0 Capability (Layout Aware)' },
+    ];
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -163,6 +174,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
 
     // Debug state for wireframe capture
     const [capturedWireframe, setCapturedWireframe] = useState<string | null>(null);
+
+    const [suggestedPrompts, setSuggestedPrompts] = useState<{ title: string, prompt: string }[]>([]);
 
     const wireframeRef = useRef<HTMLDivElement>(null);
 
@@ -174,6 +187,7 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
         setError(null);
         setResult(null);
         setCapturedWireframe(null);
+        setSuggestedPrompts([]);
         setSliderValue(50); // Reset slider on new generation
 
         try {
@@ -231,7 +245,24 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
             }
         } catch (err) {
             console.error('Generation failed:', err);
-            setError(err instanceof Error ? err.message : 'Failed to generate image. Please try again.');
+            const errorMessage = err instanceof Error ? err.message : 'Failed to generate image. Please try again.';
+            setError(errorMessage);
+
+            // Parse suggestions if present
+            if (errorMessage.includes('Gemini refused to generate image')) {
+                const suggestions: { title: string, prompt: string }[] = [];
+                // Regex to find "Option X (Title):" followed by > "Prompt"
+                // Dealing with potential markdown formatting variations
+                const regex = /\*\*Option \d+ \((.*?)\):\*\*\s*>\s*"(.*?)"/g;
+                let match;
+                while ((match = regex.exec(errorMessage)) !== null) {
+                    suggestions.push({
+                        title: match[1],
+                        prompt: match[2]
+                    });
+                }
+                setSuggestedPrompts(suggestions);
+            }
         } finally {
             setLoading(false);
         }
@@ -257,8 +288,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
             <div className="relative flex flex-col h-full bg-[#1a1d23] overflow-hidden">
                 <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
 
-                    {/* Hidden wrapper for capture - moved to absolute 0,0 but transparent to ensure rendering */}
-                    <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -50, opacity: 0, pointerEvents: 'none' }}>
+                    {/* Hidden wrapper for capture - keeps element in DOM for html-to-image but hides it from UI */}
+                    <div style={{ height: 0, overflow: 'hidden' }}>
                         {isLayoutMode && (
                             <WireframePreview
                                 ref={wireframeRef}
@@ -350,7 +381,7 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                                         <div className="relative w-full max-w-md aspect-[3/4] bg-[#1e2025] rounded-xl border border-gray-700 overflow-hidden shadow-2xl">
 
                                             {/* Layer 1: Wireframe (Bottom) */}
-                                            <div className="absolute inset-0 p-4 flex items-center justify-center bg-black">
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black">
                                                 <WireframePreview
                                                     elements={cardElements}
                                                     width={cardWidth}
@@ -531,37 +562,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Describe your image... (e.g. 'Dark fantasy castle, moody lighting, highly detailed')"
-                                    className="w-full h-24 bg-[#1a1d23] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 resize-none transition-all"
+                                    className="w-full h-24 bg-[#1a1d23] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50 resize-y transition-all"
                                 />
-
-                                {/* Suggestions */}
-                                <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-                                    {[
-                                        {
-                                            label: '✨ High Precision', prompt: `I am uploading a black-and-white wireframe of a UI card. The outer boundary represents the card edges, and the inner boxes represent where functional elements (text, buttons, icons) will live.
-
-Your task: Create a high-quality background image for this card that frames the internal elements without obscuring them. The design should feel integrated, using the inner boxes as a guide for where to place visual flourishes, borders, or negative space.
-
-Style Requirements:
-Core Aesthetic:  Dark Fantasy
-Visual Elements: Neon circuitry
-Color Palette: Deep obsidians and electric blues
-Composition: Ensure the center of the inner boxes remains relatively clean/legible so I can overlay text later.
-No text nor numbers must be present in the final image.
-Color the areas inside the inner boxes in pink with 70% transparency` },
-                                        { label: 'Epic Fantasy', prompt: 'Epic fantasy landscape, moody lighting, highly detailed' },
-                                        { label: 'Cyberpunk', prompt: 'Cyberpunk city street, neon lights, rainy atmosphere' },
-                                        { label: 'Abstract', prompt: 'Abstract watercolor pattern, soft colors' }
-                                    ].map(s => (
-                                        <button
-                                            key={s.label}
-                                            onClick={() => setPrompt(s.prompt)}
-                                            className="px-3 py-1.5 bg-[#1a1d23] hover:bg-gray-700 border border-gray-700 rounded-full text-xs text-gray-400 hover:text-white whitespace-nowrap transition-colors flex items-center gap-1.5"
-                                        >
-                                            {s.label}
-                                        </button>
-                                    ))}
-                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -578,8 +580,8 @@ Color the areas inside the inner boxes in pink with 70% transparency` },
                                     </select>
                                 </div>
 
-                                {/* Model Selection - Admin Only */}
-                                {isAdmin && (
+                                {/* Model Selection - Admin Only or Debug Mode */}
+                                {(isAdmin || showDebug) && (
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                                             <Cpu className="w-3.5 h-3.5" />
@@ -587,18 +589,56 @@ Color the areas inside the inner boxes in pink with 70% transparency` },
                                         </label>
                                         <select
                                             value={selectedModel}
-                                            onChange={(e) => setSelectedModel(e.target.value as 'imagen' | 'gemini')}
+                                            onChange={(e) => setSelectedModel(e.target.value)}
                                             className="w-full bg-[#1a1d23] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 appearance-none"
                                         >
-                                            <option value="gemini">Gemini 2.0 Flash</option>
-                                            <option value="imagen">Imagen 3.0 (Admin)</option>
+                                            {AVAILABLE_MODELS.map(model => (
+                                                <option key={model.id} value={model.id}>{model.label}</option>
+                                            ))}
                                         </select>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Error */}
-                            {error && (
+                            {/* Error and Suggestions */}
+                            {suggestedPrompts.length > 0 ? (
+                                <div className="space-y-4 animate-in fade-in">
+                                    <div className="bg-[#1e2025] rounded-xl border border-indigo-500/30 p-4 shadow-lg shadow-indigo-500/10">
+                                        <h4 className="flex items-center gap-2 text-sm font-bold text-indigo-400 mb-3">
+                                            <Sparkles className="w-4 h-4" />
+                                            AI Refined Prompts (Select one)
+                                        </h4>
+                                        <p className="text-xs text-gray-400 mb-4">
+                                            The AI couldn't generate an image with the current prompt, but suggested these optimized alternatives:
+                                        </p>
+                                        <div className="space-y-3">
+                                            {suggestedPrompts.map((suggestion, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => {
+                                                        setPrompt(suggestion.prompt);
+                                                        setSuggestedPrompts([]);
+                                                        setError(null);
+                                                    }}
+                                                    className="group p-3 bg-black/30 hover:bg-black/50 border border-gray-700 hover:border-indigo-500/50 rounded-lg cursor-pointer transition-all"
+                                                >
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <span className="text-xs font-bold text-gray-300 group-hover:text-white">
+                                                            {suggestion.title}
+                                                        </span>
+                                                        <span className="text-[10px] uppercase tracking-wider text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            Use This
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 group-hover:text-gray-400 line-clamp-2">
+                                                        "{suggestion.prompt}"
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : error && (
                                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm text-center animate-in fade-in">
                                     {error}
                                 </div>
@@ -617,7 +657,7 @@ Color the areas inside the inner boxes in pink with 70% transparency` },
                                 ) : (
                                     <>
                                         <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                                        Generate Image
+                                        {prompt.toLowerCase().includes('generate a prompt') || prompt.toLowerCase().includes('suggest a prompt') ? 'Generate a Prompt' : 'Generate Image'}
                                     </>
                                 )}
                             </button>
