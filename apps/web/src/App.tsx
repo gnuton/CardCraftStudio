@@ -769,7 +769,7 @@ function App() {
         <LandingPage
           onEnter={() => setView('library')}
           onLogin={handleLoginRequest}
-          isAuthenticated={isAuthenticated}
+          isAuthenticated={isAuthenticated || isAppAuthenticated}
         />
       </>
     );

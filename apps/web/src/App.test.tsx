@@ -20,6 +20,17 @@ vi.mock('./utils/deckIO', () => ({
     exportDeckToZip: vi.fn() // mock export too just in case
 }));
 
+vi.mock('./services/db', () => ({
+    db: {
+        decks: {
+            toArray: vi.fn().mockResolvedValue([]),
+            bulkPut: vi.fn().mockResolvedValue(undefined),
+            put: vi.fn().mockResolvedValue(undefined),
+            delete: vi.fn().mockResolvedValue(undefined),
+        }
+    }
+}));
+
 vi.mock('./contexts/AuthContext', () => ({
     useAuth: () => ({
         user: { uid: 'test-uid', email: 'test@example.com', plan: 'free' },
@@ -54,7 +65,7 @@ describe('App Component', () => {
         }, { timeout: 6000 });
 
         // Navigate past Landing Page
-        const enterBtn = await screen.findByText(/Continue as Guest/i);
+        const enterBtn = await screen.findByText(/Enter Studio|Continue as Guest/i);
         fireEvent.click(enterBtn);
     };
 
