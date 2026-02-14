@@ -34,3 +34,26 @@ vi.mock('../contexts/AuthContext', () => {
         AuthProvider: ({ children }: any) => children,
     };
 });
+
+// Mock Dexie
+vi.mock('dexie', () => {
+    return {
+        default: class {
+            version() { return this; }
+            stores() { return this; }
+            on() { return this; }
+            open() { return Promise.resolve(this); }
+            table() {
+                return {
+                    toArray: () => Promise.resolve([]),
+                    put: () => Promise.resolve(),
+                    bulkPut: () => Promise.resolve(),
+                    delete: () => Promise.resolve(),
+                    get: () => Promise.resolve(null),
+                };
+            }
+            get images() { return this.table(); }
+            get decks() { return this.table(); }
+        }
+    };
+});
