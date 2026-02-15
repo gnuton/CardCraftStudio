@@ -42,10 +42,12 @@ export interface AssetFilters {
     category?: AssetCategory;
     search?: string;
     tags?: string[];
+    update?: string; // fix for update in service
     sortBy?: 'createdAt' | 'updatedAt' | 'usageCount';
     sortOrder?: 'asc' | 'desc';
     page?: number;
     limit?: number;
+    unused?: boolean;
 }
 
 export interface AssetListResponse {

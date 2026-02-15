@@ -60,7 +60,7 @@ router.post('/generate', requirePremium, async (req, res, next) => {
                 asset = await assetService.createAsset({
                     userId: user.uid,
                     imageData,
-                    fileName: assetMetadata?.fileName || `Generated: ${prompt.substring(0, 50)}`,
+                    fileName: assetMetadata?.fileName || `${prompt.substring(0, 50)}`,
                     source: 'generated',
                     category: assetMetadata?.category || 'main-illustration', // Pass category
                     prompt: finalPrompt,

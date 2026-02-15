@@ -22,9 +22,16 @@ export const requireAuth = (
     next: NextFunction
 ) => {
     const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+    let token: string | undefined;
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+    } else if (req.query && req.query.token) {
+        token = req.query.token as string;
+    }
+
+    if (!token) {
         return next(
             new ApiError(
                 401,
@@ -33,8 +40,6 @@ export const requireAuth = (
             )
         );
     }
-
-    const token = authHeader.split(' ')[1];
 
     try {
         const decoded: any = jwt.verify(token, JWT_SECRET);

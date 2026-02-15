@@ -23,6 +23,10 @@ vi.mock('html-to-image', () => ({
     toPng: vi.fn().mockResolvedValue('data:image/png;base64,mock-wireframe'),
 }));
 
+vi.mock('../../contexts/AuthContext', () => ({
+    useAuth: vi.fn().mockReturnValue({ isAdmin: true, user: { id: 'test-user' } }),
+}));
+
 describe('AssetGenerate', () => {
     const defaultProps = {
         onAssetGenerated: vi.fn(),
@@ -118,5 +122,33 @@ describe('AssetGenerate', () => {
                 })
             );
         }, { timeout: 2000 });
+    });
+
+    it('captures wireframe when Test Capture is clicked in debug mode', async () => {
+        const toPng = (await import('html-to-image')).toPng;
+        const elements = [
+            { id: '1', type: 'text', side: 'front', x: 10, y: 10, width: 100, height: 50, isVisible: true }
+        ] as any[];
+
+        render(
+            <AssetGenerate
+                {...defaultProps}
+                category="front-background"
+                cardElements={elements}
+            />
+        );
+
+        // Enable Debug Mode
+        const debugToggle = screen.getByText('Show Debug');
+        fireEvent.click(debugToggle);
+
+        // Find and click Test Capture
+        const captureBtn = screen.getByText('Test Capture');
+        fireEvent.click(captureBtn);
+
+        await waitFor(() => {
+            expect(toPng).toHaveBeenCalled();
+            expect(screen.getByText('Captured Wireframe (Sent to AI):')).toBeDefined();
+        });
     });
 });

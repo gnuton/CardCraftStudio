@@ -1,52 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Eye, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Eye, Download, Plus, Check, Image as ImageIcon } from 'lucide-react';
 import type { Asset } from '../types/asset';
+
+
+// Rethinking: I will use a larger block replacement to update Interface and Component implementation.
 
 interface AssetCardProps {
     asset: Asset;
     onClick: () => void;
     onDelete: (id: string) => void;
-    selectionMode?: boolean;
+    isBulkMode?: boolean;
+    isPickingMode?: boolean;
+    selected?: boolean;
+    onToggleSelection?: (id: string) => void;
 }
 
-export const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick, onDelete, selectionMode = false }) => {
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
-    const [imageLoading, setImageLoading] = useState(true);
-    const [showActions, setShowActions] = useState(false);
+export const AssetCard: React.FC<AssetCardProps> = ({
+    asset,
+    onClick,
+    onDelete,
+    isBulkMode = false,
+    isPickingMode = false,
+    selected = false,
+    onToggleSelection
+}) => {
+    // We don't need imageUrl state anymore as we use the direct URL
+    const [isVisible, setIsVisible] = useState(false);
+    const cardRef = React.useRef<HTMLDivElement>(null);
+
+    // Use token in query param to allow browser caching of the image
+    const token = localStorage.getItem('cc_auth_token');
+    const secureImageUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/assets/${asset.id}/image?token=${token}`;
 
     useEffect(() => {
-        // Load image data from backend
-        const loadImage = async () => {
-            setImageLoading(true);
-            try {
-                const token = localStorage.getItem('cc_auth_token');
-                if (!token) {
-                    setImageLoading(false);
-                    return;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
                 }
+            },
+            { threshold: 0.1 }
+        );
 
-                const response = await fetch(
-                    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/assets/${asset.id}/data`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                        },
-                    }
-                );
+        if (cardRef.current) {
+            observer.observe(cardRef.current);
+        }
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setImageUrl(data.dataUrl);
-                }
-            } catch (err) {
-                console.error('Failed to load asset image:', err);
-            } finally {
-                setImageLoading(false);
-            }
-        };
-
-        loadImage();
-    }, [asset.id]);
+        return () => observer.disconnect();
+    }, []);
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -55,102 +57,173 @@ export const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick, onDelete, 
         }
     };
 
+    const handleDownload = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            // For download we might need to fetch blob to force download behavior
+            // or just open in new tab? Fetching blob allows true download attribute.
+            const response = await fetch(secureImageUrl);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = asset.fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error('Download failed', err);
+        }
+    };
+
+    const handleUse = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onClick();
+    };
+
+    const handleToggleSelection = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (onToggleSelection) {
+            onToggleSelection(asset.id);
+        }
+    };
+
     const formattedDate = new Date(asset.createdAt).toLocaleDateString();
 
     return (
         <div
-            className="group relative bg-[#25282e] rounded-xl border border-gray-700 overflow-hidden transition-all hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 cursor-pointer"
-            onClick={onClick}
-            onMouseEnter={() => setShowActions(true)}
-            onMouseLeave={() => setShowActions(false)}
+            ref={cardRef}
+            className={`group relative bg-[#25282e] rounded-xl border overflow-hidden transition-all cursor-pointer ${selected
+                ? 'border-pink-500 shadow-lg shadow-pink-500/20'
+                : 'border-gray-700 hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20'
+                }`}
+            onClick={isBulkMode ? handleToggleSelection : onClick}
         >
             {/* Image Preview */}
-            <div className="aspect-square relative bg-gray-900">
-                {imageLoading ? (
+            <div className="w-full h-full relative bg-gray-900">
+                {isVisible ? (
+                    <img
+                        src={secureImageUrl}
+                        alt={asset.fileName}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
+                        onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                    />
+                ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-2 border-pink-500 border-t-transparent" />
                     </div>
-                ) : imageUrl ? (
-                    <img
-                        src={imageUrl}
-                        alt={asset.fileName}
-                        className="w-full h-full object-cover"
-                        onError={() => setImageUrl(null)}
-                    />
-                ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-600">
-                        <ImageIcon className="w-12 h-12" />
-                    </div>
                 )}
 
-                {/* Overlay Actions */}
-                {showActions && (
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-2 transition-opacity">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onClick();
-                            }}
-                            className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-                            title="Preview"
-                        >
-                            <Eye className="w-5 h-5 text-white" />
-                        </button>
-                        <button
-                            onClick={handleDelete}
-                            className="p-3 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
-                            title="Delete"
-                        >
-                            <Trash2 className="w-5 h-5 text-red-400" />
-                        </button>
+                {/* Fallback Icon */}
+                <div className="absolute inset-0 flex items-center justify-center text-gray-600 -z-10">
+                    <ImageIcon className="w-12 h-12" />
+                </div>
+
+                {/* Selection Circle - Top Right */}
+                <div
+                    className="absolute top-2 right-2 z-20 p-1 rounded-full cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                    onClick={handleToggleSelection}
+                    title={selected ? "Deselect" : "Select"}
+                >
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selected
+                        ? 'bg-pink-500 border-pink-500 shadow-md'
+                        : 'bg-black/40 border-gray-400 hover:border-white hover:bg-black/60'
+                        }`}>
+                        {selected && <Check className="w-3 h-3 text-white" />}
                     </div>
-                )}
+                </div>
 
                 {/* Source Badge */}
-                <div className="absolute top-2 left-2">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${asset.source === 'generated'
+                <div className="absolute top-2 left-2 pointer-events-none z-20">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium backdrop-blur-sm ${asset.source === 'generated'
                         ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                         : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                         }`}>
                         {asset.source === 'generated' ? '✨ AI' : '📁 Uploaded'}
                     </span>
                 </div>
-            </div>
 
-            {/* Info */}
-            <div className="p-4">
-                <h3 className="font-medium text-white truncate mb-1">
-                    {asset.fileName}
-                </h3>
-                <p className="text-xs text-gray-400">
-                    {formattedDate}
-                </p>
-                {asset.tags.length > 0 && (
-                    <div className="flex gap-1 mt-2 flex-wrap">
-                        {asset.tags.slice(0, 3).map((tag) => (
-                            <span
-                                key={tag}
-                                className="text-xs px-2 py-0.5 bg-gray-700 rounded-full text-gray-300"
-                            >
-                                {tag}
-                            </span>
-                        ))}
+                {/* Slide-Up Info Box */}
+                <div className="absolute bottom-0 left-0 right-0 bg-[#25282e]/95 backdrop-blur-md transition-transform duration-300 ease-out translate-y-[calc(100%-3rem)] group-hover:translate-y-0 p-3 z-10 border-t border-gray-700/50">
+                    {/* Title Row (Always Visible) */}
+                    <div className="h-9 flex items-center mb-1">
+                        <h3 className="font-medium text-white truncate w-full" title={asset.fileName}>
+                            {asset.fileName}
+                        </h3>
                     </div>
-                )}
-            </div>
 
-            {/* Quick Add Button */}
-            {selectionMode && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onClick();
-                    }}
-                    className="w-full py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium hover:from-pink-600 hover:to-purple-700 transition-all"
-                >
-                    Add to Card
-                </button>
-            )}
+                    {/* Hidden Details (Reveal on Hover) */}
+                    <div className="space-y-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
+
+                        {/* Meta Info Row */}
+                        <div className="flex items-center gap-2 text-xs text-gray-400 overflow-hidden">
+                            <span className="shrink-0">{formattedDate}</span>
+                            {asset.tags.length > 0 && (
+                                <>
+                                    <span className="text-gray-600">•</span>
+                                    <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                                        {asset.tags.map((tag) => (
+                                            <span key={tag} className="px-1.5 py-0.5 bg-gray-700/50 rounded text-gray-300 whitespace-nowrap">
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Action Buttons Toolbar */}
+                        {!isBulkMode && (
+                            <div className="grid grid-cols-4 gap-2 pt-2 border-t border-gray-700/50">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(secureImageUrl, '_blank');
+                                    }}
+                                    className="flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                    title="View"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                </button>
+
+                                {isPickingMode ? (
+                                    <button
+                                        onClick={handleUse}
+                                        className="flex items-center justify-center p-2 text-white bg-pink-500 hover:bg-pink-600 rounded-lg transition-colors shadow-lg shadow-pink-500/20"
+                                        title="Use"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center justify-center p-2 text-gray-600 cursor-not-allowed">
+                                        <div className="w-4 h-4" /> {/* Spacer */}
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={handleDownload}
+                                    className="flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                    title="Download"
+                                >
+                                    <Download className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                    onClick={handleDelete}
+                                    className="flex items-center justify-center p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

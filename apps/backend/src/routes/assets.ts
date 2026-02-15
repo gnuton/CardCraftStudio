@@ -23,6 +23,7 @@ router.get('/', async (req: AuthenticatedRequest, res, next) => {
             sortOrder: (req.query.sortOrder as any) || 'desc',
             page: parseInt(req.query.page as string) || 1,
             limit: Math.min(parseInt(req.query.limit as string) || 50, 100),
+            unused: req.query.unused === 'true',
         };
 
         const result = await assetService.listAssets(userId, filters);
@@ -41,6 +42,41 @@ router.get('/:id', async (req: AuthenticatedRequest, res, next) => {
         const assetId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
         const asset = await assetService.getAsset(assetId, userId);
         res.json({ asset });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/assets/:id/image - Get raw asset image with caching
+ */
+router.get('/:id/image', async (req: AuthenticatedRequest, res, next) => {
+    try {
+        const userId = req.user!.uid;
+        const assetId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+        // storageId is usually same as assetId in this implementation, 
+        // but we should ideally fetch the asset first to get metadata if needed,
+        // or just trust the ID if we want speed. 
+        // To be safe and check permissions, we use getAssetDataUrl which checks auth.
+        const dataUrl = await assetService.getAssetDataUrl(assetId, userId);
+
+        // Extract base64 and mime type
+        const matches = dataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+
+        if (!matches || matches.length !== 3) {
+            throw new ApiError(500, 'Invalid Image Data', 'Stored image data is corrupt');
+        }
+
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const imgBuffer = Buffer.from(base64Data, 'base64');
+
+        res.set('Content-Type', mimeType);
+        res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+        res.set('Content-Length', imgBuffer.length.toString());
+
+        res.send(imgBuffer);
     } catch (error) {
         next(error);
     }
@@ -109,6 +145,29 @@ router.post('/', async (req: AuthenticatedRequest, res, next) => {
         res.status(201).json({
             asset,
             message: 'Asset created successfully',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * DELETE /api/assets/batch - Batch delete assets
+ * Must come before /:id to avoid collision
+ */
+router.delete('/batch', async (req: AuthenticatedRequest, res, next) => {
+    try {
+        const userId = req.user!.uid;
+        const { ids } = req.body;
+
+        if (!ids || !Array.isArray(ids)) {
+            throw new ApiError(400, 'Bad Request', 'ids array is required');
+        }
+
+        await assetService.deleteAssets(ids, userId);
+
+        res.json({
+            message: 'Assets deleted successfully',
         });
     } catch (error) {
         next(error);

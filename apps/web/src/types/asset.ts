@@ -34,6 +34,7 @@ export interface AssetFilters {
     sortOrder?: 'asc' | 'desc';
     page?: number;
     limit?: number;
+    unused?: boolean;
 }
 
 export interface AssetListResponse {

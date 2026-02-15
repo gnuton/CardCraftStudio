@@ -7,7 +7,10 @@ interface AssetGridProps {
     onAssetClick: (asset: Asset) => void;
     onAssetDelete: (id: string) => void;
     isLoading?: boolean;
-    selectionMode?: boolean;
+    isBulkMode?: boolean;
+    isPickingMode?: boolean;
+    selectedIds?: Set<string>;
+    onToggleSelection?: (id: string) => void;
 }
 
 export const AssetGrid: React.FC<AssetGridProps> = ({
@@ -15,7 +18,10 @@ export const AssetGrid: React.FC<AssetGridProps> = ({
     onAssetClick,
     onAssetDelete,
     isLoading = false,
-    selectionMode = false,
+    isBulkMode = false,
+    isPickingMode = false,
+    selectedIds,
+    onToggleSelection
 }) => {
     if (isLoading) {
         return (
@@ -52,7 +58,10 @@ export const AssetGrid: React.FC<AssetGridProps> = ({
                     asset={asset}
                     onClick={() => onAssetClick(asset)}
                     onDelete={onAssetDelete}
-                    selectionMode={selectionMode}
+                    isBulkMode={isBulkMode}
+                    isPickingMode={isPickingMode}
+                    selected={selectedIds?.has(asset.id)}
+                    onToggleSelection={onToggleSelection}
                 />
             ))}
         </div>

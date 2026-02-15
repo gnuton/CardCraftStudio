@@ -30,6 +30,7 @@ class AssetService {
         if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
         if (filters.page) params.append('page', filters.page.toString());
         if (filters.limit) params.append('limit', filters.limit.toString());
+        if (filters.unused) params.append('unused', 'true');
 
         const queryString = params.toString();
         return queryString ? `?${queryString}` : '';
@@ -174,6 +175,27 @@ class AssetService {
     }
 
     /**
+     * Delete multiple assets
+     */
+    async deleteAssets(ids: string[]): Promise<void> {
+        const token = this.getAuthToken();
+
+        const response = await fetch(`${this.BASE_URL}/batch`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Failed to delete assets' }));
+            throw new Error(error.userMessage || error.error || 'Failed to delete assets');
+        }
+    }
+
+    /**
      * Increment usage count for an asset
      */
     async incrementUsage(id: string): Promise<void> {
@@ -240,7 +262,7 @@ class AssetService {
     ): Promise<Asset> {
         return this.createAsset({
             imageData,
-            fileName: fileName || `Generated: ${prompt.substring(0, 50)}`,
+            fileName: fileName || `${prompt.substring(0, 50)}`,
             source: 'uploaded', // We use 'uploaded' since it's from memory
             tags: tags || ['ai-generated', style],
             mimeType: 'image/png',

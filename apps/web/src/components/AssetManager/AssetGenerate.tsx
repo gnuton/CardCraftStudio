@@ -288,8 +288,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
             <div className="relative flex flex-col h-full bg-[#1a1d23] overflow-hidden">
                 <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
 
-                    {/* Hidden wrapper for capture - keeps element in DOM for html-to-image but hides it from UI */}
-                    <div style={{ height: 0, overflow: 'hidden' }}>
+                    {/* Hidden wrapper for capture - Puts element behind main content so it's visible to html-to-image but hidden from user */}
+                    <div style={{ position: 'fixed', top: 0, left: 0, zIndex: -1, pointerEvents: 'none', opacity: 1 }}>
                         {isLayoutMode && (
                             <WireframePreview
                                 ref={wireframeRef}
@@ -680,7 +680,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                                                 hasCapturedImage: !!capturedWireframe
                                             } : 'NONE'
                                         },
-                                        capturedWireframeLength: capturedWireframe?.length || 0
+                                        capturedWireframeLength: capturedWireframe?.length || 0,
+                                        capturedWireframePreview: capturedWireframe ? 'Present (Base64)' : 'Null'
                                     }, null, 2)}
                                 </pre>
                                 {capturedWireframe && (

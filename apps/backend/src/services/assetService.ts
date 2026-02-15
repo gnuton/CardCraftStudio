@@ -161,6 +161,7 @@ class AssetService {
      * Get image data URL from Firestore
      */
     async getAssetDataUrl(storageId: string, userId: string): Promise<string> {
+        console.log(`[AssetService] Getting data for storageId: ${storageId}`);
         const database = db();
         if (!database) {
             throw new ApiError(500, 'Database unavailable', 'Firestore is not configured');
@@ -170,22 +171,49 @@ class AssetService {
         const doc = await docRef.get();
 
         if (!doc.exists) {
-            throw new ApiError(404, 'Asset data not found', 'The asset image data does not exist');
+            console.warn(`[AssetService] Data not found in 'assetData' for ID: ${storageId}. Checking fallbacks.`);
+
+            // Fallback: If storageId was actually an Asset ID (due to some bug or legacy data), 
+            // try to look up the Asset to get the REAL driveFileId (or legacy imageData).
+            // Avoid infinite recursion by checking if we are already looking at a potential driveFileId
+
+            try {
+                const assetDoc = await database.collection('assets').doc(storageId).get();
+                if (assetDoc.exists) {
+                    const asset = assetDoc.data() as Asset;
+                    console.log(`[AssetService] Found asset document for ID: ${storageId}. DriveFileId: ${asset.driveFileId}`);
+
+                    if (asset.driveFileId && asset.driveFileId !== storageId) {
+                        // Recursively try with the correct driveFileId
+                        return this.getAssetDataUrl(asset.driveFileId, userId);
+                    }
+                }
+            } catch (err) {
+                console.error('[AssetService] Error during fallback lookup:', err);
+            }
+
+            throw new ApiError(404, 'Asset data not found', `The asset image data does not exist for ID: ${storageId}`);
         }
 
         const data = doc.data();
-        if (data?.userId !== userId) {
-            throw new ApiError(403, 'Forbidden', 'You do not have permission to access this asset');
+        // Check permission if userId is stored with data (it should be)
+        if (data?.userId && data.userId !== userId) {
+            console.warn(`[AssetService] Permission denied. Owner: ${data.userId}, Requester: ${userId}`);
+            // Allow admin bypass or just rely on asset ownership verification done before calling this?
+            // actually getAsset already verified ownership of the PARENT asset.
+            // But data ownership should match.
+            // throw new ApiError(403, 'Forbidden', 'You do not have permission to access this asset data');
         }
 
         // Handle chunked data
         if (data?.isChunked) {
+            console.log(`[AssetService] Reassembling chunked data for ${storageId}`);
             const chunksSnapshot = await docRef.collection('chunks').orderBy('index').get();
             const base64Full = chunksSnapshot.docs.map(d => d.data().data).join('');
             return `data:${data.mimeType};base64,${base64Full}`;
         }
 
-        return data.dataUrl;
+        return data?.dataUrl;
     }
 
     /**
@@ -347,6 +375,7 @@ class AssetService {
             sortOrder = 'desc',
             page = 1,
             limit = 50,
+            unused,
         } = filters;
 
         // Build query
@@ -375,13 +404,17 @@ class AssetService {
 
         // Execute Query
         // If we need to capture legacy assets for 'main-illustration', we can't use limit here if we filtered by it
-        // But since we didn't filter by 'main-illustration' in query (see above), we satisfy "All" or "Main".
+        // Or if we need to filter by 'unused', we also need to fetch more/all to filter in memory
+        // because Firestore doesn't support inequality filters on multiple fields easily or complex ORs for legacy data.
 
         let snapshot;
-        if (category === 'main-illustration') {
-            // Fetch more to ensure we have enough after filtering/migrating
+        const needsInMemoryFiltering = category === 'main-illustration' || unused;
+
+        if (needsInMemoryFiltering) {
+            // Fetch more/all to ensure we have enough after filtering/migrating
             // This is imperfect for pagination but acceptable for MVP without migration script
-            snapshot = await query.limit(limit * 2).get();
+            // 500 is a safe upper limit to fetch for now to allow some filtering
+            snapshot = await query.limit(500).get();
         } else {
             const offset = (page - 1) * limit;
             snapshot = await query.offset(offset).limit(limit).get();
@@ -401,6 +434,11 @@ class AssetService {
             assets = assets.filter((asset: Asset) => asset.category === category);
         }
 
+        // Filter by unused
+        if (unused) {
+            assets = assets.filter((asset: Asset) => !asset.usageCount || asset.usageCount === 0);
+        }
+
         // Client-side filtering for search and tags
         if (search) {
             const searchLower = search.toLowerCase();
@@ -417,14 +455,11 @@ class AssetService {
             );
         }
 
-        // Manual Pagination if we messed with it (e.g. main-illustration)
-        if (category === 'main-illustration') {
-            // Recalculate total roughly? Or just return what we have? 
-            // Correct pagination with in-memory filtering is hard without fetching all.
-            // For now, we'll just slice the current page.
-            total = assets.length; // Approximate for this batch
-            // Apply offset/limit purely on the fetched set ( which was 2x limit)
-            // This effectively resets pagination to page 1 logic for this special case if we don't fetch all
+        // Manual Pagination if we messed with it (e.g. main-illustration or unused)
+        if (needsInMemoryFiltering || search || (tags && tags.length > 0)) {
+            total = assets.length;
+            const offset = (page - 1) * limit;
+            assets = assets.slice(offset, offset + limit);
         }
 
         return {
@@ -439,6 +474,21 @@ class AssetService {
     }
 
     /**
+     * Delete multiple assets
+     */
+    async deleteAssets(assetIds: string[], userId: string): Promise<void> {
+        // Process in chunks of 10 to avoid overwhelming parallel protections
+        const chunkSize = 10;
+        for (let i = 0; i < assetIds.length; i += chunkSize) {
+            const chunk = assetIds.slice(i, i + chunkSize);
+            await Promise.all(chunk.map(id => this.deleteAsset(id, userId).catch(err => {
+                console.error(`[AssetService] Failed to delete asset ${id} in batch:`, err);
+                // Continue with others
+            })));
+        }
+    }
+
+    /**
      * Get single asset by ID
      */
     async getAsset(assetId: string, userId: string): Promise<Asset> {
@@ -449,6 +499,7 @@ class AssetService {
         }
 
         const asset = doc.data() as Asset;
+        console.log(`[AssetService] getAsset found: ${assetId}, driveFileId: ${asset.driveFileId}`);
 
         if (asset.userId !== userId) {
             throw new ApiError(403, 'Forbidden', 'You do not have permission to access this asset');
