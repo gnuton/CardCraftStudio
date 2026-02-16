@@ -96,6 +96,29 @@ vi.mock('../services/db', () => ({
 describe('Cloud Sync Behavior', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Mock localStorage to avoid QuotaExceededError in test environment
+        const localStorageMock = (() => {
+            let store: Record<string, string> = {};
+            return {
+                getItem: (key: string) => store[key] || null,
+                setItem: (key: string, value: string) => {
+                    store[key] = value.toString();
+                },
+                removeItem: (key: string) => {
+                    delete store[key];
+                },
+                clear: () => {
+                    store = {};
+                }
+            };
+        })();
+
+        Object.defineProperty(window, 'localStorage', {
+            value: localStorageMock,
+            writable: true
+        });
+
         localStorage.clear();
         sessionStorage.clear();
         vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'test-client-id');

@@ -30,11 +30,7 @@ spec:
             secretKeyRef:
               key: latest
               name: google-api-key
-        - name: GOOGLE_CUSTOM_SEARCH_CX
-          valueFrom:
-            secretKeyRef:
-              key: latest
-              name: google-search-cx
+
         - name: GOOGLE_CLIENT_ID
           valueFrom:
             secretKeyRef:

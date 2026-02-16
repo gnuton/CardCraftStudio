@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, LayoutGrid, Upload, Search, Wand2, Image as ImageIcon } from 'lucide-react';
+import { X, LayoutGrid, Upload, Wand2, Image as ImageIcon } from 'lucide-react';
 import type { Asset, AssetCategory } from '../../types/asset';
 import { AssetLibrary } from './AssetLibrary';
 import { AssetUpload } from './AssetUpload';
-import { AssetSearch } from './AssetSearch';
 import { AssetGenerate } from './AssetGenerate';
 
 interface AssetManagerProps {
@@ -19,7 +18,7 @@ interface AssetManagerProps {
     onShowToast?: (message: string, type?: 'success' | 'error' | 'info' | 'loading') => void;
 }
 
-type Tab = 'library' | 'upload' | 'search' | 'generate';
+type Tab = 'library' | 'upload' | 'generate';
 
 const CATEGORIES: { value: AssetCategory, label: string }[] = [
     { value: 'main-illustration', label: 'Main Illustration' },
@@ -127,13 +126,6 @@ export const AssetManager: React.FC<AssetManagerProps> = ({
                             description="Drag & drop images"
                         />
                         <NavButton
-                            active={activeTab === 'search'}
-                            onClick={() => setActiveTab('search')}
-                            icon={<Search className="w-5 h-5" />}
-                            label="Web Search"
-                            description="Find images online"
-                        />
-                        <NavButton
                             active={activeTab === 'generate'}
                             onClick={() => setActiveTab('generate')}
                             icon={<Wand2 className="w-5 h-5" />}
@@ -163,20 +155,6 @@ export const AssetManager: React.FC<AssetManagerProps> = ({
                                 <AssetUpload
                                     onUploadSuccess={() => {
                                         // Switch to library to show the new asset
-                                        setActiveTab('library');
-                                    }}
-                                    category={category}
-                                />
-                            </div>
-                        )}
-                        {activeTab === 'search' && (
-                            <div className="h-full flex flex-col">
-                                <AssetSearch
-                                    onAssetImported={(asset) => {
-                                        // Optional: Select the imported asset immediately
-                                        if (onAssetSelect) {
-                                            onAssetSelect(asset);
-                                        }
                                         setActiveTab('library');
                                     }}
                                     category={category}

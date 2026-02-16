@@ -21,11 +21,7 @@ variable "google_api_key" {
   sensitive   = true
 }
 
-variable "google_custom_search_cx" {
-  description = "Google Custom Search Engine ID"
-  type        = string
-  sensitive   = true
-}
+
 
 variable "google_client_id" {
   description = "Google OAuth Client ID"

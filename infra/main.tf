@@ -64,10 +64,7 @@ resource "google_cloud_run_v2_service" "backend" {
         value = var.google_api_key
       }
 
-      env {
-        name  = "GOOGLE_CUSTOM_SEARCH_CX"
-        value = var.google_custom_search_cx
-      }
+
 
       env {
         name  = "GOOGLE_CLIENT_ID"
