@@ -104,7 +104,7 @@ describe('AssetGenerate', () => {
         const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
         fireEvent.change(textarea, { target: { value: 'test prompt' } });
 
-        const button = screen.getByText(/Generate Image/i);
+        const button = screen.getByText(/^Generate$/i);
         fireEvent.click(button);
 
         await waitFor(() => {
@@ -145,7 +145,7 @@ describe('AssetGenerate', () => {
 
         await waitFor(() => {
             expect(toPng).toHaveBeenCalled();
-            expect(screen.getByText('Captured Wireframe (Sent to AI):')).toBeDefined();
+            expect(screen.getByText('Captured Wireframe')).toBeDefined();
         });
     });
 });

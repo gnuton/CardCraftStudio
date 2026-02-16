@@ -54,15 +54,37 @@ vi.mock('../services/googleDrive', () => ({
 }));
 
 // Mock DB Service
+// Stateful DB Mock
+const mockDecksStore: any[] = [];
 vi.mock('../services/db', () => ({
     db: {
         transaction: vi.fn((mode, tables, callback) => callback()),
         decks: {
-            toArray: vi.fn().mockResolvedValue([]),
-            put: vi.fn(),
-            bulkPut: vi.fn(),
-            delete: vi.fn(),
-            bulkDelete: vi.fn(),
+            toArray: vi.fn().mockImplementation(async () => [...mockDecksStore]),
+            put: vi.fn().mockImplementation(async (item) => {
+                const index = mockDecksStore.findIndex(d => d.id === item.id);
+                if (index >= 0) mockDecksStore[index] = item;
+                else mockDecksStore.push(item);
+                return item.id;
+            }),
+            bulkPut: vi.fn().mockImplementation(async (items) => {
+                items.forEach((item: any) => {
+                    const index = mockDecksStore.findIndex(d => d.id === item.id);
+                    if (index >= 0) mockDecksStore[index] = item;
+                    else mockDecksStore.push(item);
+                });
+                return items.map((i: any) => i.id);
+            }),
+            delete: vi.fn().mockImplementation(async (id) => {
+                const index = mockDecksStore.findIndex(d => d.id === id);
+                if (index >= 0) mockDecksStore.splice(index, 1);
+            }),
+            bulkDelete: vi.fn().mockImplementation(async (ids) => {
+                ids.forEach((id: any) => {
+                    const index = mockDecksStore.findIndex(d => d.id === id);
+                    if (index >= 0) mockDecksStore.splice(index, 1);
+                });
+            }),
         },
         images: {
             get: vi.fn(),
@@ -80,6 +102,9 @@ describe('Cloud Sync Behavior', () => {
 
         // Reset Auth Mock
         mockIsAuthenticated.mockReturnValue(true);
+
+        // Reset DB Mock Store
+        mockDecksStore.length = 0;
 
         (driveService.init as any).mockResolvedValue(undefined);
         (driveService.listFiles as any).mockResolvedValue([]);
