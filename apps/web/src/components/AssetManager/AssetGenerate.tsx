@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toPng } from 'html-to-image';
 import { imageProviderService } from '../../services/imageProviderService';
 import type { Asset, AssetCategory } from '../../types/asset';
-import { Loader2, Wand2, Check, Layers, Sparkles, Download, Info, Cpu, ChevronDown } from 'lucide-react';
+import { Loader2, Wand2, Check, Layers, Sparkles, Download, Cpu, ChevronDown } from 'lucide-react';
 import { PremiumGate } from '../common/PremiumGate';
 import type { CardElement } from '../../types/element';
 

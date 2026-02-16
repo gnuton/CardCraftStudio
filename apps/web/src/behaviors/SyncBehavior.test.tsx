@@ -58,7 +58,7 @@ vi.mock('../services/googleDrive', () => ({
 const mockDecksStore: any[] = [];
 vi.mock('../services/db', () => ({
     db: {
-        transaction: vi.fn((mode, tables, callback) => callback()),
+        transaction: vi.fn((_mode, _tables, callback) => callback()),
         decks: {
             toArray: vi.fn().mockImplementation(async () => [...mockDecksStore]),
             put: vi.fn().mockImplementation(async (item) => {

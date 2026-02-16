@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { AssetCard } from './AssetCard';
 import type { Asset } from '../types/asset';
 
@@ -72,7 +72,7 @@ describe('AssetCard', () => {
         let observerCallback: IntersectionObserverCallback | null = null;
 
         const IntersectionObserverMock = class {
-            constructor(callback: IntersectionObserverCallback, options: any) {
+            constructor(callback: IntersectionObserverCallback, _options: any) {
                 observerCallback = callback;
                 return {
                     observe,
