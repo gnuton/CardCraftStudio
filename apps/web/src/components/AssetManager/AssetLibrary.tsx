@@ -322,6 +322,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
                 isDestructive={true}
                 onConfirm={confirmDelete}
                 onCancel={() => !isDeleting && setDeleteConfirmTarget(null)}
+                isLoading={isDeleting}
             />
         </div>
     );

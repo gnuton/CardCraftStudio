@@ -62,4 +62,30 @@ describe('ConfirmationDialog', () => {
         fireEvent.click(screen.getByText('Cancel'));
         expect(handleCancel).toHaveBeenCalled();
     });
+
+    it('shows loading state and disables confirm button', () => {
+        const handleConfirm = vi.fn();
+        render(
+            <ConfirmationDialog
+                isOpen={true}
+                title="Loading Test"
+                message="Message"
+                onConfirm={handleConfirm}
+                onCancel={() => { }}
+                confirmLabel="Confirm"
+                isLoading={true}
+            />
+        );
+
+        const confirmButton = screen.getByRole('button', { name: 'Confirm' });
+        expect(confirmButton).toBeDisabled();
+        expect(confirmButton).toHaveClass('cursor-not-allowed');
+        // Check for spinner (Loader2 renders as svg)
+        // Since we import Loader2 from lucide-react, it renders an svg.
+        // We can check if an svg is present inside the button.
+        expect(confirmButton.querySelector('svg')).toBeInTheDocument();
+
+        fireEvent.click(confirmButton);
+        expect(handleConfirm).not.toHaveBeenCalled();
+    });
 });

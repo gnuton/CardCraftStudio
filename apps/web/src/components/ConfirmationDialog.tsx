@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle, X, Loader2 } from 'lucide-react';
 
 interface ConfirmationDialogProps {
     isOpen: boolean;
@@ -10,6 +10,7 @@ interface ConfirmationDialogProps {
     confirmLabel?: string;
     cancelLabel?: string;
     isDestructive?: boolean;
+    isLoading?: boolean;
 }
 
 export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
@@ -20,7 +21,8 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     onCancel,
     confirmLabel = 'Confirm',
     cancelLabel = 'Cancel',
-    isDestructive = false
+    isDestructive = false,
+    isLoading = false
 }) => {
     if (!isOpen) return null;
 
@@ -50,11 +52,13 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                     </button>
                     <button
                         onClick={onConfirm}
-                        className={`px-4 py-2 text-white rounded-lg transition-colors ${isDestructive
-                                ? 'bg-red-600 hover:bg-red-700'
-                                : 'bg-indigo-600 hover:bg-indigo-700'
-                            }`}
+                        disabled={isLoading}
+                        className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2 ${isDestructive
+                            ? 'bg-red-600 hover:bg-red-700 disabled:bg-red-600/70'
+                            : 'bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/70'
+                            } ${isLoading ? 'cursor-not-allowed opacity-80' : ''}`}
                     >
+                        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                         {confirmLabel}
                     </button>
                 </div>
