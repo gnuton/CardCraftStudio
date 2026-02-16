@@ -1,4 +1,4 @@
-import { ChevronRight, Home, FolderOpen, Edit, Palette } from 'lucide-react';
+import { ChevronRight, Home, FolderOpen, Edit, Palette, LayoutGrid } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 interface NavigationProps {
@@ -6,17 +6,31 @@ interface NavigationProps {
     deckName?: string;
     onNavigateToLibrary: () => void;
     onNavigateToDeck?: () => void;
+    onNavigateToLanding: () => void;
 }
 
 export const Navigation = ({
     view,
     deckName,
     onNavigateToLibrary,
-    onNavigateToDeck
+    onNavigateToDeck,
+    onNavigateToLanding
 }: NavigationProps) => {
     return (
         <nav className="flex items-center gap-2 text-sm">
-            {/* Library/Home */}
+            {/* Home (Landing Page) */}
+            <button
+                onClick={onNavigateToLanding}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                title="Back to Home"
+            >
+                <Home className="w-4 h-4" />
+                <span className="hidden sm:inline">Home</span>
+            </button>
+
+            <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+
+            {/* Library */}
             <button
                 onClick={onNavigateToLibrary}
                 className={cn(
@@ -25,9 +39,9 @@ export const Navigation = ({
                         ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 font-medium"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
-                title="Back to Library"
+                title="Deck Library"
             >
-                <Home className="w-4 h-4" />
+                <LayoutGrid className="w-4 h-4" />
                 <span className="hidden sm:inline">Library</span>
             </button>
 

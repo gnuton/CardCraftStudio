@@ -47,9 +47,10 @@ export const LoadingScreen = ({ version }: LoadingScreenProps) => {
                         delay: 0.2,
                         ease: [0, 0.71, 0.2, 1.01]
                     }}
-                    className="mb-8 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl"
+                    className="mb-8 relative"
                 >
-                    <img src={logo} alt="Logo" className="w-24 h-24 object-contain" />
+                    <div className="absolute inset-0 bg-indigo-500 blur-3xl opacity-20 rounded-full animate-pulse"></div>
+                    <img src={logo} alt="Logo" className="w-32 h-32 object-contain relative z-10 drop-shadow-2xl" />
                 </motion.div>
 
                 <motion.h1

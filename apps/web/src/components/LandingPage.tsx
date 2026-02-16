@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Cloud, Shield, Search, Wand2 } from 'lucide-react';
+import { ArrowRight, Cloud, Shield, Wand2 } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 interface LandingPageProps {
@@ -49,7 +49,7 @@ export const LandingPage = ({ onEnter, onLogin, isAuthenticated }: LandingPagePr
                 >
                     <motion.div variants={itemVariants} className="mb-6 relative">
                         <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-30 rounded-full"></div>
-                        <img src={logo} alt="CardCraft Studio" className="w-24 h-24 object-contain relative z-10 drop-shadow-xl" />
+                        <img src={logo} alt="CardCraft Studio" className="w-32 h-32 object-contain relative z-10 drop-shadow-2xl" />
                     </motion.div>
 
                     {isAuthenticated && (
@@ -123,7 +123,7 @@ export const LandingPage = ({ onEnter, onLogin, isAuthenticated }: LandingPagePr
                     <FeatureCard
                         icon={<Wand2 className="w-8 h-8 text-purple-500" />}
                         title="Premium"
-                        description="Unlock exclusive AI tools. Generate illustrations and search for images directly within the studio."
+                        description="Unlock exclusive AI tools. Generate unique illustrations for your cards directly within the studio."
                         delay={0.4}
                     />
                 </motion.div>
@@ -142,10 +142,7 @@ export const LandingPage = ({ onEnter, onLogin, isAuthenticated }: LandingPagePr
                                 Core features and Sync are free forever. Premium users unlock exclusive AI-powered tools.
                             </p>
                             <ul className="space-y-3">
-                                <li className="flex items-center gap-3 text-foreground/90">
-                                    <span className="p-1 rounded-full bg-amber-500/20 text-amber-600"><Search className="w-4 h-4" /></span>
-                                    <span>Instant <strong>Web Image Search</strong> integration</span>
-                                </li>
+
                                 <li className="flex items-center gap-3 text-foreground/90">
                                     <span className="p-1 rounded-full bg-amber-500/20 text-amber-600"><Palette className="w-4 h-4" /></span>
                                     <span><strong>AI-Assisted Illustration</strong> generation</span>
@@ -159,8 +156,8 @@ export const LandingPage = ({ onEnter, onLogin, isAuthenticated }: LandingPagePr
                     </div>
                 </motion.div>
 
-                <motion.p variants={itemVariants} className="mt-12 text-sm text-muted-foreground/60">
-                    © {new Date().getFullYear()} CardCraft Studio. All rights reserved.
+                <motion.p variants={itemVariants} className="mt-12 text-sm text-muted-foreground/60 text-center max-w-lg">
+                    CardCraft Studio — The ultimate toolkit for card game designers. Craft your vision, build your world.
                 </motion.p>
             </div>
         </div>

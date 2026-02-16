@@ -364,6 +364,66 @@ export class GoogleAiService {
             throw error;
         }
     }
+
+    /**
+     * Enhance a prompt using Gemini.
+     */
+    async enhancePrompt(prompt: string, category: string): Promise<string> {
+        const projectId = this.getProjectId();
+        const headers = await this.getAuthHeaders();
+        const modelId = 'gemini-2.0-flash-exp';
+        const endpoint = `${this.baseUrl}/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:generateContent`;
+
+        const systemInstruction = `You are a prompt engineering expert for AI image generation. 
+Your goal is to take a simple user prompt and expand it into a detailed, high-quality prompt that will produce stunning results in an AI image generator (like Imagen or Gemini).
+The user is generating an asset for a card game. The category is: ${category}.
+
+Guidelines:
+1. Maintain the user's original intent but add descriptive adjectives, lighting details, artistic style, and composition.
+2. For backgrounds, focus on framing and atmosphere.
+3. For icons, focus on clarity and stylized details.
+4. For illustrations, focus on epic scale and cinematic qualities.
+5. Provide ONLY the enhanced prompt text. No preamble, no explanations.
+6. Do not include forbidden words (text, numbers, etc. if it's a background).
+7. Keep it under 200 words.`;
+
+        const requestBody = {
+            systemInstruction: {
+                parts: [{ text: systemInstruction }]
+            },
+            contents: [
+                {
+                    role: 'user',
+                    parts: [{ text: prompt }],
+                }
+            ],
+            generationConfig: {
+                temperature: 0.7,
+                topP: 0.95,
+                maxOutputTokens: 500,
+            }
+        };
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Gemini API error during enhancement: ${errorText}`);
+        }
+
+        const data = await response.json();
+        const enhancedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!enhancedText) {
+            throw new Error('Failed to get enhanced prompt from Gemini');
+        }
+
+        return enhancedText.trim();
+    }
 }
 
 export const googleAiService = new GoogleAiService();

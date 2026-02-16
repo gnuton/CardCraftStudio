@@ -50,6 +50,30 @@ class ImageProviderService {
         const data = await response.json();
         return data;
     }
+
+    async enhancePrompt(prompt: string, category: string): Promise<{ enhancedPrompt: string }> {
+        const token = getAuthToken();
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${this.baseUrl}/api/images/enhance-prompt`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ prompt, category }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to enhance prompt');
+        }
+
+        return await response.json();
+    }
 }
 
 export const imageProviderService = new ImageProviderService();

@@ -730,6 +730,11 @@ function App() {
 
   const handleBackToLibrary = () => {
     setActiveDeckId(null);
+    setView('library');
+  };
+
+  const handleGoToLanding = () => {
+    setActiveDeckId(null);
     setView('landing');
   };
 
@@ -782,25 +787,38 @@ function App() {
         ) : (
           <motion.div
             key="app"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 50 }}
-            transition={{ duration: 0.3 }}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.1 }
+              },
+              exit: { opacity: 0, x: 50, transition: { duration: 0.2 } }
+            }}
             className="min-h-screen flex flex-col transition-colors duration-300"
           >
             {/* Impersonation Banner - Always on top */}
             <ImpersonationBanner />
 
             {/* Global Top Bar */}
-            <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <motion.nav
+              variants={{
+                hidden: { y: -100, opacity: 0 },
+                visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 20 } }
+              }}
+              className="fixed top-0 left-0 right-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+            >
               <div className="container flex h-16 items-center justify-between px-8 mx-auto max-w-7xl">
                 <div className="flex items-center gap-8">
                   <div
                     className="flex items-center gap-3 cursor-pointer group"
-                    onClick={handleBackToLibrary}
+                    onClick={handleGoToLanding}
                     title="CardCraft Studio"
                   >
-                    <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform" />
+                    <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
                     <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
                       CardCraft Studio
                     </span>
@@ -809,6 +827,7 @@ function App() {
                   <Navigation
                     view={view}
                     deckName={activeDeck?.name}
+                    onNavigateToLanding={handleGoToLanding}
                     onNavigateToLibrary={handleBackToLibrary}
                     onNavigateToDeck={() => {
                       if (activeDeck) {
@@ -849,9 +868,15 @@ function App() {
                   <UserProfile />
                 </div>
               </div>
-            </nav>
+            </motion.nav>
 
-            <main className="flex-1 container mx-auto px-8 py-8 max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <motion.main
+              variants={{
+                hidden: { x: 50, opacity: 0 },
+                visible: { x: 0, opacity: 1, transition: { delay: 0.2, type: "spring", stiffness: 100, damping: 20 } }
+              }}
+              className="flex-1 container mx-auto px-8 pt-24 pb-24 max-w-7xl"
+            >
               {view === 'library' && (
                 <DeckLibrary
                   decks={decks}
@@ -901,7 +926,19 @@ function App() {
                   onBack={() => setView('deck')}
                 />
               )}
-            </main>
+            </motion.main>
+
+            <motion.footer
+              variants={{
+                hidden: { y: 100, opacity: 0 },
+                visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 20 } }
+              }}
+              className="fixed bottom-0 left-0 right-0 w-full py-4 border-t bg-background/80 backdrop-blur-md z-50 text-center"
+            >
+              <p className="text-sm text-muted-foreground">
+                Designed for Creators. Powered by CardCraft Studio.
+              </p>
+            </motion.footer>
 
             {/* Dialogs */}
             <NewDeckDialog

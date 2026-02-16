@@ -9,6 +9,22 @@ const router = express.Router();
 
 
 
+router.post('/enhance-prompt', requirePremium, async (req, res, next) => {
+    try {
+        const { prompt, category } = req.body;
+
+        if (!prompt) {
+            throw new ApiError(400, 'Prompt is required');
+        }
+
+        const enhancedPrompt = await googleAiService.enhancePrompt(prompt, category || 'general');
+
+        res.json({ enhancedPrompt });
+    } catch (error) {
+        next(error);
+    }
+});
+
 router.post('/generate', requirePremium, async (req, res, next) => {
     try {
         const { prompt, saveToAssets, assetMetadata, aspectRatio, layout, layoutImage, model } = req.body;

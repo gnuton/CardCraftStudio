@@ -38,22 +38,46 @@ describe('AssetGenerate', () => {
         expect(screen.getByText('AI Image Generator')).toBeDefined();
     });
 
-    it('starts with a non-empty default prompt for backgrounds', () => {
-        render(<AssetGenerate {...defaultProps} />);
+    it('starts with a non-empty default prompt for front background', () => {
+        render(<AssetGenerate {...defaultProps} category="front-background" />);
 
         const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
         expect(textarea.value).toContain('wireframe');
+        expect(textarea.value).toContain('FRONT');
     });
 
-    it('preserves user input when switching categories', () => {
-        const { rerender } = render(<AssetGenerate {...defaultProps} />);
+    it('starts with a non-empty default prompt for back background', () => {
+        render(<AssetGenerate {...defaultProps} category="back-background" />);
 
         const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
-        fireEvent.change(textarea, { target: { value: 'My custom prompt' } });
+        expect(textarea.value).toContain('wireframe');
+        expect(textarea.value).toContain('BACK');
+    });
 
-        rerender(<AssetGenerate {...defaultProps} category="icon" />);
+    it('sets correct default prompt for icons', () => {
+        render(<AssetGenerate {...defaultProps} category="icon" />);
 
-        expect(textarea.value).toBe('My custom prompt');
+        const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
+        expect(textarea.value).toContain('icon for a fantasy card game');
+        expect(textarea.value).toContain('No text');
+    });
+
+    it('sets correct default prompt for main illustration', () => {
+        render(<AssetGenerate {...defaultProps} category="main-illustration" />);
+
+        const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
+        expect(textarea.value).toContain('main illustration');
+        expect(textarea.value).toContain('cinematic lighting'); // Case insensitive regex in test or match exact string? The prompt has "cinematic lighting"
+    });
+
+    it('updates prompt when switching categories', () => {
+        const { rerender } = render(<AssetGenerate {...defaultProps} category="icon" />);
+
+        const textarea = screen.getByPlaceholderText(/Describe your image/i) as HTMLTextAreaElement;
+        expect(textarea.value).toContain('icon');
+
+        rerender(<AssetGenerate {...defaultProps} category="main-illustration" />);
+        expect(textarea.value).toContain('main illustration');
     });
 
     it('renders wireframe preview for background categories', () => {

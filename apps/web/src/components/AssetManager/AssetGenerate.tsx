@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toPng } from 'html-to-image';
 import { imageProviderService } from '../../services/imageProviderService';
 import type { Asset, AssetCategory } from '../../types/asset';
-import { Loader2, Wand2, Check, Layers, Sparkles, Download, Cpu, ChevronDown } from 'lucide-react';
+import { Loader2, Wand2, Check, Layers, Sparkles, Download, Cpu, ChevronDown, X } from 'lucide-react';
 import { PremiumGate } from '../common/PremiumGate';
 import type { CardElement } from '../../types/element';
 
@@ -137,9 +137,25 @@ export const AssetGenerate: React.FC<AssetGenerateProps> = ({
     cardHeight = 525
 }) => {
     const { isAdmin } = useAuth();
-    const [prompt, setPrompt] = useState(`I am uploading a white background wireframe of a UI card. The outer boundary represents the card edges, and the inner boxes represent where functional elements (text, buttons, icons) will live.
+    const getDefaultPrompt = (cat: AssetCategory) => {
+        switch (cat) {
+            case 'icon':
+                return `Create a high-quality, game-ready icon for a fantasy card game.
+Subject: [Describe item/ability]
+Style: Hand-painted, stylized, readable at small sizes.
+Background: Neutral or transparent.
+Lighting: Dynamic, emphasizing the form.
+No text.`;
+            case 'main-illustration':
+                return `Create a stunning, highly detailed main illustration for a trading card game.
+Subject: [Describe character/scene]
+Style: Epic fantasy/sci-fi, cinematic lighting, dynamic composition.
+Focus: Central character or action.
+No text or UI elements.`;
+            case 'front-background':
+                return `I am uploading a white background wireframe of the FRONT of a UI card. The outer boundary represents the card edges, and the inner boxes represent where functional elements (text, buttons, icons) will live.
 
-Your task: Create a high-quality background image for this card that frames the internal elements without obscuring them. The design should feel integrated, using the inner boxes as a guide for where to place visual flourishes, borders, or negative space.
+Your task: Create a high-quality background image for the FRONT of this card that frames the internal elements without obscuring them. The design should feel integrated, using the inner boxes as a guide for where to place visual flourishes, borders, or negative space.
 
 Style Requirements:
 Core Aesthetic:  Dark Fantasy
@@ -147,7 +163,32 @@ Visual Elements: Neon circuitry
 Color Palette: Deep obsidians and electric blues
 Composition: Ensure the center of the inner boxes remains relatively clean/legible so I can overlay text later.
 No text nor numbers must be present in the final image.
-Color the areas inside the inner boxes in pink with 70% transparency`);
+Color the areas inside the inner boxes in pink with 70% transparency`;
+            case 'back-background':
+                return `I am uploading a white background wireframe of the BACK of a UI card. The outer boundary represents the card edges, and the inner boxes represent where functional elements (lore text, description, stats) will live.
+
+Your task: Create a high-quality background image for the BACK of this card that frames the internal elements without obscuring them. The design should feel integrated, using the inner boxes as a guide for where to place visual flourishes, borders, or negative space.
+
+Style Requirements:
+Core Aesthetic:  Dark Fantasy
+Visual Elements: Neon circuitry
+Color Palette: Deep obsidians and electric blues
+Composition: Ensure the center of the inner boxes remains relatively clean/legible so I can overlay text later.
+No text nor numbers must be present in the final image.
+Color the areas inside the inner boxes in pink with 70% transparency`;
+            default:
+                return '';
+        }
+    };
+
+    const [prompt, setPrompt] = useState(getDefaultPrompt(category));
+
+    // Update prompt when category changes, but only if it was the default for the previous category?
+    // For now, let's just reset it to default if the category changes to give the user the right template.
+    // Or better, use a simpler approach: key the component by category in parent, or useEffect here.
+    React.useEffect(() => {
+        setPrompt(getDefaultPrompt(category));
+    }, [category]);
 
     const [selectedModel, setSelectedModel] = useState<string>('gemini-2.0-flash-exp');
     const [showDebug, setShowDebug] = useState(false);
@@ -164,6 +205,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
     const wireframeRef = useRef<HTMLDivElement>(null);
 
     const [isPromptOpen, setIsPromptOpen] = useState(true);
+    const [enhancing, setEnhancing] = useState(false);
+    const [enhancedPromptResult, setEnhancedPromptResult] = useState<string | null>(null);
 
     // Auto-collapse prompt when result generates
     React.useEffect(() => {
@@ -268,6 +311,23 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
             }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleEnhance = async () => {
+        if (!prompt.trim() || enhancing) return;
+
+        setEnhancing(true);
+        setError(null);
+
+        try {
+            const { enhancedPrompt } = await imageProviderService.enhancePrompt(prompt, category);
+            setEnhancedPromptResult(enhancedPrompt);
+        } catch (err) {
+            console.error('Enhancement failed:', err);
+            setError(err instanceof Error ? err.message : 'Failed to enhance prompt');
+        } finally {
+            setEnhancing(false);
         }
     };
 
@@ -511,11 +571,26 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                             {/* Prompt Input */}
                             <div className="lg:col-span-8 space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex justify-between">
-                                        Prompt
-                                        <span className="text-indigo-400 font-normal normal-case">
-                                            {isLayoutMode ? 'Layout Aware' : 'Standard'}
-                                        </span>
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            Prompt
+                                            <span className="text-indigo-400 font-normal normal-case">
+                                                {isLayoutMode ? 'Layout Aware' : 'Standard'}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={handleEnhance}
+                                            disabled={!prompt.trim() || enhancing || loading}
+                                            className="flex items-center gap-1.5 px-2 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 rounded-md border border-pink-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                                            title="Enhance prompt with AI"
+                                        >
+                                            {enhancing ? (
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                            ) : (
+                                                <Sparkles className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                                            )}
+                                            <span className="text-[10px]">Enhance Prompt</span>
+                                        </button>
                                     </label>
                                     <textarea
                                         value={prompt}
@@ -647,6 +722,64 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                         </div>
                     </div>
                 </div>
+
+                {/* --- LAYER 4: MODAL - ENHANCE PROMPT --- */}
+                {enhancedPromptResult && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-[#1e2025] border border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-pink-500/10 to-transparent">
+                                <div className="flex items-center gap-2 text-pink-400">
+                                    <Sparkles className="w-5 h-5" />
+                                    <h3 className="font-bold">Enhanced Prompt</h3>
+                                </div>
+                                <button
+                                    onClick={() => setEnhancedPromptResult(null)}
+                                    className="p-1 hover:bg-white/5 rounded-lg text-gray-500 hover:text-white transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                <div className="space-y-2">
+                                    <div className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Original</div>
+                                    <div className="p-3 bg-black/20 border border-white/5 rounded-xl text-sm text-gray-400 italic">
+                                        "{prompt}"
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="text-[10px] uppercase font-bold text-pink-500 tracking-wider flex items-center gap-1.5">
+                                        <Wand2 className="w-3 h-3" />
+                                        Suggested Improvement
+                                    </div>
+                                    <div className="p-4 bg-pink-500/5 border border-pink-500/20 rounded-xl text-sm text-white leading-relaxed">
+                                        {enhancedPromptResult}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="p-4 border-t border-white/5 bg-black/20 flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setPrompt(enhancedPromptResult);
+                                        setEnhancedPromptResult(null);
+                                    }}
+                                    className="flex-1 py-3 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20"
+                                >
+                                    <Check className="w-5 h-5" />
+                                    Use This Prompt
+                                </button>
+                                <button
+                                    onClick={() => setEnhancedPromptResult(null)}
+                                    className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
             </div>
         </PremiumGate>
