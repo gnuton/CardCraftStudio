@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import type { Asset, AssetFilters, AssetCategory } from '../../types/asset';
 import { assetService } from '../../services/assetService';
+import { driveService } from '../../services/googleDrive';
 import { AssetGrid } from '../AssetGrid';
 
 interface AssetLibraryProps {
@@ -103,7 +104,34 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
 
     const handleAssetDelete = async (id: string) => {
         try {
+            // 1. Delete from Backend (Firestore)
             await assetService.deleteAsset(id);
+
+            // 2. Try to delete from Google Drive if signed in
+            // We need the hash to find the file: img-{hash}
+            // But we already deleted the asset, so we might not have the hash?
+            // Actually 'assets' state still has it until we reload.
+            const assetToDelete = assets.find(a => a.id === id);
+
+            if (assetToDelete && assetToDelete.fileHash && driveService.isSignedIn) {
+                try {
+                    const fileName = `img-${assetToDelete.fileHash}`;
+                    // List files to find ID
+                    const files = await driveService.listFiles();
+                    // Use loose matching or strict? 
+                    // The file name is usually `img-{hash}.{ext}`
+                    const driveFile = files.find((f: any) => f.name.startsWith(fileName));
+
+                    if (driveFile) {
+                        await driveService.deleteFile(driveFile.id);
+                        console.log(`Deleted from Drive: ${driveFile.name}`);
+                    }
+                } catch (driveErr) {
+                    console.error('Failed to delete from Drive:', driveErr);
+                    // improve user feedback? or just log it since it's secondary
+                }
+            }
+
             // Reload assets
             loadAssets();
         } catch (err) {
@@ -120,7 +148,29 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
         }
 
         try {
+            // 1. Delete from Backend
             await assetService.deleteAssets(Array.from(selectedIds));
+
+            // 2. Delete from Drive
+            if (driveService.isSignedIn) {
+                try {
+                    const files = await driveService.listFiles();
+
+                    for (const id of selectedIds) {
+                        const asset = assets.find(a => a.id === id);
+                        if (asset && asset.fileHash) {
+                            const fileName = `img-${asset.fileHash}`;
+                            const driveFile = files.find((f: any) => f.name.startsWith(fileName));
+                            if (driveFile) {
+                                await driveService.deleteFile(driveFile.id);
+                            }
+                        }
+                    }
+                } catch (driveErr) {
+                    console.error('Failed to bulk delete from Drive:', driveErr);
+                }
+            }
+
             setSelectedIds(new Set());
             setIsBulkMode(false);
             loadAssets();
