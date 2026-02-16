@@ -1,5 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import * as matchers from '@testing-library/jest-dom/matchers';
+import { expect } from 'vitest';
+expect.extend(matchers);
 import { AssetCard } from './AssetCard';
 import type { Asset } from '../types/asset';
 
@@ -52,6 +55,10 @@ describe('AssetCard', () => {
         updatedAt: Date.now(),
         usageCount: 0
     } as any;
+
+    afterEach(() => {
+        cleanup();
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -106,8 +113,10 @@ describe('AssetCard', () => {
             }
         };
 
-        // Mock import.meta.env
-        vi.stubGlobal('import.meta', { env: { VITE_API_BASE_URL: 'http://localhost:3000' } });
+        // Mock import.meta.env - using defineProperty as stubGlobal might not work if properties are read-only
+        // actually, since we have .env file, we should probably just expect the value from there or mock it properly via vite config
+        // For now, let's remove the stub if it's ineffective and adjust expectation, or try to respect the env.
+
     });
 
     it('renders asset info correctly', () => {
@@ -135,8 +144,8 @@ describe('AssetCard', () => {
     it('calls onDelete when delete button clicked', () => {
         const onClick = vi.fn();
         const onDelete = vi.fn();
-        // confirm dialog mock
-        window.confirm = vi.fn(() => true);
+        // confirm dialog mock removed as component no longer uses it
+
 
         render(<AssetCard asset={mockAsset} onClick={onClick} onDelete={onDelete} />);
 
@@ -153,7 +162,8 @@ describe('AssetCard', () => {
         const mockToken = 'mock-asset-token';
         localStorage.setItem('cc_auth_token', mockToken);
         // Mock import.meta.env again to ensure consistency
-        vi.stubGlobal('import.meta', { env: { VITE_API_BASE_URL: 'http://localhost:3000' } });
+        // vi.stubGlobal removed as per above
+
 
         render(<AssetCard asset={mockAsset} onClick={() => { }} onDelete={() => { }} />);
 
@@ -161,6 +171,7 @@ describe('AssetCard', () => {
         (window as any).triggerIntersection(true);
 
         const img = await screen.findByRole('img');
+        // Expect 3001 as defined in .env
         expect(img).toHaveAttribute('src', `http://localhost:3001/api/assets/123/image?token=${mockToken}`);
     });
 

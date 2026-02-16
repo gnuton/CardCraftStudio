@@ -730,7 +730,7 @@ function App() {
 
   const handleBackToLibrary = () => {
     setActiveDeckId(null);
-    setView('library');
+    setView('landing');
   };
 
   // Editor Key
@@ -760,252 +760,199 @@ function App() {
     }
   };
 
-  if (view === 'landing') {
-    return (
-      <>
-        <AnimatePresence>
-          {isLoading && <LoadingScreen version={APP_VERSION} />}
-        </AnimatePresence>
-        <LandingPage
-          onEnter={() => setView('library')}
-          onLogin={handleLoginRequest}
-          isAuthenticated={isAuthenticated || isAppAuthenticated}
-        />
-      </>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
-      {/* Impersonation Banner - Always on top */}
-      <ImpersonationBanner />
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <AnimatePresence mode="wait">
+        {isLoading && <LoadingScreen key="loader" version={APP_VERSION} />}
 
-      <AnimatePresence>
-        {isLoading && <LoadingScreen version={APP_VERSION} />}
-      </AnimatePresence>
-
-      {/* Global Top Bar */}
-      <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-8 mx-auto max-w-7xl">
-          <div className="flex items-center gap-8">
-            <div
-              className="flex items-center gap-3 cursor-pointer group"
-              onClick={handleBackToLibrary}
-              title="CardCraft Studio"
-            >
-              <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform" />
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                CardCraft Studio
-              </span>
-            </div>
-
-            {/* Navigation Breadcrumbs */}
-            <Navigation
-              view={view}
-              deckName={activeDeck?.name}
-              onNavigateToLibrary={handleBackToLibrary}
-              onNavigateToDeck={() => setView('deck')}
+        {view === 'landing' ? (
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.3 }}
+          >
+            <LandingPage
+              onEnter={() => setView('library')}
+              onLogin={handleLoginRequest}
+              isAuthenticated={isAuthenticated || isAppAuthenticated}
             />
-          </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="app"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            transition={{ duration: 0.3 }}
+            className="min-h-screen flex flex-col transition-colors duration-300"
+          >
+            {/* Impersonation Banner - Always on top */}
+            <ImpersonationBanner />
 
-          <div className="flex items-center gap-4">
-            {/* Sync Button */}
-            <button
-              onClick={() => {
-                if (!isAppAuthenticated) {
-                  addToast('Please sign in to enable sync', 'info');
-                  return;
-                }
-                if (syncError) {
-                  setIsErrorDialogOpen(true);
-                } else {
-                  handleSync();
-                }
+            {/* Global Top Bar */}
+            <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="container flex h-16 items-center justify-between px-8 mx-auto max-w-7xl">
+                <div className="flex items-center gap-8">
+                  <div
+                    className="flex items-center gap-3 cursor-pointer group"
+                    onClick={handleBackToLibrary}
+                    title="CardCraft Studio"
+                  >
+                    <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform" />
+                    <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                      CardCraft Studio
+                    </span>
+                  </div>
+
+                  <Navigation
+                    view={view}
+                    deckName={activeDeck?.name}
+                    onNavigateToLibrary={handleBackToLibrary}
+                    onNavigateToDeck={() => {
+                      if (activeDeck) {
+                        setView('deck');
+                        setActiveCardIndex(null);
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 mr-4 border-r pr-4">
+                    {isSyncing ? (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                        <Cloud className="w-3 h-3" /> Syncing...
+                      </div>
+                    ) : syncError ? (
+                      <div className="flex items-center gap-2 text-xs text-red-500 cursor-pointer hover:underline" onClick={() => setIsErrorDialogOpen(true)}>
+                        <CloudAlert className="w-3 h-3" /> Sync Error
+                      </div>
+                    ) : isAuthenticated ? (
+                      <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400" title="Synced with Google Drive">
+                        <Cloud className="w-3 h-3" /> Synced
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground" title="Local Mode">
+                        <CloudOff className="w-3 h-3" /> Local
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                    className="p-2 rounded-full hover:bg-muted transition-colors"
+                  >
+                    {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                  </button>
+                  <UserProfile />
+                </div>
+              </div>
+            </nav>
+
+            <main className="flex-1 container mx-auto px-8 py-8 max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {view === 'library' && (
+                <DeckLibrary
+                  decks={decks}
+                  onCreateDeck={handleCreateDeck}
+                  onImportDeck={handleImportDeck}
+                  onSelectDeck={handleSelectDeck}
+                  onDeleteDeck={handleDeleteDeck}
+                />
+              )}
+
+              {view === 'deck' && activeDeck && (
+                <DeckStudio
+                  deck={activeDeck.cards}
+                  projectName={activeDeck.name}
+                  deckStyle={activeDeck.style}
+                  onAddCard={handleAddCard}
+                  onEditCard={handleEditCard}
+                  onDeleteCard={handleDeleteCard}
+                  onUpdateProjectName={handleUpdateProjectName}
+                  onUpdateCard={handleUpdateCardInDeck}
+                  onDuplicateCard={handleDuplicateCard}
+                  onOpenStyleEditor={() => setView('style')}
+                />
+              )}
+
+              {view === 'editor' && activeDeck && activeCardIndex !== null && (
+                <CardStudio
+                  key={editorKey}
+                  initialCard={activeDeck.cards[activeCardIndex]}
+                  deckStyle={activeDeck.style}
+                  onUpdate={handleAutoSaveCard}
+                  onDone={handleCancelEditor}
+                  onShowToast={addToast}
+                />
+              )}
+
+              {view === 'style' && activeDeck && (
+                <GlobalStyleEditor
+                  deckStyle={activeDeck.style}
+                  sampleCard={activeDeck.cards[0]}
+                  onUpdateStyle={handleUpdateDeckStyle}
+                  onUpdateStyleAndSync={async (style: DeckStyle) => {
+                    handleUpdateDeckStyle(style);
+                    const updatedDeck = { ...activeDeck, style, updatedAt: Date.now() };
+                    await handleSync([updatedDeck], false);
+                  }}
+                  onBack={() => setView('deck')}
+                />
+              )}
+            </main>
+
+            {/* Dialogs */}
+            <NewDeckDialog
+              isOpen={isNewDeckDialogOpen}
+              onClose={() => setIsNewDeckDialogOpen(false)}
+              onCreate={finalizeCreateDeck}
+            />
+
+            <ConfirmationDialog
+              isOpen={!!cardToDelete}
+              title="Delete Card"
+              message="Are you sure you want to delete this card? This action cannot be undone."
+              confirmLabel="Delete"
+              onConfirm={confirmDeleteCard}
+              onCancel={() => setCardToDelete(null)}
+            />
+
+            <ConfirmationDialog
+              isOpen={!!deckToDelete}
+              title="Delete Deck"
+              message="Are you sure you want to delete this deck? This action cannot be undone."
+              confirmLabel="Delete"
+              onConfirm={confirmDeleteDeck}
+              onCancel={() => setDeckToDelete(null)}
+            />
+
+            <SyncErrorDialog
+              isOpen={isErrorDialogOpen}
+              onClose={() => setIsErrorDialogOpen(false)}
+              error={syncError}
+              onRetry={() => handleSync()}
+            />
+
+            <SyncConflictDialog
+              isOpen={!!conflictDeck}
+              onClose={() => {
+                setConflictDeck(null);
+                setConflictRemoteDate(null);
+                setPendingSyncDecks([]);
+                setIsSyncing(false);
               }}
-              className={`flex items-center text-sm font-medium transition-colors ${syncError ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-indigo-600'
-                }`}
-              title={
-                isSyncing ? 'Syncing...' :
-                  syncError ? 'Sync Failed (Click for details)' :
-                    isAuthenticated && isAppAuthenticated ? 'Sync with Google Drive' :
-                      'Sync is offline'
-              }
-            >
-              {isSyncing ? (
-                <Cloud className="w-5 h-5 animate-pulse text-indigo-500" />
-              ) : syncError ? (
-                <CloudAlert className="w-5 h-5 text-red-500" />
-              ) : isAuthenticated && isAppAuthenticated ? (
-                <Cloud className="w-5 h-5 text-green-500" />
-              ) : (
-                <CloudOff className="w-5 h-5" />
-              )}
-            </button>
+              localDeck={conflictDeck}
+              remoteDate={conflictRemoteDate}
+              onKeepLocal={() => handleResolveConflict(true)}
+              onUseCloud={() => handleResolveConflict(false)}
+            />
 
-            <div className="h-6 w-px bg-border mx-2 hidden sm:block"></div>
-
-            <button
-              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-            >
-              {theme === 'light' ? (
-                <Moon className="w-5 h-5 text-slate-700 hover:text-indigo-600" />
-              ) : (
-                <Sun className="w-5 h-5 text-amber-400" />
-              )}
-            </button>
-
-            <div className="h-6 w-px bg-border mx-2"></div>
-
-            <UserProfile />
-          </div>
-        </div>
-      </nav>
-
-      <main className="flex-1 relative overflow-hidden">
-        <AnimatePresence mode="wait">
-          {view === 'library' && (
-            <motion.div
-              key="library-view"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <DeckLibrary
-                decks={decks}
-                onCreateDeck={handleCreateDeck}
-                onSelectDeck={handleSelectDeck}
-                onDeleteDeck={handleDeleteDeck}
-                onImportDeck={handleImportDeck}
-              />
-              <NewDeckDialog
-                isOpen={isNewDeckDialogOpen}
-                onClose={() => setIsNewDeckDialogOpen(false)}
-                onCreate={finalizeCreateDeck}
-              />
-
-              <SyncErrorDialog
-                isOpen={isErrorDialogOpen}
-                onClose={() => setIsErrorDialogOpen(false)}
-                error={syncError}
-                onRetry={() => {
-                  setIsErrorDialogOpen(false);
-                  handleSync();
-                }}
-              />
-              <SyncConflictDialog
-                isOpen={!!conflictDeck}
-                onClose={() => {
-                  setConflictDeck(null);
-                  setConflictRemoteDate(null);
-                  setPendingSyncDecks([]);
-                  setIsSyncing(false);
-                }}
-                localDeck={conflictDeck}
-                remoteDate={conflictRemoteDate}
-                onKeepLocal={() => handleResolveConflict(true)}
-                onUseCloud={() => handleResolveConflict(false)}
-              />
-            </motion.div>
-          )}
-
-          {view === 'deck' && activeDeck && (
-            <motion.div
-              key="deck-view"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.02 }}
-              transition={{ duration: 0.3, ease: 'circOut' }}
-            >
-              <DeckStudio
-                deck={activeDeck.cards}
-                projectName={activeDeck.name}
-                deckStyle={activeDeck.style}
-                onAddCard={handleAddCard}
-                onEditCard={handleEditCard}
-                onDeleteCard={handleDeleteCard}
-                onUpdateProjectName={handleUpdateProjectName}
-                onUpdateCard={handleUpdateCardInDeck}
-                onDuplicateCard={handleDuplicateCard}
-                onOpenStyleEditor={() => setView('style')}
-              />
-            </motion.div>
-          )}
-
-          {view === 'editor' && activeDeck && (
-            <motion.div
-              key="editor-view"
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.4, ease: 'backOut' }}
-            >
-              <CardStudio
-                key={editorKey}
-                initialCard={activeCardIndex !== null ? activeDeck.cards[activeCardIndex] : undefined}
-                deckStyle={activeDeck.style}
-                onUpdate={handleAutoSaveCard}
-                onDone={handleCancelEditor}
-                onShowToast={addToast}
-              />
-            </motion.div>
-          )}
-          {view === 'style' && activeDeck && (
-            <motion.div
-              key="style-view"
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 50 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-            >
-              <GlobalStyleEditor
-                deckStyle={activeDeck.style}
-                sampleCard={activeDeck.cards[0]}
-                onUpdateStyle={handleUpdateDeckStyle}
-                onUpdateStyleAndSync={async (style: DeckStyle) => {
-                  handleUpdateDeckStyle(style);
-                  // Passing the updated deck explicitly to ensure it syncs the new state
-                  const updatedDeck = { ...activeDeck, style, updatedAt: Date.now() };
-                  await handleSync([updatedDeck], false);
-                }}
-                onBack={() => setView('deck')}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-
-      <footer className="fixed bottom-0 w-full py-4 border-t bg-background/80 backdrop-blur-md z-50 text-center">
-        <p className="text-sm text-muted-foreground">
-          &copy; 2026 Antonio 'GNUton' Aloisio. Released under GPL-3.0.
-        </p>
-      </footer>
-
-      <ConfirmationDialog
-        isOpen={deckToDelete !== null}
-        title="Delete Deck"
-        message="Are you sure you want to delete this deck? All cards within it will be permanently lost."
-        onConfirm={confirmDeleteDeck}
-        onCancel={() => setDeckToDelete(null)}
-        confirmLabel="Delete Deck"
-        isDestructive={true}
-      />
-
-      <ConfirmationDialog
-        isOpen={cardToDelete !== null}
-        title="Delete Card"
-        message="Are you sure you want to delete this card? This action cannot be undone."
-        onConfirm={confirmDeleteCard}
-        onCancel={() => setCardToDelete(null)}
-        confirmLabel="Delete"
-        isDestructive={true}
-      />
-
-      <ToastContainer toasts={toasts} onClose={removeToast} />
-
-
+            <ToastContainer toasts={toasts} onClose={removeToast} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

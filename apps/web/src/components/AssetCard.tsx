@@ -52,9 +52,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm(`Delete "${asset.fileName}"?`)) {
-            onDelete(asset.id);
-        }
+        onDelete(asset.id);
     };
 
     const handleDownload = async (e: React.MouseEvent) => {
@@ -94,7 +92,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
     return (
         <div
             ref={cardRef}
-            className={`group relative bg-[#25282e] rounded-xl border overflow-hidden transition-all cursor-pointer ${selected
+            className={`group relative bg-[#25282e] rounded-xl border overflow-hidden transition-all cursor-pointer aspect-square ${selected
                 ? 'border-pink-500 shadow-lg shadow-pink-500/20'
                 : 'border-gray-700 hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20'
                 }`}
@@ -160,19 +158,22 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                     <div className="space-y-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
 
                         {/* Meta Info Row */}
-                        <div className="flex items-center gap-2 text-xs text-gray-400 overflow-hidden">
+                        {/* Meta Info Row */}
+                        <div className="flex flex-col gap-1.5 text-xs text-gray-400">
                             <span className="shrink-0">{formattedDate}</span>
                             {asset.tags.length > 0 && (
-                                <>
-                                    <span className="text-gray-600">•</span>
-                                    <div className="flex gap-1 overflow-x-auto no-scrollbar">
-                                        {asset.tags.map((tag) => (
-                                            <span key={tag} className="px-1.5 py-0.5 bg-gray-700/50 rounded text-gray-300 whitespace-nowrap">
-                                                {tag}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </>
+                                <div className="flex flex-wrap gap-1.5" title={asset.tags.join(', ')}>
+                                    {asset.tags.slice(0, 3).map((tag) => (
+                                        <span key={tag} className="px-2 py-0.5 bg-gray-700/50 rounded-full text-gray-300 whitespace-nowrap text-[10px] border border-gray-600/50">
+                                            {tag}
+                                        </span>
+                                    ))}
+                                    {asset.tags.length > 3 && (
+                                        <span className="px-2 py-0.5 bg-gray-700/50 rounded-full text-gray-400 whitespace-nowrap text-[10px] border border-gray-600/50">
+                                            +{asset.tags.length - 3}
+                                        </span>
+                                    )}
+                                </div>
                             )}
                         </div>
 

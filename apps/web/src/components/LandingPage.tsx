@@ -34,7 +34,7 @@ export const LandingPage = ({ onEnter, onLogin, isAuthenticated }: LandingPagePr
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground relative overflow-hidden">
             {/* Background Gradients */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+            <div className="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
                 <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[100px]" />
                 <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-violet-600/20 rounded-full blur-[100px]" />
             </div>

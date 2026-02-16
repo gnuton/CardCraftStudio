@@ -16,12 +16,7 @@ interface AssetGenerateProps {
     cardHeight?: number;
 }
 
-const ASPECT_RATIOS = [
-    { value: '1:1', label: 'Square (1:1)' },
-    { value: '3:4', label: 'Portrait (3:4)' },
-    { value: '4:3', label: 'Landscape (4:3)' },
-    { value: '16:9', label: 'Wide (16:9)' },
-];
+
 
 // Update WireframePreview signature
 const WireframePreview = React.forwardRef<HTMLDivElement, {
@@ -153,7 +148,7 @@ Color Palette: Deep obsidians and electric blues
 Composition: Ensure the center of the inner boxes remains relatively clean/legible so I can overlay text later.
 No text nor numbers must be present in the final image.
 Color the areas inside the inner boxes in pink with 70% transparency`);
-    const [aspectRatio, setAspectRatio] = useState('3:4');
+
     const [selectedModel, setSelectedModel] = useState<string>('gemini-2.0-flash-exp');
     const [showDebug, setShowDebug] = useState(false);
 
@@ -237,7 +232,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
 
             const response = await imageProviderService.generateImage(prompt, undefined, {
                 saveToAssets: true,
-                aspectRatio,
+                // aspectRatio removed
+
                 assetMetadata: {
                     tags: ['ai-generated', category],
                     category
@@ -334,8 +330,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                             height={cardHeight}
                             targetSide={category === 'front-background' ? 'front' : 'back'}
                             minimal={true}
-                            forcedAspectRatio={aspectRatio}
                             containerPixelWidth={cardWidth}
+
                         />
                     )}
                 </div>
@@ -368,7 +364,6 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                                                 height={cardHeight}
                                                 targetSide={category === 'front-background' ? 'front' : 'back'}
                                                 minimal={false}
-                                                forcedAspectRatio={aspectRatio}
                                             />
                                             <div data-testid="comparison-view-badge" className="absolute top-2 right-2 px-2 py-1 bg-black/60 rounded text-[10px] text-gray-400 font-mono pointer-events-none z-10">
                                                 WIREFRAME
@@ -559,20 +554,7 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
 
                             {/* Sidebar Options */}
                             <div className="lg:col-span-4 space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Dimensions</label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {ASPECT_RATIOS.map(opt => (
-                                            <button
-                                                key={opt.value}
-                                                onClick={() => setAspectRatio(opt.value)}
-                                                className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${aspectRatio === opt.value ? 'bg-pink-500/20 border-pink-500 text-white' : 'bg-black/30 border-gray-700 text-gray-400 hover:border-gray-500'}`}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+
 
                                 {(isAdmin || showDebug) && (
                                     <div className="space-y-2">
@@ -646,7 +628,8 @@ Color the areas inside the inner boxes in pink with 70% transparency`);
                                 <pre className="p-3 bg-black/50 rounded-lg overflow-x-auto text-[10px] leading-relaxed border border-white/5">
                                     {JSON.stringify({
                                         prompt,
-                                        aspectRatio,
+                                        // aspectRatio removed
+
                                         model: selectedModel,
                                         layoutMode: isLayoutMode
                                     }, null, 2)}
