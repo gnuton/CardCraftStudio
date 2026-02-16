@@ -53,6 +53,24 @@ vi.mock('../services/googleDrive', () => ({
     }
 }));
 
+// Mock DB Service
+vi.mock('../services/db', () => ({
+    db: {
+        transaction: vi.fn((mode, tables, callback) => callback()),
+        decks: {
+            toArray: vi.fn().mockResolvedValue([]),
+            put: vi.fn(),
+            bulkPut: vi.fn(),
+            delete: vi.fn(),
+            bulkDelete: vi.fn(),
+        },
+        images: {
+            get: vi.fn(),
+            put: vi.fn(),
+        }
+    }
+}));
+
 describe('Cloud Sync Behavior', () => {
     beforeEach(() => {
         vi.clearAllMocks();

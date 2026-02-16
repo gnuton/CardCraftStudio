@@ -27,9 +27,10 @@ interface CardStudioProps {
     deckStyle: DeckStyle;
     onUpdate: (card: CardConfig) => void;
     onDone: () => void;
+    onShowToast?: (message: string, type?: 'success' | 'error' | 'info' | 'loading') => void;
 }
 
-export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStudioProps) => {
+export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone, onShowToast }: CardStudioProps) => {
     const [config, setConfig] = useState<CardConfig>(() => {
         // Migration Logic
         if (initialCard && typeof initialCard.data === 'object') {
@@ -576,6 +577,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone }: CardStu
                 })()}
                 cardWidth={deckStyle.cardWidth}
                 cardHeight={deckStyle.cardHeight}
+                onShowToast={onShowToast}
             />
 
             <ConfirmationDialog

@@ -948,6 +948,7 @@ function App() {
                 deckStyle={activeDeck.style}
                 onUpdate={handleAutoSaveCard}
                 onDone={handleCancelEditor}
+                onShowToast={addToast}
               />
             </motion.div>
           )}

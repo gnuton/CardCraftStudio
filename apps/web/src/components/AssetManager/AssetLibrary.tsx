@@ -4,13 +4,15 @@ import type { Asset, AssetFilters, AssetCategory } from '../../types/asset';
 import { assetService } from '../../services/assetService';
 import { driveService } from '../../services/googleDrive';
 import { AssetGrid } from '../AssetGrid';
+import { ConfirmationDialog } from '../ConfirmationDialog';
 
 interface AssetLibraryProps {
     onAssetSelect?: (asset: Asset) => void;
     category: AssetCategory;
+    onShowToast?: (message: string, type?: 'success' | 'error' | 'info' | 'loading') => void;
 }
 
-export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, category }) => {
+export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, category, onShowToast }) => {
     const [assets, setAssets] = useState<Asset[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -102,81 +104,85 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
         }
     };
 
-    const handleAssetDelete = async (id: string) => {
+    const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<string | 'bulk' | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleAssetDeleteRequest = (id: string) => {
+        setDeleteConfirmTarget(id);
+    };
+
+    const handleBulkDeleteRequest = () => {
+        if (selectedIds.size > 0) {
+            setDeleteConfirmTarget('bulk');
+        }
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteConfirmTarget) return;
+
+        setIsDeleting(true);
         try {
-            // 1. Delete from Backend (Firestore)
-            await assetService.deleteAsset(id);
+            if (deleteConfirmTarget === 'bulk') {
+                // Bulk Delete
+                // 1. Delete from Backend
+                await assetService.deleteAssets(Array.from(selectedIds));
 
-            // 2. Try to delete from Google Drive if signed in
-            // We need the hash to find the file: img-{hash}
-            // But we already deleted the asset, so we might not have the hash?
-            // Actually 'assets' state still has it until we reload.
-            const assetToDelete = assets.find(a => a.id === id);
-
-            if (assetToDelete && assetToDelete.fileHash && driveService.isSignedIn) {
-                try {
-                    const fileName = `img-${assetToDelete.fileHash}`;
-                    // List files to find ID
-                    const files = await driveService.listFiles();
-                    // Use loose matching or strict? 
-                    // The file name is usually `img-{hash}.{ext}`
-                    const driveFile = files.find((f: any) => f.name.startsWith(fileName));
-
-                    if (driveFile) {
-                        await driveService.deleteFile(driveFile.id);
-                        console.log(`Deleted from Drive: ${driveFile.name}`);
+                // 2. Delete from Drive
+                if (driveService.isSignedIn) {
+                    try {
+                        const files = await driveService.listFiles();
+                        for (const id of selectedIds) {
+                            const asset = assets.find(a => a.id === id);
+                            if (asset && asset.fileHash) {
+                                const fileName = `img-${asset.fileHash}`;
+                                const driveFile = files.find((f: any) => f.name.startsWith(fileName));
+                                if (driveFile) {
+                                    await driveService.deleteFile(driveFile.id);
+                                }
+                            }
+                        }
+                    } catch (driveErr) {
+                        console.error('Failed to bulk delete from Drive:', driveErr);
+                        // Non-blocking error
                     }
-                } catch (driveErr) {
-                    console.error('Failed to delete from Drive:', driveErr);
-                    // improve user feedback? or just log it since it's secondary
                 }
+
+                onShowToast?.(`Deleted ${selectedIds.size} assets`, 'success');
+                setSelectedIds(new Set());
+                setIsBulkMode(false);
+            } else {
+                // Single Delete
+                const id = deleteConfirmTarget;
+                // 1. Delete from Backend
+                await assetService.deleteAsset(id);
+
+                // 2. Try to delete from Google Drive if signed in
+                const assetToDelete = assets.find(a => a.id === id);
+
+                if (assetToDelete && assetToDelete.fileHash && driveService.isSignedIn) {
+                    try {
+                        const fileName = `img-${assetToDelete.fileHash}`;
+                        const files = await driveService.listFiles();
+                        const driveFile = files.find((f: any) => f.name.startsWith(fileName));
+
+                        if (driveFile) {
+                            await driveService.deleteFile(driveFile.id);
+                        }
+                    } catch (driveErr) {
+                        console.error('Failed to delete from Drive:', driveErr);
+                    }
+                }
+                onShowToast?.('Asset deleted', 'success');
             }
 
             // Reload assets
             loadAssets();
         } catch (err) {
-            console.error('Failed to delete asset:', err);
-            alert('Failed to delete asset');
-        }
-    };
-
-    const handleBulkDelete = async () => {
-        if (selectedIds.size === 0) return;
-
-        if (!confirm(`Delete ${selectedIds.size} assets? This cannot be undone.`)) {
-            return;
-        }
-
-        try {
-            // 1. Delete from Backend
-            await assetService.deleteAssets(Array.from(selectedIds));
-
-            // 2. Delete from Drive
-            if (driveService.isSignedIn) {
-                try {
-                    const files = await driveService.listFiles();
-
-                    for (const id of selectedIds) {
-                        const asset = assets.find(a => a.id === id);
-                        if (asset && asset.fileHash) {
-                            const fileName = `img-${asset.fileHash}`;
-                            const driveFile = files.find((f: any) => f.name.startsWith(fileName));
-                            if (driveFile) {
-                                await driveService.deleteFile(driveFile.id);
-                            }
-                        }
-                    }
-                } catch (driveErr) {
-                    console.error('Failed to bulk delete from Drive:', driveErr);
-                }
-            }
-
-            setSelectedIds(new Set());
-            setIsBulkMode(false);
-            loadAssets();
-        } catch (err) {
-            console.error('Failed to delete assets:', err);
-            alert('Failed to delete selected assets');
+            console.error('Failed to delete asset(s):', err);
+            onShowToast?.('Failed to delete asset(s)', 'error');
+        } finally {
+            setIsDeleting(false);
+            setDeleteConfirmTarget(null);
         }
     };
 
@@ -226,7 +232,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
                                         {selectedIds.size === assets.length ? 'Deselect All' : 'Select All'}
                                     </button>
                                     <button
-                                        onClick={handleBulkDelete}
+                                        onClick={handleBulkDeleteRequest}
                                         disabled={selectedIds.size === 0}
                                         className="px-3 py-1.5 text-sm bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors border border-red-500/30 disabled:opacity-50"
                                     >
@@ -271,7 +277,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
                     <AssetGrid
                         assets={assets}
                         onAssetClick={handleAssetClick}
-                        onAssetDelete={handleAssetDelete}
+                        onAssetDelete={handleAssetDeleteRequest}
                         isLoading={isLoading}
                         isBulkMode={isBulkMode}
                         isPickingMode={!!onAssetSelect}
@@ -303,6 +309,20 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
                     </button>
                 </div>
             )}
+
+            <ConfirmationDialog
+                isOpen={!!deleteConfirmTarget}
+                title={deleteConfirmTarget === 'bulk' ? 'Delete Assets' : 'Delete Asset'}
+                message={deleteConfirmTarget === 'bulk'
+                    ? `Are you sure you want to delete ${selectedIds.size} assets? This action cannot be undone.`
+                    : "Are you sure you want to delete this asset? This action cannot be undone."
+                }
+                confirmLabel={isDeleting ? "Deleting..." : "Delete"}
+                cancelLabel="Cancel"
+                isDestructive={true}
+                onConfirm={confirmDelete}
+                onCancel={() => !isDeleting && setDeleteConfirmTarget(null)}
+            />
         </div>
     );
 };

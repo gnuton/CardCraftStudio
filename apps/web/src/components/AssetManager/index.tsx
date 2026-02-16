@@ -16,6 +16,7 @@ interface AssetManagerProps {
     selectedElementId?: string | null;
     cardWidth?: number;
     cardHeight?: number;
+    onShowToast?: (message: string, type?: 'success' | 'error' | 'info' | 'loading') => void;
 }
 
 type Tab = 'library' | 'upload' | 'search' | 'generate';
@@ -36,7 +37,8 @@ export const AssetManager: React.FC<AssetManagerProps> = ({
     cardElements = [],
     selectedElementId = null,
     cardWidth = 375, // Default logical width
-    cardHeight = 525 // Default logical height
+    cardHeight = 525, // Default logical height
+    onShowToast
 }) => {
     const [activeTab, setActiveTab] = useState<Tab>('library');
     const [category, setCategory] = useState<AssetCategory>(initialCategory);
@@ -152,6 +154,7 @@ export const AssetManager: React.FC<AssetManagerProps> = ({
                             <AssetLibrary
                                 onAssetSelect={handleAssetSelect}
                                 category={category}
+                                onShowToast={onShowToast}
                             />
                         )}
                         {activeTab === 'upload' && (
