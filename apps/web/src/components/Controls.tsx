@@ -44,12 +44,16 @@ export const Controls: React.FC<ControlsProps> = ({
         setIsImageDialogOpen(true);
     };
 
-    const handleImageSelect = (asset: any) => {
+    const handleImageSelect = async (asset: any) => {
         if (activeImageField) {
-            const url = assetService.getAssetImageUrl(asset);
-            onChange(activeImageField, url);
-            setIsImageDialogOpen(false);
-            setActiveImageField(null);
+            try {
+                const url = await assetService.fetchAssetData(asset);
+                onChange(activeImageField, url);
+                setIsImageDialogOpen(false);
+                setActiveImageField(null);
+            } catch (error) {
+                console.error("Failed to fetch asset data", error);
+            }
         }
     };
 

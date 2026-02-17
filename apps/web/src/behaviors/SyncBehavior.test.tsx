@@ -176,7 +176,8 @@ describe('Cloud Sync Behavior', () => {
         await waitForLoadingToFinish();
 
         await screen.findByText(/Decks Library/i);
-        const syncBtn = screen.getByTitle(/Sync with Google Drive/i);
+        await screen.findByTestId('icon-cloud');
+        const syncBtn = screen.getByTestId('sync-status');
         fireEvent.click(syncBtn);
 
         await waitFor(() => {
@@ -198,7 +199,8 @@ describe('Cloud Sync Behavior', () => {
         await waitForLoadingToFinish();
 
         await screen.findByText('Local Deck');
-        const syncBtn = screen.getByTitle(/Sync with Google Drive/i);
+        await screen.findByTestId('icon-cloud');
+        const syncBtn = screen.getByTestId('sync-status');
         fireEvent.click(syncBtn);
 
         expect(await screen.findByText(/Sync Conflict Detected/i)).toBeInTheDocument();
@@ -219,7 +221,8 @@ describe('Cloud Sync Behavior', () => {
         await waitForLoadingToFinish();
 
         await screen.findByText('Local Deck');
-        const syncBtn = screen.getByTitle(/Sync with Google Drive/i);
+        await screen.findByTestId('icon-cloud');
+        const syncBtn = screen.getByTestId('sync-status');
         fireEvent.click(syncBtn);
 
         // Conflict dialog should NOT appear
@@ -254,7 +257,9 @@ describe('Cloud Sync Behavior', () => {
         render(<App />);
         await waitForLoadingToFinish();
 
-        const syncBtn = screen.getByTitle(/Sync with Google Drive/i);
+        // Wait for it to become synced
+        await screen.findByTestId('icon-cloud');
+        const syncBtn = screen.getByTestId('sync-status');
         fireEvent.click(syncBtn);
 
         await waitFor(() => {
@@ -291,7 +296,7 @@ describe('Cloud Sync Behavior', () => {
 
         // Now we should be in 'library' view with the navbar
         await waitFor(() => {
-            expect(screen.getByText('CardCraft Studio')).toBeInTheDocument();
+            expect(screen.getAllByText('CardCraft Studio').length).toBeGreaterThan(0);
         });
 
         await waitFor(() => {

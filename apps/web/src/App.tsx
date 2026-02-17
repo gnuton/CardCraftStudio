@@ -14,6 +14,7 @@ import { ToastContainer, type ToastType } from './components/Toast';
 import { driveService } from './services/googleDrive';
 import { calculateHash } from './utils/hash';
 import { imageService } from './services/imageService';
+import { assetService } from './services/assetService';
 import { db } from './services/db';
 import { GlobalStyleEditor } from './components/GlobalStyleEditor';
 import { Navigation } from './components/Navigation';
@@ -748,6 +749,14 @@ function App() {
       await driveService.ensureSignedIn(false);
       setIsAuthenticated(true);
       localStorage.setItem(SYNC_ENABLED_KEY, 'true');
+
+      // Sync local assets if any
+      assetService.syncLocalAssets().then(count => {
+        if (count > 0) {
+          addToast(`Synced ${count} local assets to cloud`, 'success');
+        }
+      }).catch(console.error);
+
       setView('library');
       addToast('Signed in successfully', 'success');
       setTimeout(() => handleSync(), 500);
@@ -757,11 +766,6 @@ function App() {
 
       // Clear legacy sync flag
       localStorage.removeItem(SYNC_ENABLED_KEY);
-
-      // In case of a failure, we might want to ensure the user is seeing a "Logged Out" state
-      // or redirect them to a specific error view if needed, but for now, 
-      // keeping them on the Landing Page (which is likely where they are) is safe.
-      // If we had a specific /login route, we could navigate there.
     }
   };
 
@@ -815,7 +819,7 @@ function App() {
                 <div className="flex items-center gap-8">
                   <div
                     className="flex items-center gap-3 cursor-pointer group"
-                    onClick={handleGoToLanding}
+                    onClick={handleBackToLibrary}
                     title="CardCraft Studio"
                   >
                     <img src={logo} alt="CardCraft Studio Logo" className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
@@ -848,8 +852,13 @@ function App() {
                       <div className="flex items-center gap-2 text-xs text-red-500 cursor-pointer hover:underline" onClick={() => setIsErrorDialogOpen(true)}>
                         <CloudAlert className="w-3 h-3" /> Sync Error
                       </div>
-                    ) : isAuthenticated ? (
-                      <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400" title="Synced with Google Drive">
+                    ) : (isAuthenticated && isAppAuthenticated) ? (
+                      <div
+                        className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 cursor-pointer hover:bg-muted/50 px-2 py-1 rounded-md transition-all"
+                        title="Sync with Google Drive"
+                        data-testid="sync-status"
+                        onClick={() => handleSync()}
+                      >
                         <Cloud className="w-3 h-3" /> Synced
                       </div>
                     ) : (

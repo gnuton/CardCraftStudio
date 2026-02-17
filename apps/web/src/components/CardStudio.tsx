@@ -434,7 +434,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone, onShowToa
                                         source: 'uploaded',
                                         tags: ['quick-upload']
                                     });
-                                    const url = assetService.getAssetImageUrl(asset);
+                                    const url = await assetService.fetchAssetData(asset);
                                     handleConfigChange('centerImage', url);
                                     showStatus('Image uploaded');
                                 } catch (error) {
