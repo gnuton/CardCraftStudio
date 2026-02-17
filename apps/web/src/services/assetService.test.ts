@@ -23,6 +23,36 @@ vi.stubGlobal('localStorage', localStorageMock);
 const mockedFetch = vi.fn();
 global.fetch = mockedFetch;
 
+// Mock DB
+vi.mock('./db', () => ({
+    db: {
+        localAssets: {
+            toCollection: vi.fn().mockReturnValue({
+                toArray: vi.fn().mockResolvedValue([]),
+            }),
+            where: vi.fn().mockReturnValue({
+                equals: vi.fn().mockReturnValue({
+                    toArray: vi.fn().mockResolvedValue([]),
+                }),
+            }),
+            offset: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockReturnThis(),
+            toArray: vi.fn().mockResolvedValue([]),
+            get: vi.fn(),
+            put: vi.fn(),
+            delete: vi.fn(),
+            orderBy: vi.fn().mockReturnThis(),
+            reverse: vi.fn().mockReturnThis(),
+            filter: vi.fn().mockReturnThis(),
+        },
+        images: {
+            get: vi.fn(),
+            put: vi.fn(),
+            delete: vi.fn(),
+        }
+    }
+}));
+
 describe('AssetService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -60,11 +90,15 @@ describe('AssetService', () => {
         );
     });
 
-    it('should throw error if not authenticated', async () => {
+    it('should return local assets if not authenticated', async () => {
         // Arrange
         localStorage.removeItem('cc_auth_token');
 
-        // Act & Assert
-        await expect(assetService.listAssets()).rejects.toThrow('Not authenticated');
+        // Act
+        const result = await assetService.listAssets();
+
+        // Assert
+        expect(result.assets).toEqual([]);
+        expect(result.pagination).toBeDefined();
     });
 });

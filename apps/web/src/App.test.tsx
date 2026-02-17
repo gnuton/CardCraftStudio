@@ -78,7 +78,7 @@ describe('App Component', () => {
             await enterApp();
 
             // Navigate: Library -> Deck Studio (click the Create New Deck placeholder card)
-            const createDeckPlaceholder = screen.getByText('Create New Deck');
+            const createDeckPlaceholder = await screen.findByText('Create New Deck');
             fireEvent.click(createDeckPlaceholder);
 
             // Handle New Deck Dialog
@@ -108,7 +108,7 @@ describe('App Component', () => {
             await enterApp();
 
             // 1. Create Deck
-            const createDeckPlaceholder = screen.getByText('Create New Deck');
+            const createDeckPlaceholder = await screen.findByText('Create New Deck');
             fireEvent.click(createDeckPlaceholder);
             const nameInput = await screen.findByLabelText(/Deck Name/i);
             fireEvent.change(nameInput, { target: { value: 'Deck To Delete' } });
@@ -131,7 +131,7 @@ describe('App Component', () => {
             expect(await screen.findByText(/Are you sure you want to delete this deck?/)).toBeInTheDocument();
 
             // 5. Click Confirm
-            const elements = await screen.findAllByText('Delete Deck');
+            const elements = await screen.findAllByText('Delete');
             const confirmBtn = elements.find(el => el.tagName === 'BUTTON');
             if (!confirmBtn) throw new Error("Button not found");
             fireEvent.click(confirmBtn);
@@ -147,7 +147,7 @@ describe('App Component', () => {
             await enterApp();
 
             // 1. Create Deck
-            const createDeckPlaceholder = screen.getByText('Create New Deck');
+            const createDeckPlaceholder = await screen.findByText('Create New Deck');
             fireEvent.click(createDeckPlaceholder);
             const nameInput = await screen.findByLabelText(/Deck Name/i);
             fireEvent.change(nameInput, { target: { value: 'Card Test Deck' } });
@@ -195,7 +195,7 @@ describe('App Component', () => {
             await enterApp();
 
             // Ensure we are on Library screen
-            expect(screen.getByText('Decks Library')).toBeInTheDocument();
+            expect(await screen.findByText('Decks Library')).toBeInTheDocument();
 
             // Find file input
             const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;

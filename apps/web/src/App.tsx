@@ -957,7 +957,7 @@ function App() {
             />
 
             <ConfirmationDialog
-              isOpen={!!cardToDelete}
+              isOpen={cardToDelete !== null}
               title="Delete Card"
               message="Are you sure you want to delete this card? This action cannot be undone."
               confirmLabel="Delete"

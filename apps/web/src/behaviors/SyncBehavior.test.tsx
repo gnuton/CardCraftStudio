@@ -259,7 +259,7 @@ describe('Cloud Sync Behavior', () => {
 
         // Wait for it to become synced
         await screen.findByTestId('icon-cloud');
-        const syncBtn = screen.getByTestId('sync-status');
+        const syncBtn = await screen.findByTestId('sync-status');
         fireEvent.click(syncBtn);
 
         await waitFor(() => {
