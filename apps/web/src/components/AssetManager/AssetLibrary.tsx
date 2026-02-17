@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import type { Asset, AssetFilters, AssetCategory } from '../../types/asset';
 import { assetService } from '../../services/assetService';
 import { driveService } from '../../services/googleDrive';
@@ -24,6 +24,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
     const [showUnusedOnly, setShowUnusedOnly] = useState(false);
     const [isBulkMode, setIsBulkMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
 
     // Load assets
     const loadAssets = async () => {
@@ -283,6 +284,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
                         isPickingMode={!!onAssetSelect}
                         selectedIds={selectedIds}
                         onToggleSelection={handleToggleSelection}
+                        onAssetPreview={setPreviewAsset}
                     />
                 )}
             </div>
@@ -324,6 +326,203 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAssetSelect, categ
                 onCancel={() => !isDeleting && setDeleteConfirmTarget(null)}
                 isLoading={isDeleting}
             />
+
+
+            {/* Asset Preview Dialog */}
+            {previewAsset && (
+                <AssetPreviewDialog
+                    asset={previewAsset}
+                    onClose={() => setPreviewAsset(null)}
+                />
+            )}
+        </div>
+    );
+};
+
+interface AssetPreviewDialogProps {
+    asset: Asset;
+    onClose: () => void;
+}
+
+const AssetPreviewDialog: React.FC<AssetPreviewDialogProps> = ({ asset, onClose }) => {
+    const [imageUrl, setImageUrl] = useState<string>('');
+    const [loading, setLoading] = useState(true);
+    const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        let isMounted = true;
+        const load = async () => {
+            try {
+                const url = await assetService.fetchAssetData(asset);
+                if (isMounted) {
+                    setImageUrl(url);
+                    setLoading(false);
+                }
+            } catch (e) {
+                console.error("Failed to load preview", e);
+                if (isMounted) setLoading(false);
+            }
+        };
+        load();
+        return () => { isMounted = false; };
+    }, [asset]);
+
+    // Close on backdrop click (if not dragging)
+    const handleBackdropClick = (e: React.MouseEvent) => {
+        if (e.target === e.currentTarget && !isDragging) {
+            onClose();
+        }
+    };
+
+    // Pan/Zoom handlers
+    const handleWheel = (e: React.WheelEvent) => {
+        e.stopPropagation();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setTransform(prev => ({
+            ...prev,
+            scale: Math.min(Math.max(0.1, prev.scale + delta), 5)
+        }));
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+        setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging) return;
+        setTransform(prev => ({
+            ...prev,
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y
+        }));
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleReset = () => setTransform({ scale: 1, x: 0, y: 0 });
+    const handleZoomIn = () => setTransform(prev => ({ ...prev, scale: Math.min(prev.scale + 0.1, 5) }));
+    const handleZoomOut = () => setTransform(prev => ({ ...prev, scale: Math.max(0.1, prev.scale - 0.1) }));
+
+    const formattedDate = new Date(asset.createdAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={handleBackdropClick}
+        >
+            <div className="relative max-w-6xl w-full h-[85vh] bg-[#1a1d23] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200 border border-gray-700">
+
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-[#25282e] z-10 shrink-0">
+                    <h3 className="font-medium text-white pr-4 text-lg break-words line-clamp-2">{asset.fileName}</h3>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-black/20 rounded-lg p-1 mr-4 border border-gray-700">
+                            <button onClick={handleZoomOut} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Zoom Out">
+                                <ZoomOut className="w-4 h-4" />
+                            </button>
+                            <span className="text-xs font-mono font-medium min-w-[3ch] text-center text-gray-400">
+                                {Math.round(transform.scale * 100)}%
+                            </span>
+                            <button onClick={handleZoomIn} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Zoom In">
+                                <ZoomIn className="w-4 h-4" />
+                            </button>
+                            <div className="w-px h-4 bg-gray-700 mx-1" />
+                            <button onClick={handleReset} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Reset View">
+                                <RotateCcw className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div
+                    className={`flex-1 overflow-hidden relative bg-[url('/checkerboard.png')] bg-repeat flex items-center justify-center ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    onWheel={handleWheel}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                >
+                    {loading ? (
+                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent" />
+                    ) : imageUrl ? (
+                        <div
+                            style={{
+                                transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                                transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                            }}
+                            className="will-change-transform"
+                        >
+                            <img
+                                src={imageUrl}
+                                alt={asset.fileName}
+                                className="max-w-none shadow-2xl rounded-sm object-contain"
+                                style={{ maxHeight: 'none', maxWidth: 'none' }}
+                                draggable={false}
+                            />
+                        </div>
+                    ) : (
+                        <div className="text-gray-400">Failed to load image</div>
+                    )}
+                </div>
+
+                {/* Footer / Metadata */}
+                <div className="bg-[#25282e] border-t border-gray-700 p-4 z-10">
+                    <div className="flex flex-col gap-3">
+                        {/* Tags */}
+                        {asset.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {asset.tags.map(tag => (
+                                    <span key={tag} className="px-2.5 py-1 bg-gray-700/50 rounded-full text-xs text-gray-300 border border-gray-600/50">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Meta Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-400 pt-2 border-t border-gray-700/50">
+                            <div>
+                                <span className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-0.5">Created</span>
+                                {formattedDate}
+                            </div>
+                            <div>
+                                <span className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-0.5">Type</span>
+                                <span className="uppercase">{asset.mimeType.split('/')[1] || 'Unknown'}</span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-0.5">Source</span>
+                                <span className={asset.source === 'generated' ? 'text-purple-400' : 'text-blue-400'}>
+                                    {asset.source === 'generated' ? '✨ AI Generated' : '📁 Uploaded'}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-0.5">File Size</span>
+                                {/* We assume size might be available in future, for now placeholder or nothing */}
+                                --
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

@@ -13,6 +13,7 @@ interface AssetCardProps {
     isPickingMode?: boolean;
     selected?: boolean;
     onToggleSelection?: (id: string) => void;
+    onPreview?: (asset: Asset) => void;
 }
 
 export const AssetCard: React.FC<AssetCardProps> = ({
@@ -22,15 +23,41 @@ export const AssetCard: React.FC<AssetCardProps> = ({
     isBulkMode = false,
     isPickingMode = false,
     selected = false,
-    onToggleSelection
+    onToggleSelection,
+    onPreview
 }) => {
-    // We don't need imageUrl state anymore as we use the direct URL
+    const [imageUrl, setImageUrl] = useState<string>('');
     const [isVisible, setIsVisible] = useState(false);
     const cardRef = React.useRef<HTMLDivElement>(null);
 
-    // Use token in query param to allow browser caching of the image
-    const token = localStorage.getItem('cc_auth_token');
-    const secureImageUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/assets/${asset.id}/image?token=${token}`;
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadAsset = async () => {
+            if (isVisible) {
+                try {
+                    // Import assetService dynamically to avoid circular dependencies if any, 
+                    // or just use the global import if available (it is available as import at top?)
+                    // We need to import it. Let's assume it is imported or we add it.
+                    // Wait, we need to add the import first. 
+                    // But in this replace block helper, we can't easily add import if it's not there.
+                    // Let's check imports. assetService is NOT imported.
+                    // We will need to do a multi-step replacement or use the existing imports if possible.
+                    // Actually, we should add the import.
+
+                    // For now, let's implement the logic assuming assetService will be imported.
+                    const url = await import('../services/assetService').then(m => m.assetService.fetchAssetData(asset));
+                    if (isMounted) setImageUrl(url);
+                } catch (err) {
+                    console.error("Failed to load asset image", err);
+                }
+            }
+        };
+
+        loadAsset();
+
+        return () => { isMounted = false; };
+    }, [asset, isVisible]);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -60,7 +87,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         try {
             // For download we might need to fetch blob to force download behavior
             // or just open in new tab? Fetching blob allows true download attribute.
-            const response = await fetch(secureImageUrl);
+            const response = await fetch(imageUrl);
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -87,7 +114,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
         }
     };
 
-    const formattedDate = new Date(asset.createdAt).toLocaleDateString();
+
 
     return (
         <div
@@ -102,7 +129,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
             <div className="w-full h-full relative bg-gray-900">
                 {isVisible ? (
                     <img
-                        src={secureImageUrl}
+                        src={imageUrl}
                         alt={asset.fileName}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         loading="lazy"
@@ -146,10 +173,10 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                 </div>
 
                 {/* Slide-Up Info Box */}
-                <div className="absolute bottom-0 left-0 right-0 bg-[#25282e]/95 backdrop-blur-md transition-transform duration-300 ease-out translate-y-[calc(100%-3rem)] group-hover:translate-y-0 p-3 z-10 border-t border-gray-700/50">
+                <div className="absolute bottom-0 left-0 right-0 bg-[#25282e]/95 backdrop-blur-md transition-transform duration-300 ease-out translate-y-[calc(100%-4rem)] group-hover:translate-y-0 p-3 z-10 border-t border-gray-700/50">
                     {/* Title Row (Always Visible) */}
-                    <div className="h-9 flex items-center mb-1">
-                        <h3 className="font-medium text-white truncate w-full" title={asset.fileName}>
+                    <div className="flex items-center mb-1 max-h-[3.5rem] overflow-hidden">
+                        <h3 className="font-medium text-white line-clamp-2 w-full text-sm leading-tight" title={asset.fileName}>
                             {asset.fileName}
                         </h3>
                     </div>
@@ -158,24 +185,7 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                     <div className="space-y-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-75">
 
                         {/* Meta Info Row */}
-                        {/* Meta Info Row */}
-                        <div className="flex flex-col gap-1.5 text-xs text-gray-400">
-                            <span className="shrink-0">{formattedDate}</span>
-                            {asset.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5" title={asset.tags.join(', ')}>
-                                    {asset.tags.slice(0, 3).map((tag) => (
-                                        <span key={tag} className="px-2 py-0.5 bg-gray-700/50 rounded-full text-gray-300 whitespace-nowrap text-[10px] border border-gray-600/50">
-                                            {tag}
-                                        </span>
-                                    ))}
-                                    {asset.tags.length > 3 && (
-                                        <span className="px-2 py-0.5 bg-gray-700/50 rounded-full text-gray-400 whitespace-nowrap text-[10px] border border-gray-600/50">
-                                            +{asset.tags.length - 3}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+
 
                         {/* Action Buttons Toolbar */}
                         {!isBulkMode && (
@@ -183,7 +193,11 @@ export const AssetCard: React.FC<AssetCardProps> = ({
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        window.open(secureImageUrl, '_blank');
+                                        if (onPreview) {
+                                            onPreview(asset);
+                                        } else {
+                                            window.open(imageUrl, '_blank');
+                                        }
                                     }}
                                     className="flex items-center justify-center p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                                     title="View"

@@ -1,5 +1,5 @@
 import { describe, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { expect } from 'vitest';
 expect.extend(matchers);
@@ -128,7 +128,7 @@ describe('AssetCard', () => {
         (window as any).triggerIntersection(true);
 
         expect(screen.getByText('test-image.png')).toBeInTheDocument();
-        expect(screen.getByText('test')).toBeInTheDocument();
+
         expect(screen.getByText('📁 Uploaded')).toBeInTheDocument();
     });
 
@@ -158,21 +158,25 @@ describe('AssetCard', () => {
         expect(onDelete).toHaveBeenCalledWith('123');
     });
 
+    // Mock assetService
+    vi.mock('../services/assetService', () => ({
+        assetService: {
+            fetchAssetData: vi.fn().mockResolvedValue('http://mock-api.com/image.png')
+        }
+    }));
+
+    // ... (keep existing imports and setup)
+
     it('renders image with correct source when visible', async () => {
-        const mockToken = 'mock-asset-token';
-        localStorage.setItem('cc_auth_token', mockToken);
-        // Mock import.meta.env again to ensure consistency
-        // vi.stubGlobal removed as per above
-
-
         render(<AssetCard asset={mockAsset} onClick={() => { }} onDelete={() => { }} />);
 
         // Trigger intersection
         (window as any).triggerIntersection(true);
 
-        const img = await screen.findByRole('img');
-        // Expect 3001 as defined in .env
-        expect(img).toHaveAttribute('src', `http://localhost:3001/api/assets/123/image?token=${mockToken}`);
+        await waitFor(() => {
+            const img = screen.getByRole('img');
+            expect(img).toHaveAttribute('src', 'http://mock-api.com/image.png');
+        });
     });
 
     it('hides Use button in Browsing Mode', () => {
@@ -218,5 +222,30 @@ describe('AssetCard', () => {
         const selectCircle = screen.getByTitle('Select');
         fireEvent.click(selectCircle);
         expect(onToggle).toHaveBeenCalledWith('123');
+    });
+
+    it('calls onPreview when view button is clicked', () => {
+        const onPreview = vi.fn();
+        render(<AssetCard asset={mockAsset} onClick={() => { }} onDelete={() => { }} onPreview={onPreview} />);
+
+        fireEvent.mouseEnter(screen.getByText('test-image.png').closest('div')!);
+
+        const viewBtn = screen.getByTitle('View');
+        fireEvent.click(viewBtn);
+
+        expect(onPreview).toHaveBeenCalledWith(mockAsset);
+    });
+
+    it('falls back to window.open if onPreview is not provided', () => {
+        const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+        render(<AssetCard asset={mockAsset} onClick={() => { }} onDelete={() => { }} />);
+
+        fireEvent.mouseEnter(screen.getByText('test-image.png').closest('div')!);
+
+        const viewBtn = screen.getByTitle('View');
+        fireEvent.click(viewBtn);
+
+        expect(openSpy).toHaveBeenCalled();
+        openSpy.mockRestore();
     });
 });

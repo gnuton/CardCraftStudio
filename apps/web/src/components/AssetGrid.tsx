@@ -11,6 +11,7 @@ interface AssetGridProps {
     isPickingMode?: boolean;
     selectedIds?: Set<string>;
     onToggleSelection?: (id: string) => void;
+    onAssetPreview?: (asset: Asset) => void;
 }
 
 export const AssetGrid: React.FC<AssetGridProps> = ({
@@ -21,7 +22,8 @@ export const AssetGrid: React.FC<AssetGridProps> = ({
     isBulkMode = false,
     isPickingMode = false,
     selectedIds,
-    onToggleSelection
+    onToggleSelection,
+    onAssetPreview
 }) => {
     if (isLoading) {
         return (
@@ -62,6 +64,7 @@ export const AssetGrid: React.FC<AssetGridProps> = ({
                     isPickingMode={isPickingMode}
                     selected={selectedIds?.has(asset.id)}
                     onToggleSelection={onToggleSelection}
+                    onPreview={onAssetPreview}
                 />
             ))}
         </div>
