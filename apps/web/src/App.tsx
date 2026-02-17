@@ -772,9 +772,9 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <AnimatePresence mode="wait">
-        {isLoading && <LoadingScreen key="loader" version={APP_VERSION} />}
-
-        {view === 'landing' ? (
+        {isLoading ? (
+          <LoadingScreen key="loader" version={APP_VERSION} />
+        ) : view === 'landing' ? (
           <motion.div
             key="landing"
             initial={{ opacity: 0, x: -50 }}
@@ -885,7 +885,7 @@ function App() {
                 visible: { x: 0, opacity: 1, transition: { delay: 0.2, type: "spring", stiffness: 100, damping: 20 } }
               }}
               className={
-                view === 'editor'
+                (view === 'editor' || view === 'style')
                   ? "fixed inset-0 top-16 bottom-0 z-0 overflow-hidden bg-background"
                   : "flex-1 container mx-auto px-8 pt-24 pb-24 max-w-7xl"
               }
