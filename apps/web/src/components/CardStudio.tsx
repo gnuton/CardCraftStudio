@@ -371,7 +371,7 @@ export const CardStudio = ({ initialCard, deckStyle, onUpdate, onDone, onShowToa
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-80px)] bg-background">
+        <div className="flex flex-col h-full bg-background">
             {/* Toolbar Header */}
             <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4 shadow-sm z-20">
                 <div className="flex items-center gap-4">

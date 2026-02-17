@@ -884,7 +884,11 @@ function App() {
                 hidden: { x: 50, opacity: 0 },
                 visible: { x: 0, opacity: 1, transition: { delay: 0.2, type: "spring", stiffness: 100, damping: 20 } }
               }}
-              className="flex-1 container mx-auto px-8 pt-24 pb-24 max-w-7xl"
+              className={
+                view === 'editor'
+                  ? "fixed inset-0 top-16 bottom-0 z-0 overflow-hidden bg-background"
+                  : "flex-1 container mx-auto px-8 pt-24 pb-24 max-w-7xl"
+              }
             >
               {view === 'library' && (
                 <DeckLibrary
