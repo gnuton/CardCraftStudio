@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AssetManager } from './AssetManager';
 import { assetService } from '../services/assetService';
-import { templateService } from '../services/templateService';
+import { templateStorageService } from '../services/templateStorageService';
 import { driveService } from '../services/googleDrive';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, ChevronDown, ChevronRight, Trash2, Plus, Type, Palette, Layout, Save, Cloud, Download, Loader2, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, AlertCircle, X, Box, Maximize2 } from 'lucide-react';
@@ -13,9 +13,9 @@ import type { DeckStyle } from '../types/deck';
 import { FontPicker } from './FontPicker';
 import type { CardElement } from '../types/element';
 import { createDefaultElement } from '../types/element';
-// import type { AssetCategory } from '../types/asset'; // Removed unused import
+import type { DeckTemplate } from '../types/template';
 
-import { TEMPLATES, type Template } from '../constants/templates';
+import { TEMPLATES } from '../constants/templates';
 import { TemplatePickerModal } from './TemplatePickerModal';
 
 interface GlobalStyleEditorProps {
@@ -35,7 +35,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-    const [customTemplates, setCustomTemplates] = useState<Template[]>([]);
+    const [customTemplates, setCustomTemplates] = useState<DeckTemplate[]>([]);
 
     // Viewport Controls
     const [viewScale, setViewScale] = useState(1.1);
@@ -79,38 +79,15 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
     const hasChanges = JSON.stringify(deckStyle) !== JSON.stringify(currentStyle);
 
     const fetchCustomTemplates = async () => {
-        if (!driveService.isSignedIn) {
-            return;
-        }
-
         try {
-            const files = await driveService.listFiles();
-            // Filter for SVGs that are not deck JSONs
-            const svgFiles = files.filter(f => f.name.endsWith('.svg'));
-
-            const templates: Template[] = await Promise.all(svgFiles.map(async (file) => {
-                const blob = await driveService.getFileBlob(file.id);
-                const url = URL.createObjectURL(blob);
-
-                return {
-                    id: file.id,
-                    name: file.name.replace('.svg', '').replace(/_/g, ' '),
-                    style: {
-                        ...TEMPLATES[0].style, // Use default style as base
-                        backgroundImage: url,
-                    },
-                    side: 'front' as const,
-                    isCustom: true
-                };
-            }));
-
+            const templates = await templateStorageService.listCustomTemplates();
             setCustomTemplates(templates);
         } catch (error) {
             console.error("Failed to fetch custom templates:", error);
         }
     };
 
-    // Fetch custom templates from Drive
+    // Fetch custom templates on mount
     useEffect(() => {
         fetchCustomTemplates();
     }, []);
@@ -133,23 +110,10 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         onUpdateStyle(newStyle);
     };
 
-    const handleDownloadSVG = async () => {
+    const handleDownloadTemplate = () => {
         if (!newTemplateName.trim()) return;
-        const svgContent = await templateService.generateSvgWithLayout(
-            currentStyle.backgroundImage,
-            currentStyle
-        );
-        const fileName = `${newTemplateName.trim().replace(/\s+/g, '_').toLowerCase()}.svg`;
-
-        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        const template = templateStorageService.createFromStyle(newTemplateName.trim(), currentStyle);
+        templateStorageService.exportToFile(template);
     };
 
     const handleSave = () => {
@@ -166,40 +130,19 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
         setIsSaving(true);
         try {
-            // 1. Generate the SVG content with markers
-            const svgContent = await templateService.generateSvgWithLayout(
-                currentStyle.backgroundImage,
-                currentStyle
-            );
+            const template = templateStorageService.createFromStyle(newTemplateName.trim(), currentStyle);
 
-            const fileName = `${newTemplateName.trim().replace(/\s+/g, '_').toLowerCase()}.svg`;
-
-            // 2. Sync to GDrive if signed in (or can sign in)
+            // Try signing into Drive before saving
             try {
                 await driveService.ensureSignedIn();
             } catch (e) {
                 console.warn("Auth failed during save", e);
             }
 
-            if (driveService.isSignedIn) {
-                const fileId = await driveService.saveBlob(fileName, new Blob([svgContent], { type: 'image/svg+xml' }));
+            await templateStorageService.save(template);
+            await fetchCustomTemplates();
 
-                // Fetch the new file for immediate use
-                const blob = await driveService.getFileBlob(fileId);
-                const url = URL.createObjectURL(blob);
-
-                // Update current style to use the NEWLY CREATED GDrive SVG!
-                const updatedStyle = { ...currentStyle, backgroundImage: url };
-                setCurrentStyle(updatedStyle);
-                onUpdateStyle(updatedStyle);
-
-                // Refresh list
-                await fetchCustomTemplates();
-            } else {
-                console.warn("Drive not signed in. Template saved locally in state but not synced to GDrive.");
-                onUpdateStyle(currentStyle);
-            }
-
+            onUpdateStyle(currentStyle);
             setShowSaveTemplateModal(false);
             onBack();
         } catch (error) {
@@ -210,7 +153,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         }
     };
 
-    const applyTemplate = async (template: Template) => {
+    const applyTemplate = (template: DeckTemplate) => {
         const templateStyle = template.style;
         const finalStyle: DeckStyle = JSON.parse(JSON.stringify(currentStyle)); // Start with current
         finalStyle.id = template.id;
@@ -245,86 +188,6 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         } else {
             // Replace everything (for 'both' or undefined)
             Object.assign(finalStyle, JSON.parse(JSON.stringify(templateStyle)));
-        }
-
-        // If the template has an SVG background (only for front/both), try to extract layout markers
-        if ((template.side === 'front' || template.side === 'both') && templateStyle.backgroundImage?.toLowerCase().includes('.svg')) {
-            let svgUrl = templateStyle.backgroundImage;
-
-            // If it's a relative path, prefix with base URL
-            if (!svgUrl.startsWith('http') && !svgUrl.startsWith('blob:') && !svgUrl.startsWith('data:')) {
-                const baseUrl = import.meta.env.BASE_URL;
-                const cleanPath = svgUrl.startsWith('/') ? svgUrl.slice(1) : svgUrl;
-                svgUrl = `${baseUrl}${cleanPath}`;
-            }
-
-            try {
-                const layout = await templateService.parseSvgLayout(svgUrl);
-                if (layout) {
-                    // NEW: Update card dimensions if present in SVG
-                    if (layout.width && layout.height) {
-                        finalStyle.cardWidth = layout.width;
-                        finalStyle.cardHeight = layout.height;
-                    }
-
-                    if (layout.elements && finalStyle.elements) {
-                        // Update elements based on SVG layout matches
-                        // Update existing elements based on SVG layout matches
-                        finalStyle.elements = finalStyle.elements.map(el => {
-                            // Match element by ID (e.g. 'title', 'description', 'art')
-                            const layoutEl = layout.elements?.[el.id];
-
-                            if (layoutEl) {
-                                return {
-                                    ...el,
-                                    x: Math.round(layoutEl.offsetX),
-                                    y: Math.round(layoutEl.offsetY),
-                                    width: Math.round(layoutEl.width),
-                                    height: Math.round(layoutEl.height),
-                                    rotate: layoutEl.rotation || 0,
-                                    scale: layoutEl.scale ?? el.scale,
-                                    opacity: layoutEl.opacity ?? el.opacity,
-                                    ...(layoutEl.fill ? { color: layoutEl.fill } : {}),
-                                    ...(layoutEl.fontFamily ? { fontFamily: layoutEl.fontFamily } : {}),
-                                    ...(layoutEl.fontSize ? { fontSize: layoutEl.fontSize } : {})
-                                };
-                            }
-                            return el;
-                        });
-
-                        // Create NEW elements from SVG if they don't exist
-                        const matchedIds = new Set(finalStyle.elements.map(e => e.id));
-                        Object.entries(layout.elements).forEach(([id, layoutEl]) => {
-                            if (!matchedIds.has(id)) {
-                                // Use explicit type or fallback to 'text' if undefined
-                                const type = layoutEl.elementType || 'text';
-                                const newEl = createDefaultElement(type, 'front');
-
-                                // Override defaults with SVG layout
-                                const elWithLayout = {
-                                    ...newEl,
-                                    id: id,
-                                    name: id.charAt(0).toUpperCase() + id.slice(1), // Capitalize ID for name
-                                    x: Math.round(layoutEl.offsetX),
-                                    y: Math.round(layoutEl.offsetY),
-                                    width: Math.round(layoutEl.width),
-                                    height: Math.round(layoutEl.height),
-                                    rotate: layoutEl.rotation || 0,
-                                    scale: layoutEl.scale ?? 1,
-                                    opacity: layoutEl.opacity ?? 1,
-                                    ...(layoutEl.fill ? { color: layoutEl.fill } : {}),
-                                    ...(layoutEl.fontFamily ? { fontFamily: layoutEl.fontFamily } : {}),
-                                    ...(layoutEl.fontSize ? { fontSize: layoutEl.fontSize } : {})
-                                };
-
-                                finalStyle.elements!.push(elWithLayout);
-                            }
-                        });
-                    }
-                }
-            } catch (e) {
-                console.warn("Failed to parse SVG layout", e);
-            }
         }
 
         setCurrentStyle(finalStyle);
@@ -1150,7 +1013,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
                                         <div className="grid grid-cols-2 gap-3">
                                             <button
-                                                onClick={handleDownloadSVG}
+                                                onClick={handleDownloadTemplate}
                                                 disabled={!newTemplateName.trim() || isSaving}
                                                 className="bg-muted text-foreground rounded-xl py-3 font-bold hover:bg-muted/80 transition-all text-sm flex items-center justify-center gap-2"
                                             >

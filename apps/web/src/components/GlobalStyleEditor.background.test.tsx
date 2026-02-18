@@ -37,7 +37,9 @@ vi.mock('./AssetManager', () => ({
 // Mock dependencies that we don't care about but are rendered
 vi.mock('./Card', () => ({ Card: () => <div data-testid="mock-card">Card Preview</div> }));
 vi.mock('./FontPicker', () => ({ FontPicker: () => null }));
-vi.mock('../services/templateService', () => ({ templateService: {} }));
+vi.mock('../services/templateStorageService', () => ({
+    templateStorageService: { listCustomTemplates: async () => [], createFromStyle: vi.fn(), save: vi.fn(), exportToFile: vi.fn() }
+}));
 vi.mock('../services/googleDrive', () => ({ driveService: { isSignedIn: false, listFiles: async () => [] } }));
 
 const mockDeckStyle: DeckStyle = {

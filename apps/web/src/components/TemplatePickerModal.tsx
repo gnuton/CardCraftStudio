@@ -2,16 +2,17 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Layout, Search, Grid } from 'lucide-react';
 import { Card } from './Card';
-import { TEMPLATES, type Template } from '../constants/templates';
+import { TEMPLATES } from '../constants/templates';
+import type { DeckTemplate } from '../types/template';
 import { cn } from '../utils/cn';
 
 
 interface TemplatePickerModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSelect: (template: Template) => void;
+    onSelect: (template: DeckTemplate) => void;
     currentTemplateId?: string;
-    customTemplates?: Template[];
+    customTemplates?: DeckTemplate[];
     isFlipped?: boolean; // To filter front/back/both
 }
 
@@ -23,7 +24,7 @@ export const TemplatePickerModal = ({
     customTemplates = [],
     isFlipped = false
 }: TemplatePickerModalProps) => {
-    const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+    const [selectedTemplate, setSelectedTemplate] = useState<DeckTemplate | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     const allTemplates = [...TEMPLATES, ...customTemplates];
@@ -146,7 +147,7 @@ export const TemplatePickerModal = ({
                                                     {template.name}
                                                 </h3>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    {template.isCustom ? 'Custom' : 'Standard'}
+                                                    {template.isOfficial ? 'Official' : 'Custom'}
                                                 </div>
                                             </div>
 
