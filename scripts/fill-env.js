@@ -5,8 +5,6 @@
  * 
  * This script automatically detects missing environment variables and fills them
  * by fetching values from Google Cloud resources:
- * - GOOGLE_API_KEY: Fetches or creates an API key
- * - GOOGLE_CUSTOM_SEARCH_CX: Lists available search engines
  * - GOOGLE_CLOUD_PROJECT: Uses active gcloud project
  * - GOOGLE_CLIENT_ID/SECRET: Lists OAuth credentials
  * 
@@ -19,6 +17,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
+const crypto = require('crypto');
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -172,72 +171,11 @@ async function getSecretValue(projectId, secretName) {
     }
 }
 
-async function getOrCreateApiKey(projectId, autoMode = false) {
-    displayInfo('Checking for existing API keys...');
-
-    // 1. Try to fetch from Secret Manager first (prod pattern)
-    const secretKey = await getSecretValue(projectId, 'google-api-key');
-    if (secretKey) {
-        displaySuccess('Found GOOGLE_API_KEY in Secret Manager');
-        return secretKey;
-    }
-
-    try {
-        // 2. Try to list via gcloud services
-        const keysJson = execCommand(
-            `gcloud alpha services api-keys list --project=${projectId} --format=json`,
-            { silent: true, ignoreError: true }
-        );
-
-        if (keysJson) {
-            const keys = JSON.parse(keysJson);
-            if (keys && keys.length > 0) {
-                const key = keys[0];
-                const keyString = execCommand(
-                    `gcloud alpha services api-keys get-key-string ${key.name.split('/').pop()} --project=${projectId} --format="value(keyString)"`,
-                    { silent: true, ignoreError: true }
-                );
-                if (keyString) {
-                    displaySuccess(`Found existing API key: ${key.displayName || key.name}`);
-                    return keyString;
-                }
-            }
-        }
-    } catch (error) {
-        // Fallback to manual/creation
-    }
-
-    if (autoMode) return null;
-    const create = await question('No API key found. Create a new one? (y/n): ');
-    if (create.toLowerCase() !== 'y') return null;
-
-    try {
-        displayInfo('Creating new API key...');
-        const result = execCommand(`gcloud alpha services api-keys create --display-name="cardcraft-api-key" --project=${projectId} --format=json`, { silent: true });
-        const keyId = JSON.parse(result).name.split('/').pop();
-        execSync('sleep 5');
-        return execCommand(`gcloud alpha services api-keys get-key-string ${keyId} --project=${projectId} --format="value(keyString)"`, { silent: true });
-    } catch (error) {
-        return null;
-    }
+function generateRandomKey(length = 32) {
+    return crypto.randomBytes(length).toString('hex').substring(0, length);
 }
 
-async function getCustomSearchEngineId(projectId, autoMode = false) {
-    displayInfo('Checking for Custom Search Engine ID...');
 
-    // 1. Try Secret Manager
-    const cx = await getSecretValue(projectId, 'google-search-cx');
-    if (cx) {
-        displaySuccess('Found GOOGLE_CUSTOM_SEARCH_CX in Secret Manager');
-        return cx;
-    }
-
-    displayWarning('Custom Search Engine IDs are not directly retrievable via standard gcloud commands.');
-    displayInfo('If you have already created one, please paste it below.');
-    if (autoMode) return null;
-    const input = await question('Enter Search Engine ID (or Enter to skip): ');
-    return input.trim() || null;
-}
 
 async function getOAuthCredentials(projectId, autoMode = false) {
     displayInfo('Checking for OAuth Credentials...');
@@ -280,11 +218,11 @@ async function fillBackendEnv(autoMode = false) {
 
     // Check which variables are missing or empty
     const requiredVars = [
-        'GOOGLE_API_KEY',
-        'GOOGLE_CUSTOM_SEARCH_CX',
         'GOOGLE_CLOUD_PROJECT',
         'GOOGLE_CLIENT_ID',
-        'GOOGLE_CLIENT_SECRET'
+        'GOOGLE_CLIENT_SECRET',
+        'TOKEN_ENCRYPTION_KEY',
+        'JWT_SECRET'
     ];
 
     for (const varName of requiredVars) {
@@ -317,27 +255,7 @@ async function fillBackendEnv(autoMode = false) {
         displaySuccess(`Set GOOGLE_CLOUD_PROJECT=${projectId}`);
     }
 
-    // Fill GOOGLE_API_KEY
-    if (missing.includes('GOOGLE_API_KEY')) {
-        const apiKey = await getOrCreateApiKey(projectId, autoMode);
-        if (apiKey) {
-            updates.GOOGLE_API_KEY = apiKey;
-            displaySuccess('Set GOOGLE_API_KEY');
-        } else {
-            displayWarning('GOOGLE_API_KEY not set (manual setup required)');
-        }
-    }
 
-    // Fill GOOGLE_CUSTOM_SEARCH_CX
-    if (missing.includes('GOOGLE_CUSTOM_SEARCH_CX')) {
-        const cx = await getCustomSearchEngineId(projectId, autoMode);
-        if (cx) {
-            updates.GOOGLE_CUSTOM_SEARCH_CX = cx;
-            displaySuccess('Set GOOGLE_CUSTOM_SEARCH_CX');
-        } else {
-            displayWarning('GOOGLE_CUSTOM_SEARCH_CX not set (manual setup required)');
-        }
-    }
 
     // Fill OAuth credentials
     if (missing.includes('GOOGLE_CLIENT_ID') || missing.includes('GOOGLE_CLIENT_SECRET')) {
@@ -354,6 +272,17 @@ async function fillBackendEnv(autoMode = false) {
         } else {
             displayWarning('GOOGLE_CLIENT_SECRET not set (manual setup required)');
         }
+    }
+
+    // Fill Security Keys
+    if (missing.includes('TOKEN_ENCRYPTION_KEY')) {
+        updates.TOKEN_ENCRYPTION_KEY = generateRandomKey(32);
+        displaySuccess('Generated TOKEN_ENCRYPTION_KEY');
+    }
+
+    if (missing.includes('JWT_SECRET')) {
+        updates.JWT_SECRET = generateRandomKey(64);
+        displaySuccess('Generated JWT_SECRET');
     }
 
     // Write updates
@@ -416,7 +345,6 @@ async function main() {
         console.log('  3. Restart your backend server: npm start');
         console.log('');
         displayInfo('For variables that require manual setup:');
-        console.log('  - Custom Search Engine: https://programmablesearchengine.google.com/');
         console.log('  - OAuth Credentials: https://console.cloud.google.com/apis/credentials');
 
     } catch (error) {

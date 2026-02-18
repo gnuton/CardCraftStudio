@@ -150,7 +150,7 @@ function enableApis(projectId) {
         'run.googleapis.com',
         'artifactregistry.googleapis.com',
         'cloudbuild.googleapis.com',
-        'customsearch.googleapis.com',
+
         'aiplatform.googleapis.com',
         'cloudresourcemanager.googleapis.com',
         'iam.googleapis.com',
@@ -370,16 +370,15 @@ function displayConfiguration(projectId, wifConfig) {
 
     console.log('');
     displayInfo('Still needed (obtain from Google Cloud Console):');
-    console.log('  - GOOGLE_API_KEY (Custom Search API)');
-    console.log('  - GOOGLE_CUSTOM_SEARCH_CX (Custom Search Engine ID)');
+    displayInfo('Still needed (obtain from Google Cloud Console):');
     console.log('  - GOOGLE_CLIENT_ID (OAuth 2.0 Client)');
     console.log('  - GOOGLE_CLIENT_SECRET (OAuth 2.0 Client)');
     console.log('');
     displayInfo('Create OAuth credentials at:');
     console.log('  https://console.cloud.google.com/apis/credentials');
     console.log('');
-    displayInfo('Create Custom Search Engine at:');
-    console.log('  https://programmablesearchengine.google.com/');
+    displayInfo('Create OAuth credentials at:');
+    console.log('  https://console.cloud.google.com/apis/credentials');
     console.log('');
 }
 
@@ -415,8 +414,7 @@ async function main() {
         displayInfo('Next steps:');
         console.log('  1. Update your .env files with the configuration above');
         console.log('  2. Create OAuth 2.0 credentials in Google Cloud Console');
-        console.log('  3. Create Custom Search Engine');
-        console.log('  4. Run: npm run setup:github-secrets');
+        console.log('  3. Run: npm run setup:github-secrets');
         console.log('');
         displayInfo('Full documentation: docs/SETUP.md');
 

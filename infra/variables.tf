@@ -15,11 +15,7 @@ variable "service_name" {
   default     = "cardcraft-backend"
 }
 
-variable "google_api_key" {
-  description = "Google API Key for Custom Search"
-  type        = string
-  sensitive   = true
-}
+
 
 
 

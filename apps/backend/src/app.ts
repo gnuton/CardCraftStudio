@@ -52,8 +52,6 @@ export const createApp = (): express.Application => {
 
     app.get('/health', (req, res) => {
         const requiredVars = [
-            'GOOGLE_API_KEY',
-            'GOOGLE_CUSTOM_SEARCH_CX',
             'GOOGLE_CLOUD_PROJECT',
             'GOOGLE_CLIENT_ID',
             'GOOGLE_CLIENT_SECRET',

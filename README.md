@@ -20,6 +20,11 @@ A modern web application for designing and printing custom playing cards with ri
 - **Grid View**: Visual overview of your entire deck
 - **Hybrid Storage**: Decks are saved using `localStorage`, while large assets (images) are efficiently managed in **IndexedDB** for high performance and scalability.
 
+### 📂 Asset Management
+- **Asset Preview**: View full-size images in a dedicated modal dialog for detailed inspection.
+- **Improved Readability**: Long asset filenames are smartly handled to ensure full visibility without truncation.
+- **Tag Integration**: Organize assets with tags for easier filtering and discovery.
+
 ### ☁️ Cloud Synchronization & Storage
 - **Google Drive Integration**: Sync your entire library across devices using your private Google Drive storage.
 - **Bidirectional Sync**: Automatically detects changes in the cloud and keeps your local library up to date.
@@ -47,6 +52,8 @@ A modern web application for designing and printing custom playing cards with ri
 - **Visual Sync**: Position, rotation, scale, opacity, fonts, and colors of SVG elements are faithfully rendered in the Card Editor.
 - **Bi-directional Editing**: Changes made in the Style Editor (e.g., moving a title or changing a font) are written back to the SVG upon export.
 - **Reference Mapping**: Use `data-ref` attributes in your SVGs (e.g., `data-ref="title"`) to explicitly link graphical elements to card properties. These references are displayed in the editor for easy debugging.
+- **Template Management**: Easily import `.style.json` configuration files to apply complex styling rules instantly.
+- **Template Cleanup**: Delete unused or obsolete templates directly from the interface to keep your workspace organized.
 
 ## Installation
 
@@ -87,9 +94,7 @@ npm run dev
 
 The `fill-env` script automatically detects missing environment variables and attempts to fetch them from Google Cloud:
 
-- **GOOGLE_API_KEY**: Finds existing API keys or creates a new one
 - **GOOGLE_CLOUD_PROJECT**: Uses your active gcloud project
-- **GOOGLE_CUSTOM_SEARCH_CX**: Guides you to create a Custom Search Engine
 - **OAuth Credentials**: Provides instructions for manual setup
 
 ```bash
@@ -177,8 +182,8 @@ To inject credentials into your production environment, add the following secret
 | `GCP_PROJECT_ID` | Your Google Cloud Project ID |
 | `WIF_PROVIDER` | Workload Identity Federation Provider ID |
 | `WIF_SERVICE_ACCOUNT` | Service Account email for Workload Identity |
-| `GOOGLE_API_KEY` | Google API Key for Custom Search |
-| `GOOGLE_CUSTOM_SEARCH_CX` | Google Custom Search Engine ID |
+| `WIF_SERVICE_ACCOUNT` | Service Account email for Workload Identity |
+
 | `GOOGLE_CLIENT_ID` | Google OAuth Client ID |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret |
 | `TOKEN_ENCRYPTION_KEY` | A random 32-character string (for encrypting refresh tokens) |

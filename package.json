@@ -11,7 +11,6 @@
     "build:web": "npm run build --workspace=@cardcraft/web",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
-    "setup:local-env": "node scripts/setup-local-env.js",
     "setup:cloud-env": "node scripts/setup-cloud-env.js",
     "setup:github-secrets": "node scripts/setup-github-secrets.js",
     "fill-env": "node scripts/fill-env.js",

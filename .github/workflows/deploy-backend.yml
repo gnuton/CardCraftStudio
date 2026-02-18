@@ -68,8 +68,6 @@ jobs:
           terraform apply -auto-approve \
             -lock-timeout=3m \
             -var="project_id=${{ env.PROJECT_ID }}" \
-            -var="google_api_key=${{ secrets.GOOGLE_API_KEY }}" \
-            -var="google_custom_search_cx=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }}" \
             -var="google_client_id=${{ secrets.GOOGLE_CLIENT_ID }}" \
             -var="google_client_secret=${{ secrets.GOOGLE_CLIENT_SECRET }}" \
             -var="token_encryption_key=${{ secrets.TOKEN_ENCRYPTION_KEY }}" \
@@ -142,7 +140,7 @@ jobs:
             --image=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/cardcraft/backend:$IMAGE_TAG \
             --region=${{ env.REGION }} \
             --platform=managed \
-            --set-env-vars="GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }},GOOGLE_CUSTOM_SEARCH_CX=${{ secrets.GOOGLE_CUSTOM_SEARCH_CX }},GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},TOKEN_ENCRYPTION_KEY=${{ secrets.TOKEN_ENCRYPTION_KEY }},JWT_SECRET=${{ secrets.JWT_SECRET }},STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }},STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }},GOOGLE_REDIRECT_URI=https://${{ github.repository_owner }}.github.io/cardcraft/oauth-callback.html,ALLOWED_ORIGINS=https://${{ github.repository_owner }}.github.io" \
+            --set-env-vars="GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},TOKEN_ENCRYPTION_KEY=${{ secrets.TOKEN_ENCRYPTION_KEY }},JWT_SECRET=${{ secrets.JWT_SECRET }},STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }},STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }},GOOGLE_REDIRECT_URI=https://${{ github.repository_owner }}.github.io/cardcraft/oauth-callback.html,ALLOWED_ORIGINS=https://${{ github.repository_owner }}.github.io" \
             --timeout=300s \
             --port=8080 \
             --allow-unauthenticated

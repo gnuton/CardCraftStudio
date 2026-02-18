@@ -59,10 +59,7 @@ resource "google_cloud_run_v2_service" "backend" {
         value = var.project_id
       }
       
-      env {
-        name  = "GOOGLE_API_KEY"
-        value = var.google_api_key
-      }
+
 
 
 
