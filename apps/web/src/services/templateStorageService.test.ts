@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { templateStorageService } from './templateStorageService';
-import type { DeckTemplate } from '../types/template';
+import { type DeckTemplate, safeParseDeckTemplate } from '../types/template';
 import type { DeckStyle } from '../types/deck';
 
 // Mock Google Drive service
@@ -155,6 +155,105 @@ describe('templateStorageService', () => {
             const file = makeFile(JSON.stringify({ id: 'partial' }), 'partial.style.json');
             const result = await templateStorageService.importFromFile(file);
             expect(result).toBeNull();
+        });
+    });
+
+    describe('serialization safety', () => {
+        it('round-trips a complex template through JSON.stringify/parse', () => {
+            const complexStyle: DeckStyle = {
+                ...TEST_STYLE,
+                elements: [
+                    {
+                        id: 'e1', type: 'text', name: 'Title', side: 'front',
+                        x: 10, y: 10, width: 100, height: 20, rotate: 0, scale: 1, zIndex: 1, opacity: 1,
+                        fontFamily: 'serif', fontSize: 16, color: '#000'
+                    },
+                    {
+                        id: 'e2', type: 'image', name: 'Icon', side: 'back',
+                        x: 50, y: 50, width: 40, height: 40, rotate: 45, scale: 1.5, zIndex: 2, opacity: 0.8,
+                        url: 'http://example.com/img.png'
+                    }
+                ],
+                cardSizePreset: 'poker',
+                cardWidth: 63,
+                cardHeight: 88,
+                // Ensure optional fields are handled correctly
+                layoutMode: undefined,
+            };
+
+            const original = makeTemplate({
+                name: 'Complex Serialization Test',
+                style: complexStyle,
+                description: 'A test template with various data types',
+                thumbnailUrl: 'http://example.com/thumb.png',
+                // Explicitly set undefined for optional fields to test stripping vs preservation 
+                // in JSON (undefined fields are stripped by JSON.stringify)
+                author: undefined
+            });
+
+            // Simulate storage/network round-trip
+            const jsonString = JSON.stringify(original);
+            const parsedJson = JSON.parse(jsonString);
+
+            // 1. Verify structural equality
+            // Note: JSON.stringify removes keys with undefined values. 
+            // So we expect the parsed object to NOT have the keys that were undefined.
+            // Vitest's toEqual handles this gracefully usually or strict equality might fail on key presence.
+            // Let's verify commonly used fields.
+            expect(parsedJson.name).toBe(original.name);
+            expect(parsedJson.style.elements).toHaveLength(2);
+            expect(parsedJson.style.elements[0].id).toBe('e1');
+            expect(parsedJson.thumbnailUrl).toBe('http://example.com/thumb.png');
+
+            // 2. Verify Schema Validation
+            const validationResult = safeParseDeckTemplate(parsedJson);
+            expect(validationResult).not.toBeNull();
+
+            const validated = validationResult!;
+            expect(validated.id).toBe(original.id);
+            expect(validated.version).toBe(1);
+            expect(validated.style.cardSizePreset).toBe('poker');
+
+            // 3. Verify deep integrity of style
+            // We expect the style to match, excluding undefined keys that got stripped
+            const recoveredStyle = validated.style;
+            expect(recoveredStyle.borderColor).toBe(TEST_STYLE.borderColor);
+            expect(recoveredStyle.elements).toHaveLength(2);
+        });
+
+        it('rejects templates with missing required fields after parsing', () => {
+            const invalidJson = JSON.stringify({
+                id: 'bad-id',
+                // missing version
+                name: 'Bad Template',
+                // missing style
+            });
+            const parsed = JSON.parse(invalidJson);
+            const result = safeParseDeckTemplate(parsed);
+            expect(result).toBeNull();
+        });
+
+        it('handles malicious/extra fields by ignoring or stripping them (Zod default is strip)', () => {
+            const original = makeTemplate();
+            const withExtra = {
+                ...original,
+                dangerousField: '<script>alert(1)</script>',
+                style: {
+                    ...original.style,
+                    __proto__: { isAdmin: true }
+                }
+            };
+
+            const json = JSON.stringify(withExtra);
+            const parsed = JSON.parse(json);
+
+            const result = safeParseDeckTemplate(parsed);
+            expect(result).not.toBeNull();
+
+            // Zod should strip unknown keys by default unless .passthrough() is used
+            // The schema in types/template.ts uses z.object(...) which strips by default!
+            expect((result as any).dangerousField).toBeUndefined();
+            expect((result!.style as any).__proto__.isAdmin).toBeUndefined();
         });
     });
 });
