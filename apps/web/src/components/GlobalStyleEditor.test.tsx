@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { GlobalStyleEditor } from './GlobalStyleEditor';
 import { describe, it, expect } from 'vitest';

@@ -1050,6 +1050,14 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                 isOpen={isTemplatePickerOpen}
                 onClose={() => setIsTemplatePickerOpen(false)}
                 onSelect={applyTemplate}
+                onDelete={async (templateId) => {
+                    await templateStorageService.delete(templateId);
+                    await fetchCustomTemplates();
+                }}
+                onImport={async (template) => {
+                    await templateStorageService.save(template);
+                    await fetchCustomTemplates();
+                }}
                 currentTemplateId={currentStyle.id}
                 customTemplates={customTemplates}
                 isFlipped={isFlipped}

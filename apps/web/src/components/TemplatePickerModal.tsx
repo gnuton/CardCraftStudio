@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Layout, Search, Grid } from 'lucide-react';
+import { X, Check, Layout, Search, Grid, Trash2, Upload } from 'lucide-react';
 import { Card } from './Card';
 import { TEMPLATES } from '../constants/templates';
 import type { DeckTemplate } from '../types/template';
@@ -11,6 +11,8 @@ interface TemplatePickerModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (template: DeckTemplate) => void;
+    onDelete?: (templateId: string) => void;
+    onImport?: (template: DeckTemplate) => void;
     currentTemplateId?: string;
     customTemplates?: DeckTemplate[];
     isFlipped?: boolean; // To filter front/back/both
@@ -20,12 +22,15 @@ export const TemplatePickerModal = ({
     isOpen,
     onClose,
     onSelect,
+    onDelete,
+    onImport,
     currentTemplateId,
     customTemplates = [],
     isFlipped = false
 }: TemplatePickerModalProps) => {
     const [selectedTemplate, setSelectedTemplate] = useState<DeckTemplate | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const allTemplates = [...TEMPLATES, ...customTemplates];
     const filteredTemplates = allTemplates
@@ -156,6 +161,20 @@ export const TemplatePickerModal = ({
                                                     <Check className="w-3 h-3" />
                                                 </div>
                                             )}
+
+                                            {/* Delete button for custom templates */}
+                                            {!template.isOfficial && onDelete && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onDelete(template.id);
+                                                    }}
+                                                    className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-all flex-shrink-0"
+                                                    title="Delete template"
+                                                >
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            )}
                                         </button>
                                     ))}
 
@@ -206,20 +225,55 @@ export const TemplatePickerModal = ({
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 bg-card border-t border-border flex justify-end gap-3">
-                            <button
-                                onClick={onClose}
-                                className="px-6 py-2.5 rounded-xl font-bold text-muted-foreground hover:bg-muted transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleApply}
-                                disabled={!selectedTemplate}
-                                className="px-8 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
-                            >
-                                Apply Template
-                            </button>
+                        <div className="p-4 bg-card border-t border-border flex justify-between">
+                            <div>
+                                {onImport && (
+                                    <>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept=".style.json"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const { templateStorageService } = await import('../services/templateStorageService');
+                                                    const template = await templateStorageService.importFromFile(file);
+                                                    if (template) {
+                                                        onImport(template);
+                                                    } else {
+                                                        alert('Invalid template file. Please select a valid .style.json file.');
+                                                    }
+                                                }
+                                                // Reset input so re-selecting same file works
+                                                e.target.value = '';
+                                            }}
+                                        />
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="px-5 py-2.5 rounded-xl font-bold text-muted-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                                        >
+                                            <Upload className="w-4 h-4" />
+                                            Import
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={onClose}
+                                    className="px-6 py-2.5 rounded-xl font-bold text-muted-foreground hover:bg-muted transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleApply}
+                                    disabled={!selectedTemplate}
+                                    className="px-8 py-2.5 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
+                                >
+                                    Apply Template
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 </div>

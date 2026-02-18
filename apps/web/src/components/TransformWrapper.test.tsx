@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { render, fireEvent, act } from '@testing-library/react';
 import { TransformWrapper } from './TransformWrapper';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
