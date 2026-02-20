@@ -4,7 +4,8 @@ import { Sun, Moon, Cloud, CloudOff, CloudAlert } from 'lucide-react';
 import logo from './assets/logo.png';
 import { CardStudio, type CardConfig } from './components/CardStudio';
 import { DeckStudio } from './components/DeckStudio';
-import { LoadingScreen } from './components/LoadingScreen';
+
+import { UnifiedBackground } from './components/UnifiedBackground';
 import { DeckLibrary, type Deck } from './components/DeckLibrary';
 import { SyncErrorDialog } from './components/SyncErrorDialog';
 import { SyncConflictDialog } from './components/SyncConflictDialog';
@@ -22,11 +23,12 @@ import { importDeckFromZip } from './utils/deckIO';
 
 import { UserProfile } from './components/UserProfile';
 import { LandingPage } from './components/LandingPage';
+import { PricingPage } from './components/PricingPage';
 import { useAuth } from './contexts/AuthContext';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
 
 
-const APP_VERSION = '1.2.0-drive-sync';
+
 
 interface DriveFile {
   id: string;
@@ -119,7 +121,7 @@ const defaultDeckStyle: DeckStyle = {
 
 function App() {
   const { isAuthenticated: isAppAuthenticated } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+
 
   // Theme State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -402,13 +404,7 @@ function App() {
     }
   };
 
-  // Loader Timer
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3500);
-    return () => clearTimeout(timer);
-  }, []);
+
 
   // Decks State
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -475,7 +471,7 @@ function App() {
   }, []);
 
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
-  const [view, setView] = useState<'landing' | 'library' | 'deck' | 'editor' | 'style'>('landing');
+  const [view, setView] = useState<'landing' | 'library' | 'deck' | 'editor' | 'style' | 'pricing'>('landing');
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [isNewDeckDialogOpen, setIsNewDeckDialogOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
@@ -769,12 +765,15 @@ function App() {
     }
   };
 
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className={`min-h-screen text-foreground overflow-x-hidden ${view === 'landing' || view === 'pricing' ? 'bg-transparent' : 'bg-background'}`}>
+      {(view === 'landing' || view === 'pricing') && <UnifiedBackground />}
       <AnimatePresence mode="wait">
-        {isLoading ? (
-          <LoadingScreen key="loader" version={APP_VERSION} />
-        ) : view === 'landing' ? (
+        {view === 'landing' ? (
           <motion.div
             key="landing"
             initial={{ opacity: 0, x: -50 }}
@@ -785,7 +784,25 @@ function App() {
             <LandingPage
               onEnter={() => setView('library')}
               onLogin={handleLoginRequest}
+              onPricing={() => setView('pricing')}
               isAuthenticated={isAuthenticated || isAppAuthenticated}
+              theme={theme}
+              toggleTheme={toggleTheme}
+            />
+          </motion.div>
+        ) : view === 'pricing' ? (
+          <motion.div
+            key="pricing"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <PricingPage
+              onBack={() => setView('landing')}
+              isAuthenticated={isAuthenticated || isAppAuthenticated}
+              theme={theme}
+              toggleTheme={toggleTheme}
             />
           </motion.div>
         ) : (

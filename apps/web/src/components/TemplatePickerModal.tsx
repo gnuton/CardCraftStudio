@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Layout, Search, Grid, Trash2, Upload } from 'lucide-react';
+import { X, Check, Layout, Search, Grid, Trash2, Upload, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card } from './Card';
 import { TEMPLATES } from '../constants/templates';
 import type { DeckTemplate } from '../types/template';
@@ -30,12 +30,40 @@ export const TemplatePickerModal = ({
 }: TemplatePickerModalProps) => {
     const [selectedTemplate, setSelectedTemplate] = useState<DeckTemplate | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const allTemplates = [...TEMPLATES, ...customTemplates];
     const filteredTemplates = allTemplates
         .filter(t => !t.side || t.side === 'both' || (isFlipped ? t.side === 'back' : t.side === 'front'))
         .filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // Group templates by category
+    const groupedTemplates = useMemo(() => {
+        const groups: Record<string, DeckTemplate[]> = {};
+        const categoryOrder = ['Card Layouts', 'Themed', 'Back Designs', 'Custom'];
+
+        for (const t of filteredTemplates) {
+            const cat = !t.isOfficial ? 'Custom' : (t.category || 'Themed');
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(t);
+        }
+
+        // Return ordered entries
+        const ordered: [string, DeckTemplate[]][] = [];
+        for (const cat of categoryOrder) {
+            if (groups[cat]?.length) ordered.push([cat, groups[cat]]);
+        }
+        // Add any remaining categories not in the order list
+        for (const [cat, templates] of Object.entries(groups)) {
+            if (!categoryOrder.includes(cat)) ordered.push([cat, templates]);
+        }
+        return ordered;
+    }, [filteredTemplates]);
+
+    const toggleCategory = (cat: string) => {
+        setCollapsedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+    };
 
     // Set initial selection when opening
     useEffect(() => {
@@ -120,62 +148,81 @@ export const TemplatePickerModal = ({
                                         />
                                     </div>
                                 </div>
-                                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-                                    {filteredTemplates.map(template => (
-                                        <button
-                                            key={template.id}
-                                            onClick={() => setSelectedTemplate(template)}
-                                            className={cn(
-                                                "w-full p-3 rounded-xl border text-left transition-all group relative flex items-center gap-3",
-                                                selectedTemplate?.id === template.id
-                                                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-indigo-500/20"
-                                                    : "border-transparent hover:bg-muted"
-                                            )}
-                                        >
-                                            {/* Mini Thumbnail */}
-                                            <div className="w-10 h-10 rounded-lg border border-border overflow-hidden bg-background flex-shrink-0 relative">
-                                                {((isFlipped && template.style.cardBackImage) || (!isFlipped && template.style.backgroundImage)) ? (
-                                                    <img
-                                                        src={(isFlipped ? template.style.cardBackImage : template.style.backgroundImage) || ''}
-                                                        className="w-full h-full object-cover"
-                                                        alt=""
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
-                                                        <Grid className="w-4 h-4 opacity-50" />
-                                                    </div>
-                                                )}
-                                            </div>
+                                <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
+                                    {groupedTemplates.map(([category, templates]) => (
+                                        <div key={category}>
+                                            <button
+                                                onClick={() => toggleCategory(category)}
+                                                className="w-full flex items-center gap-2 px-2 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                                            >
+                                                {collapsedCategories[category]
+                                                    ? <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                                                    : <ChevronDown className="w-3 h-3 flex-shrink-0" />}
+                                                <span className="flex-1 text-left">{category}</span>
+                                                <span className="text-[10px] font-normal bg-muted px-1.5 py-0.5 rounded-full">{templates.length}</span>
+                                            </button>
 
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className={cn("font-bold text-sm truncate", selectedTemplate?.id === template.id ? "text-indigo-600 dark:text-indigo-400" : "text-foreground")}>
-                                                    {template.name}
-                                                </h3>
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    {template.isOfficial ? 'Official' : 'Custom'}
+                                            {!collapsedCategories[category] && (
+                                                <div className="space-y-1 mb-2">
+                                                    {templates.map(template => (
+                                                        <button
+                                                            key={template.id}
+                                                            onClick={() => setSelectedTemplate(template)}
+                                                            className={cn(
+                                                                "w-full p-3 rounded-xl border text-left transition-all group relative flex items-center gap-3",
+                                                                selectedTemplate?.id === template.id
+                                                                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-indigo-500/20"
+                                                                    : "border-transparent hover:bg-muted"
+                                                            )}
+                                                        >
+                                                            {/* Mini Thumbnail */}
+                                                            <div className="w-10 h-10 rounded-lg border border-border overflow-hidden bg-background flex-shrink-0 relative">
+                                                                {((isFlipped && template.style.cardBackImage) || (!isFlipped && template.style.backgroundImage)) ? (
+                                                                    <img
+                                                                        src={(isFlipped ? template.style.cardBackImage : template.style.backgroundImage) || ''}
+                                                                        className="w-full h-full object-cover"
+                                                                        alt=""
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: template.style.backgroundColor }}>
+                                                                        <Grid className="w-4 h-4 opacity-30" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="min-w-0 flex-1">
+                                                                <h3 className={cn("font-bold text-sm truncate", selectedTemplate?.id === template.id ? "text-indigo-600 dark:text-indigo-400" : "text-foreground")}>
+                                                                    {template.name}
+                                                                </h3>
+                                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                                    {template.style.elements.filter(e => isFlipped ? e.side === 'back' : e.side === 'front').length} elements
+                                                                </div>
+                                                            </div>
+
+                                                            {selectedTemplate?.id === template.id && (
+                                                                <div className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-sm">
+                                                                    <Check className="w-3 h-3" />
+                                                                </div>
+                                                            )}
+
+                                                            {/* Delete button for custom templates */}
+                                                            {!template.isOfficial && onDelete && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        onDelete(template.id);
+                                                                    }}
+                                                                    className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-all flex-shrink-0"
+                                                                    title="Delete template"
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                </button>
+                                                            )}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            </div>
-
-                                            {selectedTemplate?.id === template.id && (
-                                                <div className="w-5 h-5 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-sm">
-                                                    <Check className="w-3 h-3" />
-                                                </div>
                                             )}
-
-                                            {/* Delete button for custom templates */}
-                                            {!template.isOfficial && onDelete && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onDelete(template.id);
-                                                    }}
-                                                    className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center transition-all flex-shrink-0"
-                                                    title="Delete template"
-                                                >
-                                                    <Trash2 className="w-3 h-3" />
-                                                </button>
-                                            )}
-                                        </button>
+                                        </div>
                                     ))}
 
                                     {filteredTemplates.length === 0 && (
@@ -204,14 +251,21 @@ export const TemplatePickerModal = ({
                                         </div>
                                         <div className="text-center max-w-md">
                                             <h3 className="text-lg font-bold text-foreground">{selectedTemplate.name}</h3>
-                                            <div className="flex items-center justify-center gap-2 mt-2">
+                                            {selectedTemplate.description && (
+                                                <p className="text-sm text-muted-foreground mt-1">{selectedTemplate.description}</p>
+                                            )}
+                                            <div className="flex items-center justify-center gap-2 mt-3">
                                                 <div className="flex gap-1">
                                                     <div className="w-4 h-4 rounded-full border border-border shadow-sm" style={{ backgroundColor: selectedTemplate.style.backgroundColor }} title="Background"></div>
                                                     <div className="w-4 h-4 rounded-full border border-border shadow-sm" style={{ backgroundColor: selectedTemplate.style.borderColor }} title="Border"></div>
+                                                    <div className="w-4 h-4 rounded-full border border-border shadow-sm" style={{ backgroundColor: selectedTemplate.style.svgFrameColor }} title="Frame"></div>
                                                 </div>
-                                                <span className="text-sm text-muted-foreground">
+                                                <span className="text-xs text-muted-foreground">
                                                     Color Palette
                                                 </span>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground mt-2">
+                                                {selectedTemplate.style.elements.filter(e => isFlipped ? e.side === 'back' : e.side === 'front').length} elements · {selectedTemplate.isOfficial ? 'Official' : 'Custom'}
                                             </div>
                                         </div>
                                     </div>

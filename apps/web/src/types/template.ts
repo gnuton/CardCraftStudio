@@ -59,6 +59,7 @@ export const DeckTemplateSchema = z.object({
     version: z.number(),
     name: z.string(),
     description: z.string().optional(),
+    category: z.string().optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
     author: z.string().optional(),
@@ -94,11 +95,14 @@ export function createOfficialTemplate(
     name: string,
     style: DeckStyle,
     side?: 'front' | 'back' | 'both',
+    options?: { description?: string; category?: string },
 ): DeckTemplate {
     return {
         id,
         version: 1,
         name,
+        description: options?.description,
+        category: options?.category,
         isOfficial: true,
         createdAt: '2026-01-01T00:00:00Z',
         updatedAt: '2026-01-01T00:00:00Z',

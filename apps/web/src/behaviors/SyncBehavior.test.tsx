@@ -144,7 +144,7 @@ describe('Cloud Sync Behavior', () => {
         }, { timeout: 6000 });
 
         // Navigate past Landing Page
-        const enterBtn = await screen.findByText(/Enter Studio/i); // Authenticated in most tests
+        const enterBtn = await screen.findByText(/Start Building Free/i); // Authenticated in most tests
         fireEvent.click(enterBtn);
     };
 

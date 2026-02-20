@@ -66,7 +66,7 @@ describe('App Component', () => {
         }, { timeout: 6000 });
 
         // Navigate past Landing Page
-        const enterBtn = await screen.findByText(/Enter Studio|Continue as Guest/i);
+        const enterBtn = await screen.findByText(/Start Building Free/i); // Authenticated in most tests
         fireEvent.click(enterBtn);
     };
 
