@@ -373,7 +373,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none', // Allow clicks to pass through except on elements
-                zIndex: isSelected ? 100 : element.zIndex, // Bring selected elements to front
+                zIndex: element.zIndex, // Show live layer order even when selected
             };
 
             // Calculate bounds to prevent elements from escaping the card

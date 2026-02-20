@@ -4,7 +4,7 @@ import { assetService } from '../services/assetService';
 import { templateStorageService } from '../services/templateStorageService';
 import { driveService } from '../services/googleDrive';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, ChevronDown, ChevronRight, Trash2, Plus, Type, Palette, Layout, Save, Cloud, Download, Loader2, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, AlertCircle, X, Box, Maximize2 } from 'lucide-react';
+import { Settings, ChevronDown, ChevronRight, ChevronUp, ChevronsDown, ChevronsUp, Trash2, Plus, Type, Palette, Layout, Save, Cloud, Download, Loader2, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, AlertCircle, X, Box, Maximize2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Card } from './Card';
 import { ResolvedImage } from './ResolvedImage';
@@ -377,13 +377,46 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-foreground/70">Z-Index</label>
-                                <input
-                                    type="number"
-                                    value={element.zIndex || 10}
-                                    onChange={(e) => handleUpdateElement(element.id, { zIndex: Number(e.target.value) })}
-                                    className="w-full bg-muted border border-border rounded px-2 py-1 text-sm"
-                                />
+                                <label className="text-xs font-semibold text-foreground/70 flex items-center justify-between">
+                                    Layering (Z-Index)
+                                    <span className="text-[10px] text-muted-foreground font-mono">{element.zIndex ?? 10}</span>
+                                </label>
+                                <div className="grid grid-cols-4 gap-1">
+                                    <button
+                                        onClick={() => {
+                                            const minZ = Math.min(...(currentStyle.elements?.filter(e => e.side === element.side).map(e => e.zIndex ?? 10) || [10]), 10);
+                                            handleUpdateElement(element.id, { zIndex: minZ - 1 });
+                                        }}
+                                        className="flex flex-col items-center justify-center p-1.5 bg-muted/50 border border-border hover:border-indigo-200 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-colors group"
+                                        title="Send to Back"
+                                    >
+                                        <ChevronsDown className="w-4 h-4 text-foreground/70 group-hover:text-indigo-600" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpdateElement(element.id, { zIndex: (element.zIndex ?? 10) - 1 })}
+                                        className="flex flex-col items-center justify-center p-1.5 bg-muted/50 border border-border hover:border-indigo-200 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-colors group"
+                                        title="Move Backward"
+                                    >
+                                        <ChevronDown className="w-4 h-4 text-foreground/70 group-hover:text-indigo-600" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleUpdateElement(element.id, { zIndex: (element.zIndex ?? 10) + 1 })}
+                                        className="flex flex-col items-center justify-center p-1.5 bg-muted/50 border border-border hover:border-indigo-200 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-colors group"
+                                        title="Move Forward"
+                                    >
+                                        <ChevronUp className="w-4 h-4 text-foreground/70 group-hover:text-indigo-600" />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const maxZ = Math.max(...(currentStyle.elements?.filter(e => e.side === element.side).map(e => e.zIndex ?? 10) || [10]), 10);
+                                            handleUpdateElement(element.id, { zIndex: maxZ + 1 });
+                                        }}
+                                        className="flex flex-col items-center justify-center p-1.5 bg-muted/50 border border-border hover:border-indigo-200 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-colors group"
+                                        title="Bring to Front"
+                                    >
+                                        <ChevronsUp className="w-4 h-4 text-foreground/70 group-hover:text-indigo-600" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -628,24 +661,33 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                     </div>
 
                                     <div className="space-y-1 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-                                        {currentStyle.elements?.filter(el => isFlipped ? el.side === 'back' : el.side === 'front').map(el => (
-                                            <button
-                                                key={el.id}
-                                                onClick={() => setSelectedElement(el.id)}
-                                                className={cn(
-                                                    "w-full flex items-center gap-3 p-2 rounded-lg text-sm transition-all border",
-                                                    selectedElement === el.id
-                                                        ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20"
-                                                        : "bg-transparent border-transparent hover:bg-muted"
-                                                )}
-                                            >
-                                                <span className="w-6 h-6 rounded bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
-                                                    {el.type === 'image' ? <Palette className="w-3 h-3" /> : (el.type === 'multiline' ? <Layout className="w-3 h-3" /> : <Type className="w-3 h-3" />)}
-                                                </span>
-                                                <span className="truncate font-medium flex-1 text-left">{el.name}</span>
-                                                {selectedElement === el.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
-                                            </button>
-                                        ))}
+                                        <AnimatePresence initial={false}>
+                                            {currentStyle.elements?.filter(el => isFlipped ? el.side === 'back' : el.side === 'front')
+                                                .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
+                                                .map(el => (
+                                                    <motion.button
+                                                        key={el.id}
+                                                        layout
+                                                        initial={{ opacity: 0, scale: 0.95 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.95 }}
+                                                        transition={{ duration: 0.2 }}
+                                                        onClick={() => setSelectedElement(el.id)}
+                                                        className={cn(
+                                                            "w-full flex items-center gap-3 p-2 rounded-lg text-sm transition-all border",
+                                                            selectedElement === el.id
+                                                                ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20"
+                                                                : "bg-transparent border-transparent hover:bg-muted"
+                                                        )}
+                                                    >
+                                                        <span className="w-6 h-6 rounded bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                                                            {el.type === 'image' ? <Palette className="w-3 h-3" /> : (el.type === 'multiline' ? <Layout className="w-3 h-3" /> : <Type className="w-3 h-3" />)}
+                                                        </span>
+                                                        <span className="truncate font-medium flex-1 text-left">{el.name}</span>
+                                                        {selectedElement === el.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                                                    </motion.button>
+                                                ))}
+                                        </AnimatePresence>
 
                                         {(!currentStyle.elements || currentStyle.elements.filter(el => isFlipped ? el.side === 'back' : el.side === 'front').length === 0) && (
                                             <div className="text-xs text-muted-foreground text-center py-4 italic">

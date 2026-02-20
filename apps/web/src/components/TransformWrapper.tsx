@@ -259,7 +259,7 @@ export const TransformWrapper = ({
                 width: 0,
                 height: 0,
                 overflow: 'visible',
-                zIndex: isSelected ? 100 : (zIndex ?? 'auto')
+                zIndex: zIndex ?? 'auto'
             }}
         >
             <div

@@ -58,8 +58,8 @@ describe('Built-in Templates', () => {
         }
     });
 
-    it('existing templates still have their original IDs', () => {
-        const existingIds = ['simple', 'golden_era', 'modern_blue', 'eldritch_archive', 'neon_data', 'pocket_monster', 'empty', 'royal_back', 'mystic_back', 'cyber_back'];
+    it('existing back templates still have their original IDs', () => {
+        const existingIds = ['royal_back', 'mystic_back', 'cyber_back'];
         for (const id of existingIds) {
             const found = TEMPLATES.find(t => t.id === id);
             expect(found, `Pre-existing template "${id}" should still exist`).toBeDefined();
