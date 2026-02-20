@@ -250,7 +250,7 @@ const HeroSection = ({ onEnter, onLogin, isAuthenticated }: Pick<LandingPageProp
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                 />
                                 {/* Overlay gradient */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/50 to-transparent pointer-events-none"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 dark:from-neutral-900/50 to-transparent pointer-events-none"></div>
                             </div>
 
                             {/* Floating Badge 1 */}
@@ -285,7 +285,7 @@ const HeroSection = ({ onEnter, onLogin, isAuthenticated }: Pick<LandingPageProp
                         </motion.div>
 
                         {/* Background blobs */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-500/20 blur-[100px] -z-10 rounded-full"></div>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-200/30 dark:bg-blue-500/20 blur-[100px] -z-10 rounded-full"></div>
                     </div>
                 </div>
             </div>
@@ -382,7 +382,7 @@ const PrivacySection = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col lg:flex-row items-center gap-16">
                     <div className="flex-1 order-2 lg:order-1">
-                        <div className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-8 shadow-2xl">
+                        <div className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 shadow-xl dark:shadow-2xl">
                             <div className="aspect-square rounded-xl overflow-hidden relative bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
                                 <Shield className="w-32 h-32 text-blue-600 dark:text-blue-400" strokeWidth={1} />
                             </div>
@@ -528,9 +528,6 @@ const Footer = () => {
                 <div className="pt-8 border-t border-neutral-200 dark:border-neutral-900 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-sm text-neutral-500">
                         © {new Date().getFullYear()} CardCraft Studio. All rights reserved.
-                    </p>
-                    <p className="text-sm text-neutral-500 flex items-center gap-1">
-                        Made with <Heart className="w-4 h-4 text-red-500 fill-current" /> by the community
                     </p>
                 </div>
             </div>
