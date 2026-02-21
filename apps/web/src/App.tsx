@@ -23,7 +23,6 @@ import { importDeckFromZip } from './utils/deckIO';
 
 import { UserProfile } from './components/UserProfile';
 import { LandingPage } from './components/LandingPage';
-import { PricingPage } from './components/PricingPage';
 import { useAuth } from './contexts/AuthContext';
 import { ImpersonationBanner } from './components/ImpersonationBanner';
 
@@ -46,7 +45,7 @@ const defaultDeckStyle: DeckStyle = {
   borderColor: '#e2e8f0',
   borderWidth: 2,
   backgroundColor: '#ffffff',
-  backgroundImage: '/templates/simple.svg',
+  backgroundImage: null,
   cardBackBackgroundColor: '#312e81',
   cardBackImage: null,
 
@@ -471,7 +470,7 @@ function App() {
   }, []);
 
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
-  const [view, setView] = useState<'landing' | 'library' | 'deck' | 'editor' | 'style' | 'pricing'>('landing');
+  const [view, setView] = useState<'landing' | 'library' | 'deck' | 'editor' | 'style'>('landing');
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [isNewDeckDialogOpen, setIsNewDeckDialogOpen] = useState(false);
   const [initialOpenTemplatePicker, setInitialOpenTemplatePicker] = useState(false);
@@ -772,8 +771,8 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen text-foreground overflow-x-hidden ${view === 'landing' || view === 'pricing' ? 'bg-transparent' : 'bg-background'}`}>
-      {(view === 'landing' || view === 'pricing') && <UnifiedBackground />}
+    <div className={`min-h-screen text-foreground overflow-x-hidden ${view === 'landing' ? 'bg-transparent' : 'bg-background'}`}>
+      {view === 'landing' && <UnifiedBackground />}
       <AnimatePresence mode="wait">
         {view === 'landing' ? (
           <motion.div
@@ -786,22 +785,6 @@ function App() {
             <LandingPage
               onEnter={() => setView('library')}
               onLogin={handleLoginRequest}
-              onPricing={() => setView('pricing')}
-              isAuthenticated={isAuthenticated || isAppAuthenticated}
-              theme={theme}
-              toggleTheme={toggleTheme}
-            />
-          </motion.div>
-        ) : view === 'pricing' ? (
-          <motion.div
-            key="pricing"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <PricingPage
-              onBack={() => setView('landing')}
               isAuthenticated={isAuthenticated || isAppAuthenticated}
               theme={theme}
               toggleTheme={toggleTheme}

@@ -75,7 +75,7 @@ describe('GlobalStyleEditor', () => {
         expect(screen.getByText('Sample Card')).toBeInTheDocument();
 
         // Find and click "Back" button in viewport controls
-        const backBtn = screen.getByRole('button', { name: 'Back' });
+        const backBtn = screen.getAllByRole('button', { name: 'Back' })[1];
         fireEvent.click(backBtn);
 
         // Now should show back title

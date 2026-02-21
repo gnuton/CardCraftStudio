@@ -135,14 +135,16 @@ export const TransformWrapper = ({
                 const cAngle = Math.cos(angle);
                 const sAngle = Math.sin(angle);
 
+                const dir = action.replace('resize-', '');
+
                 let anchorLocalX = 0;
                 let anchorLocalY = 0;
 
-                if (action.includes('w')) anchorLocalX = w0 / 2;
-                else if (action.includes('e')) anchorLocalX = -w0 / 2;
+                if (dir.includes('w')) anchorLocalX = w0 / 2;
+                else if (dir.includes('e')) anchorLocalX = -w0 / 2;
 
-                if (action.includes('n')) anchorLocalY = h0 / 2;
-                else if (action.includes('s')) anchorLocalY = -h0 / 2;
+                if (dir.includes('n')) anchorLocalY = h0 / 2;
+                else if (dir.includes('s')) anchorLocalY = -h0 / 2;
 
                 const anchorWorldX = x0 + anchorLocalX * cAngle - anchorLocalY * sAngle;
                 const anchorWorldY = y0 + anchorLocalX * sAngle + anchorLocalY * cAngle;
@@ -150,11 +152,11 @@ export const TransformWrapper = ({
                 let newW = w0;
                 let newH = h0;
 
-                if (action.includes('e')) newW = w0 + lDx;
-                else if (action.includes('w')) newW = w0 - lDx;
+                if (dir.includes('e')) newW = w0 + lDx;
+                else if (dir.includes('w')) newW = w0 - lDx;
 
-                if (action.includes('s')) newH = h0 + lDy;
-                else if (action.includes('n')) newH = h0 - lDy;
+                if (dir.includes('s')) newH = h0 + lDy;
+                else if (dir.includes('n')) newH = h0 - lDy;
 
                 newW = Math.max(minWidthRef.current, newW);
                 newH = Math.max(minHeightRef.current, newH);
@@ -162,11 +164,11 @@ export const TransformWrapper = ({
                 let newAnchorLocalX = 0;
                 let newAnchorLocalY = 0;
 
-                if (action.includes('w')) newAnchorLocalX = newW / 2;
-                else if (action.includes('e')) newAnchorLocalX = -newW / 2;
+                if (dir.includes('w')) newAnchorLocalX = newW / 2;
+                else if (dir.includes('e')) newAnchorLocalX = -newW / 2;
 
-                if (action.includes('n')) newAnchorLocalY = newH / 2;
-                else if (action.includes('s')) newAnchorLocalY = -newH / 2;
+                if (dir.includes('n')) newAnchorLocalY = newH / 2;
+                else if (dir.includes('s')) newAnchorLocalY = -newH / 2;
 
                 const newX = anchorWorldX - (newAnchorLocalX * cAngle - newAnchorLocalY * sAngle);
                 const newY = anchorWorldY - (newAnchorLocalX * sAngle + newAnchorLocalY * cAngle);

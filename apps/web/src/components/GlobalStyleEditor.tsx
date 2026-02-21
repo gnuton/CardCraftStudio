@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AssetManager } from './AssetManager';
 import { assetService } from '../services/assetService';
 import { templateStorageService } from '../services/templateStorageService';
 import { driveService } from '../services/googleDrive';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, ChevronDown, ChevronRight, ChevronUp, ChevronsDown, ChevronsUp, Trash2, Plus, Type, Palette, Layout, Save, Cloud, Download, Loader2, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, AlertCircle, X, Box, Maximize2 } from 'lucide-react';
+import { Settings, ChevronDown, ChevronRight, ChevronUp, ChevronsDown, ChevronsUp, Trash2, Plus, Type, Palette, Layout, Save, Cloud, Download, Loader2, ZoomIn, ZoomOut, RotateCcw, Hand, MousePointer2, AlertCircle, X, Box, Maximize2, Undo, Redo, ArrowLeft } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { Card } from './Card';
 import { ResolvedImage } from './ResolvedImage';
@@ -27,9 +27,9 @@ interface GlobalStyleEditorProps {
     initialOpenTemplatePicker?: boolean;
 }
 
-export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack }: GlobalStyleEditorProps) => {
+export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack, initialOpenTemplatePicker }: GlobalStyleEditorProps) => {
     const [currentStyle, setCurrentStyle] = useState<DeckStyle>(deckStyle);
-    const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
+    const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(initialOpenTemplatePicker || false);
     const [isFontPickerOpen, setIsFontPickerOpen] = useState(false);
     const [selectedElement, setSelectedElement] = useState<string | null>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -105,11 +105,64 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         }
     };
 
-    const handleStyleChange = (updates: Partial<DeckStyle>) => {
+    const [history, setHistory] = useState<{ past: DeckStyle[], future: DeckStyle[] }>({
+        past: [],
+        future: []
+    });
+
+    const pushToHistory = useCallback(() => {
+        setHistory(prev => ({
+            past: [...prev.past.slice(-29), currentStyle],
+            future: []
+        }));
+    }, [currentStyle]);
+
+    const handleStyleChange = useCallback((updates: Partial<DeckStyle>) => {
         const newStyle = { ...currentStyle, ...updates };
+        pushToHistory();
         setCurrentStyle(newStyle);
         onUpdateStyle(newStyle);
-    };
+    }, [currentStyle, onUpdateStyle, pushToHistory]);
+
+    const undo = useCallback(() => {
+        if (history.past.length === 0) return;
+        const newPast = [...history.past];
+        const previous = newPast.pop()!;
+        setHistory(prev => ({
+            past: newPast,
+            future: [currentStyle, ...prev.future]
+        }));
+        setCurrentStyle(previous);
+        onUpdateStyle(previous);
+    }, [history, currentStyle, onUpdateStyle]);
+
+    const redo = useCallback(() => {
+        if (history.future.length === 0) return;
+        const newFuture = [...history.future];
+        const next = newFuture.shift()!;
+        setHistory(prev => ({
+            past: [...prev.past, currentStyle],
+            future: newFuture
+        }));
+        setCurrentStyle(next);
+        onUpdateStyle(next);
+    }, [history, currentStyle, onUpdateStyle]);
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                if (e.shiftKey) redo();
+                else undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                redo();
+            } else if (e.key === 'Escape') {
+                setSelectedElement(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [undo, redo, setSelectedElement]);
 
     const handleDownloadTemplate = () => {
         if (!newTemplateName.trim()) return;
@@ -192,6 +245,7 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
         }
 
         setCurrentStyle(finalStyle);
+        onUpdateStyle(finalStyle);
     };
 
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
@@ -633,527 +687,558 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
 
     return (
         <>
-            <div className="flex h-[calc(100vh-7.5rem)] bg-background overflow-hidden animate-in fade-in duration-300">
-                {/* Left Panel: Assets */}
-                <div className="w-[300px] flex-shrink-0 h-full border-r border-border bg-card overflow-y-auto custom-scrollbar flex flex-col">
-                    <div className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border p-4">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-                                <Box className="w-4 h-4" />
-                                Assets
-                            </h3>
-                        </div>
-                    </div>
-
-                    <div className="p-4 space-y-6">
-                        {/* Templates Group */}
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => toggleGroup('templates')}
-                                className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
-                            >
-                                {expandedGroups.templates ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                                Templates
-                            </button>
-
-                            {expandedGroups.templates && (
-                                <div className="space-y-3 pl-0">
-                                    <button
-                                        onClick={() => setIsTemplatePickerOpen(true)}
-                                        className="w-full p-3 rounded-xl border border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm flex items-center justify-between group hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all text-left"
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-10 h-10 rounded-lg border border-border overflow-hidden bg-background relative flex-shrink-0">
-                                                {((isFlipped && currentStyle.cardBackImage) || (!isFlipped && currentStyle.backgroundImage)) ? (
-                                                    <ResolvedImage
-                                                        src={(isFlipped ? currentStyle.cardBackImage : currentStyle.backgroundImage) || ''}
-                                                        className="w-full h-full object-cover"
-                                                        alt="Template Preview"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                                                        <Layout className="w-4 h-4 opacity-50" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block mb-0.5">
-                                                    Current Template
-                                                </span>
-                                                <span className="text-sm font-bold block text-foreground truncate">
-                                                    {[...TEMPLATES, ...customTemplates].find(t => t.id === currentStyle.id)?.name || 'Custom / Unsaved'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <Settings className="w-4 h-4 text-indigo-500 group-hover:rotate-90 transition-transform flex-shrink-0" />
-                                    </button>
-
-                                    <button
-                                        onClick={handleSave}
-                                        className="w-full py-2 px-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-                                    >
-                                        <Plus className="w-3 h-3" />
-                                        Save Layout as New Template
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Card Elements Group */}
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => toggleGroup('elements')}
-                                className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
-                            >
-                                {expandedGroups.elements ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                                Card Elements
-                            </button>
-
-                            {expandedGroups.elements && (
-                                <div className="space-y-4 pl-2">
-                                    {/* Add Buttons */}
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <button onClick={() => handleAddElement('text')} className="flex flex-col items-center justify-center p-2 rounded bg-muted/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border border-border hover:border-indigo-200 transition-colors gap-1 group" title="Add Text">
-                                            <Type className="w-4 h-4 text-foreground/70 group-hover:text-indigo-500" />
-                                            <span className="text-[10px] text-muted-foreground group-hover:text-indigo-600">Text</span>
-                                        </button>
-                                        <button onClick={() => handleAddElement('multiline')} className="flex flex-col items-center justify-center p-2 rounded bg-muted/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border border-border hover:border-indigo-200 transition-colors gap-1 group" title="Add Multiline Text">
-                                            <Layout className="w-4 h-4 text-foreground/70 group-hover:text-indigo-500" />
-                                            <span className="text-[10px] text-muted-foreground group-hover:text-indigo-600">Multi</span>
-                                        </button>
-                                        <button onClick={() => handleAddElement('image')} className="flex flex-col items-center justify-center p-2 rounded bg-muted/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border border-border hover:border-indigo-200 transition-colors gap-1 group" title="Add Image">
-                                            <Palette className="w-4 h-4 text-foreground/70 group-hover:text-indigo-500" />
-                                            <span className="text-[10px] text-muted-foreground group-hover:text-indigo-600">Image</span>
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-1 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-                                        <AnimatePresence initial={false}>
-                                            {currentStyle.elements?.filter(el => isFlipped ? el.side === 'back' : el.side === 'front')
-                                                .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
-                                                .map(el => (
-                                                    <motion.button
-                                                        key={el.id}
-                                                        layout
-                                                        initial={{ opacity: 0, scale: 0.95 }}
-                                                        animate={{ opacity: 1, scale: 1 }}
-                                                        exit={{ opacity: 0, scale: 0.95 }}
-                                                        transition={{ duration: 0.2 }}
-                                                        onClick={() => setSelectedElement(el.id)}
-                                                        className={cn(
-                                                            "w-full flex items-center gap-3 p-2 rounded-lg text-sm transition-all border",
-                                                            selectedElement === el.id
-                                                                ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20"
-                                                                : "bg-transparent border-transparent hover:bg-muted"
-                                                        )}
-                                                    >
-                                                        <span className="w-6 h-6 rounded bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
-                                                            {el.type === 'image' ? <Palette className="w-3 h-3" /> : (el.type === 'multiline' ? <Layout className="w-3 h-3" /> : <Type className="w-3 h-3" />)}
-                                                        </span>
-                                                        <span className="truncate font-medium flex-1 text-left">{el.name}</span>
-                                                        {selectedElement === el.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
-                                                    </motion.button>
-                                                ))}
-                                        </AnimatePresence>
-
-                                        {(!currentStyle.elements || currentStyle.elements.filter(el => isFlipped ? el.side === 'back' : el.side === 'front').length === 0) && (
-                                            <div className="text-xs text-muted-foreground text-center py-4 italic">
-                                                No elements on this side.
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Card Size Group */}
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => toggleGroup('cardSize')}
-                                className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
-                            >
-                                {expandedGroups.cardSize ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                                <Maximize2 className="w-3 h-3" />
-                                Card Size
-                            </button>
-
-                            {expandedGroups.cardSize && (
-                                <div className="space-y-4 pl-5">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-foreground/70">Size Preset</label>
-                                        <select
-                                            value={currentStyle.cardSizePreset || 'poker'}
-                                            onChange={(e) => {
-                                                const preset = e.target.value as DeckStyle['cardSizePreset'];
-                                                const sizes: Record<string, { width: number; height: number }> = {
-                                                    poker: { width: 375, height: 525 },      // 2.5" x 3.5" (standard poker)
-                                                    bridge: { width: 338, height: 525 },     // 2.25" x 3.5" (bridge)
-                                                    tarot: { width: 413, height: 713 },      // 2.75" x 4.75" (tarot)
-                                                    mini: { width: 263, height: 413 },       // 1.75" x 2.75" (mini)
-                                                    euro: { width: 433, height: 675 },       // 2.875" x 4.5" (euro)
-                                                    square: { width: 450, height: 450 },     // 3" x 3" (square)
-                                                    custom: { width: currentStyle.cardWidth || 375, height: currentStyle.cardHeight || 525 }
-                                                };
-                                                const size = sizes[preset || 'poker'];
-                                                handleStyleChange({
-                                                    cardSizePreset: preset,
-                                                    cardWidth: size.width,
-                                                    cardHeight: size.height
-                                                });
-                                            }}
-                                            className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                        >
-                                            <option value="poker">Poker (2.5" × 3.5")</option>
-                                            <option value="bridge">Bridge (2.25" × 3.5")</option>
-                                            <option value="tarot">Tarot (2.75" × 4.75")</option>
-                                            <option value="mini">Mini (1.75" × 2.75")</option>
-                                            <option value="euro">Euro (2.875" × 4.5")</option>
-                                            <option value="square">Square (3" × 3")</option>
-                                            <option value="custom">Custom Size</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Custom Size Inputs - only visible when custom is selected */}
-                                    {currentStyle.cardSizePreset === 'custom' && (
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-semibold text-foreground/70">Width (px)</label>
-                                                <input
-                                                    type="number"
-                                                    min="100"
-                                                    max="1000"
-                                                    value={currentStyle.cardWidth || 375}
-                                                    onChange={(e) => handleStyleChange({ cardWidth: Number(e.target.value) })}
-                                                    className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-semibold text-foreground/70">Height (px)</label>
-                                                <input
-                                                    type="number"
-                                                    min="100"
-                                                    max="1000"
-                                                    value={currentStyle.cardHeight || 525}
-                                                    onChange={(e) => handleStyleChange({ cardHeight: Number(e.target.value) })}
-                                                    className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Size Preview */}
-                                    <div className="text-xs text-muted-foreground flex items-center gap-2 pt-1">
-                                        <span className="font-mono bg-muted px-2 py-0.5 rounded">
-                                            {currentStyle.cardWidth || 375} × {currentStyle.cardHeight || 525}
-                                        </span>
-                                        <span>pixels</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Center Panel: Preview */}
-                {/* Center Panel: Preview */}
-                <div
-                    className={cn(
-                        "flex-1 h-full bg-muted/20 relative flex items-center justify-center overflow-hidden select-none",
-                        isDraggingPan ? "cursor-grabbing" : (isPanMode ? "cursor-grab" : "cursor-[zoom-in]")
-                    )}
-                    onClick={() => {
-                        if (!isPanMode && !isDraggingPan) {
-                            setSelectedElement(null);
-                        }
-                    }}
-                    onContextMenu={(e) => e.preventDefault()}
-                    onMouseDown={handlePanMouseDown}
-                    onMouseMove={handlePanMouseMove}
-                    onMouseUp={handlePanMouseUp}
-                    onMouseLeave={handlePanMouseUp}
-                    onWheel={handleWheel}
-                >
-                    <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none"></div>
-
-                    {/* Transformable Canvas Container */}
-                    <div
-                        className="relative z-10 transition-transform duration-75 ease-linear will-change-transform"
-                        style={{
-                            transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${viewScale})`
-                        }}
-                    >
-                        <div data-testid="card-preview" className={cn("shadow-2xl rounded-xl", (isPanMode || isDraggingPan) && "pointer-events-none")}>
-                            <Card
-                                {...previewCard}
-                                deckStyle={currentStyle}
-                                onSelectElement={(id: string | null) => {
-                                    if (!isPanMode) setSelectedElement(id);
-                                }}
-                                isInteractive={!isPanMode} // Disable internal interactivity when in pan mode
-                                selectedElement={selectedElement}
-                                onElementUpdate={(id, updates) => id && handleUpdateElement(id, updates as Partial<CardElement>)}
-                                onDeleteElement={handleDeleteElement}
-                                isFlipped={isFlipped}
-                                allowTextEditing={false}
-                                parentScale={viewScale}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Viewport Controls Toolbar */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-2 py-1.5 bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg z-50">
-                        {/* Front/Back Flip Toggle */}
-                        <div className="flex items-center border-r border-border pr-2 mr-1 gap-1">
-                            <button
-                                onClick={() => {
-                                    setIsFlipped(false);
-                                    setSelectedElement(null);
-                                }}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
-                                    !isFlipped ? "bg-indigo-600 text-white shadow-sm" : "text-muted-foreground hover:bg-muted"
-                                )}
-                            >
-                                Front
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setIsFlipped(!isFlipped);
-                                    setSelectedElement(null);
-                                }}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
-                                    isFlipped ? "bg-indigo-600 text-white shadow-sm" : "text-muted-foreground hover:bg-muted"
-                                )}
-                            >
-                                Back
-                            </button>
-                        </div>
-
-                        <div className="flex items-center border-r border-border pr-2 mr-1">
-                            <button
-                                onClick={() => setIsPanMode(false)}
-                                className={cn(
-                                    "p-2 rounded-full transition-all",
-                                    !isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                                )}
-                                title="Select Mode"
-                            >
-                                <MousePointer2 className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setIsPanMode(true)}
-                                className={cn(
-                                    "p-2 rounded-full transition-all",
-                                    isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                                )}
-                                title="Pan Mode"
-                            >
-                                <Hand className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        <button onClick={handleZoomOut} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
-                            <ZoomOut className="w-4 h-4" />
+            <div className="flex flex-col h-[calc(100vh-7.5rem)] bg-background overflow-hidden animate-in fade-in duration-300">
+                {/* Toolbar Header */}
+                <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4 shadow-sm z-20 flex-shrink-0">
+                    <div className="flex items-center gap-4">
+                        <button onClick={onBack} className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                            <ArrowLeft size={18} />
+                            <span className="font-medium">Back</span>
                         </button>
-                        <span className="text-xs font-mono font-medium min-w-[3ch] text-center">
-                            {Math.round(viewScale * 100)}%
-                        </span>
-                        <button onClick={handleZoomIn} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
-                            <ZoomIn className="w-4 h-4" />
-                        </button>
+                        <div className="h-6 w-px bg-border" />
+                        <div className="flex items-center gap-1">
+                            <button onClick={undo} disabled={history.past.length === 0} className="p-2 hover:bg-muted rounded-md disabled:opacity-30 transition-colors" title="Undo">
+                                <Undo size={18} />
+                            </button>
+                            <button onClick={redo} disabled={history.future.length === 0} className="p-2 hover:bg-muted rounded-md disabled:opacity-30 transition-colors" title="Redo">
+                                <Redo size={18} />
+                            </button>
+                        </div>
+                    </div>
 
-                        <div className="w-px h-4 bg-border mx-1" />
+                    <div className="font-semibold text-foreground hidden md:block">
+                        Global Style Editor
+                    </div>
 
-                        <button onClick={handleResetView} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors" title="Reset View">
-                            <RotateCcw className="w-3 h-3" />
+                    <div className="flex items-center gap-2">
+                        <button onClick={onBack} className="ml-2 px-4 py-1.5 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 transition-colors">
+                            Done
                         </button>
                     </div>
                 </div>
 
-                {/* Right Panel: Inspector */}
-                <div className="w-[350px] flex-shrink-0 h-full border-l border-border bg-card overflow-y-auto custom-scrollbar p-6">
-                    {renderInspectorContent()}
-                </div>
+                <div className="flex flex-1 overflow-hidden relative">
+                    {/* Left Panel: Assets */}
+                    <div className="w-[300px] flex-shrink-0 h-full border-r border-border bg-card overflow-y-auto custom-scrollbar flex flex-col">
+                        <div className="sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border p-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+                                    <Box className="w-4 h-4" />
+                                    Assets
+                                </h3>
+                            </div>
+                        </div>
 
-                {/* Confirmation Dialog */}
-                <AnimatePresence>
-                    {showConfirmDialog && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                onClick={() => setShowConfirmDialog(false)}
-                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                            />
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className="relative w-full max-w-md bg-background border border-border rounded-2xl shadow-2xl overflow-hidden z-10"
-                            >
-                                <div className="p-6">
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-foreground">Unsaved Changes</h3>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                You've modified the global deck style. Would you like to save these changes before leaving?
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-3">
-                                        <button
-                                            onClick={async () => {
-                                                if (onUpdateStyleAndSync) {
-                                                    await onUpdateStyleAndSync(currentStyle);
-                                                } else {
-                                                    onUpdateStyle(currentStyle);
-                                                }
-                                                setShowConfirmDialog(false);
-                                                onBack();
-                                            }}
-                                            className="w-full px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
-                                        >
-                                            <Save className="w-4 h-4" />
-                                            Save & Sync Changes
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setShowConfirmDialog(false);
-                                                onBack();
-                                            }}
-                                            className="w-full px-4 py-3 bg-muted text-foreground rounded-xl font-bold hover:bg-muted/80 transition-colors"
-                                        >
-                                            Discard Changes
-                                        </button>
-                                        <button
-                                            onClick={() => setShowConfirmDialog(false)}
-                                            className="w-full px-4 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
-                                        >
-                                            Keep Editing
-                                        </button>
-                                    </div>
-                                </div>
-
+                        <div className="p-4 space-y-6">
+                            {/* Templates Group */}
+                            <div className="space-y-2">
                                 <button
-                                    onClick={() => setShowConfirmDialog(false)}
-                                    className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
+                                    onClick={() => toggleGroup('templates')}
+                                    className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
                                 >
-                                    <X className="w-4 h-4" />
+                                    {expandedGroups.templates ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                    Templates
                                 </button>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
 
-                {/* Save Template Modal */}
-                <AnimatePresence>
-                    {showSaveTemplateModal && (
-                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                onClick={() => !isSaving && setShowSaveTemplateModal(false)}
-                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                            />
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className="bg-card border border-border rounded-2xl p-6 w-full max-w-md relative z-10 shadow-2xl"
-                            >
-                                <h2 className="text-xl font-bold mb-2">Save Custom Template</h2>
-                                <p className="text-muted-foreground text-sm mb-6">
-                                    Enter a name for your new template. This will generate an SVG file with your layout markers and sync it to your Google Drive.
-                                </p>
+                                {expandedGroups.templates && (
+                                    <div className="space-y-3 pl-0">
+                                        <button
+                                            onClick={() => setIsTemplatePickerOpen(true)}
+                                            className="w-full p-3 rounded-xl border border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm flex items-center justify-between group hover:bg-indigo-100/50 dark:hover:bg-indigo-900/30 transition-all text-left"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 rounded-lg border border-border overflow-hidden bg-background relative flex-shrink-0">
+                                                    {((isFlipped && currentStyle.cardBackImage) || (!isFlipped && currentStyle.backgroundImage)) ? (
+                                                        <ResolvedImage
+                                                            src={(isFlipped ? currentStyle.cardBackImage : currentStyle.backgroundImage) || ''}
+                                                            className="w-full h-full object-cover"
+                                                            alt="Template Preview"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                                                            <Layout className="w-4 h-4 opacity-50" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider block mb-0.5">
+                                                        Current Template
+                                                    </span>
+                                                    <span className="text-sm font-bold block text-foreground truncate">
+                                                        {[...TEMPLATES, ...customTemplates].find(t => t.id === currentStyle.id)?.name || 'Custom / Unsaved'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <Settings className="w-4 h-4 text-indigo-500 group-hover:rotate-90 transition-transform flex-shrink-0" />
+                                        </button>
 
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Template Name</label>
-                                        <input
-                                            type="text"
-                                            value={newTemplateName}
-                                            onChange={(e) => setNewTemplateName(e.target.value)}
-                                            placeholder="e.g. My Awesome Layout"
-                                            className="w-full bg-muted border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                            autoFocus
-                                        />
+                                        <button
+                                            onClick={handleSave}
+                                            className="w-full py-2 px-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                            Save Layout as New Template
+                                        </button>
                                     </div>
+                                )}
+                            </div>
 
-                                    <div className="flex flex-col gap-3 pt-4">
-                                        {driveService.isSignedIn ? (
-                                            <button
-                                                onClick={handleSaveNewTemplate}
-                                                disabled={!newTemplateName.trim() || isSaving}
-                                                className="w-full bg-indigo-600 text-white rounded-xl py-3 font-bold hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
-                                            >
-                                                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Cloud className="w-5 h-5" />}
-                                                Save & Sync to GDrive
+                            {/* Card Elements Group */}
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => toggleGroup('elements')}
+                                    className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
+                                >
+                                    {expandedGroups.elements ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                    Card Elements
+                                </button>
+
+                                {expandedGroups.elements && (
+                                    <div className="space-y-4 pl-2">
+                                        {/* Add Buttons */}
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <button onClick={() => handleAddElement('text')} className="flex flex-col items-center justify-center p-2 rounded bg-muted/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border border-border hover:border-indigo-200 transition-colors gap-1 group" title="Add Text">
+                                                <Type className="w-4 h-4 text-foreground/70 group-hover:text-indigo-500" />
+                                                <span className="text-[10px] text-muted-foreground group-hover:text-indigo-600">Text</span>
                                             </button>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase text-center">
-                                                    Google Drive not connected
-                                                </p>
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            await driveService.signIn();
-                                                            // Force re-render to show sync button
-                                                            setNewTemplateName(prev => prev + ' ');
-                                                            setNewTemplateName(prev => prev.trim());
-                                                        } catch (e) {
-                                                            console.error(e);
-                                                        }
-                                                    }}
-                                                    className="w-full bg-white border border-border text-foreground rounded-xl py-3 font-bold hover:bg-muted transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    <Cloud className="w-5 h-5 text-indigo-500" />
-                                                    Connect Google Drive to Sync
-                                                </button>
+                                            <button onClick={() => handleAddElement('multiline')} className="flex flex-col items-center justify-center p-2 rounded bg-muted/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border border-border hover:border-indigo-200 transition-colors gap-1 group" title="Add Multiline Text">
+                                                <Layout className="w-4 h-4 text-foreground/70 group-hover:text-indigo-500" />
+                                                <span className="text-[10px] text-muted-foreground group-hover:text-indigo-600">Multi</span>
+                                            </button>
+                                            <button onClick={() => handleAddElement('image')} className="flex flex-col items-center justify-center p-2 rounded bg-muted/50 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 border border-border hover:border-indigo-200 transition-colors gap-1 group" title="Add Image">
+                                                <Palette className="w-4 h-4 text-foreground/70 group-hover:text-indigo-500" />
+                                                <span className="text-[10px] text-muted-foreground group-hover:text-indigo-600">Image</span>
+                                            </button>
+                                        </div>
+
+                                        <div className="space-y-1 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                                            <AnimatePresence initial={false}>
+                                                {currentStyle.elements?.filter(el => isFlipped ? el.side === 'back' : el.side === 'front')
+                                                    .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
+                                                    .map(el => (
+                                                        <motion.button
+                                                            key={el.id}
+                                                            layout
+                                                            initial={{ opacity: 0, scale: 0.95 }}
+                                                            animate={{ opacity: 1, scale: 1 }}
+                                                            exit={{ opacity: 0, scale: 0.95 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            onClick={() => setSelectedElement(el.id)}
+                                                            className={cn(
+                                                                "w-full flex items-center gap-3 p-2 rounded-lg text-sm transition-all border",
+                                                                selectedElement === el.id
+                                                                    ? "bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20"
+                                                                    : "bg-transparent border-transparent hover:bg-muted"
+                                                            )}
+                                                        >
+                                                            <span className="w-6 h-6 rounded bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                                                                {el.type === 'image' ? <Palette className="w-3 h-3" /> : (el.type === 'multiline' ? <Layout className="w-3 h-3" /> : <Type className="w-3 h-3" />)}
+                                                            </span>
+                                                            <span className="truncate font-medium flex-1 text-left">{el.name}</span>
+                                                            {selectedElement === el.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                                                        </motion.button>
+                                                    ))}
+                                            </AnimatePresence>
+
+                                            {(!currentStyle.elements || currentStyle.elements.filter(el => isFlipped ? el.side === 'back' : el.side === 'front').length === 0) && (
+                                                <div className="text-xs text-muted-foreground text-center py-4 italic">
+                                                    No elements on this side.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Card Size Group */}
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => toggleGroup('cardSize')}
+                                    className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full"
+                                >
+                                    {expandedGroups.cardSize ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                    <Maximize2 className="w-3 h-3" />
+                                    Card Size
+                                </button>
+
+                                {expandedGroups.cardSize && (
+                                    <div className="space-y-4 pl-5">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-foreground/70">Size Preset</label>
+                                            <select
+                                                value={currentStyle.cardSizePreset || 'poker'}
+                                                onChange={(e) => {
+                                                    const preset = e.target.value as DeckStyle['cardSizePreset'];
+                                                    const sizes: Record<string, { width: number; height: number }> = {
+                                                        poker: { width: 375, height: 525 },      // 2.5" x 3.5" (standard poker)
+                                                        bridge: { width: 338, height: 525 },     // 2.25" x 3.5" (bridge)
+                                                        tarot: { width: 413, height: 713 },      // 2.75" x 4.75" (tarot)
+                                                        mini: { width: 263, height: 413 },       // 1.75" x 2.75" (mini)
+                                                        euro: { width: 433, height: 675 },       // 2.875" x 4.5" (euro)
+                                                        square: { width: 450, height: 450 },     // 3" x 3" (square)
+                                                        custom: { width: currentStyle.cardWidth || 375, height: currentStyle.cardHeight || 525 }
+                                                    };
+                                                    const size = sizes[preset || 'poker'];
+                                                    handleStyleChange({
+                                                        cardSizePreset: preset,
+                                                        cardWidth: size.width,
+                                                        cardHeight: size.height
+                                                    });
+                                                }}
+                                                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                            >
+                                                <option value="poker">Poker (2.5" × 3.5")</option>
+                                                <option value="bridge">Bridge (2.25" × 3.5")</option>
+                                                <option value="tarot">Tarot (2.75" × 4.75")</option>
+                                                <option value="mini">Mini (1.75" × 2.75")</option>
+                                                <option value="euro">Euro (2.875" × 4.5")</option>
+                                                <option value="square">Square (3" × 3")</option>
+                                                <option value="custom">Custom Size</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Custom Size Inputs - only visible when custom is selected */}
+                                        {currentStyle.cardSizePreset === 'custom' && (
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-semibold text-foreground/70">Width (px)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="100"
+                                                        max="1000"
+                                                        value={currentStyle.cardWidth || 375}
+                                                        onChange={(e) => handleStyleChange({ cardWidth: Number(e.target.value) })}
+                                                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-semibold text-foreground/70">Height (px)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="100"
+                                                        max="1000"
+                                                        value={currentStyle.cardHeight || 525}
+                                                        onChange={(e) => handleStyleChange({ cardHeight: Number(e.target.value) })}
+                                                        className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                    />
+                                                </div>
                                             </div>
                                         )}
 
-                                        <div className="grid grid-cols-2 gap-3">
+                                        {/* Size Preview */}
+                                        <div className="text-xs text-muted-foreground flex items-center gap-2 pt-1">
+                                            <span className="font-mono bg-muted px-2 py-0.5 rounded">
+                                                {currentStyle.cardWidth || 375} × {currentStyle.cardHeight || 525}
+                                            </span>
+                                            <span>pixels</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Center Panel: Preview */}
+                    {/* Center Panel: Preview */}
+                    <div
+                        className={cn(
+                            "flex-1 h-full bg-muted/20 relative flex items-center justify-center overflow-hidden select-none",
+                            isDraggingPan ? "cursor-grabbing" : (isPanMode ? "cursor-grab" : "cursor-[zoom-in]")
+                        )}
+                        onClick={() => {
+                            if (!isPanMode && !isDraggingPan) {
+                                setSelectedElement(null);
+                            }
+                        }}
+                        onContextMenu={(e) => e.preventDefault()}
+                        onMouseDown={handlePanMouseDown}
+                        onMouseMove={handlePanMouseMove}
+                        onMouseUp={handlePanMouseUp}
+                        onMouseLeave={handlePanMouseUp}
+                        onWheel={handleWheel}
+                    >
+                        <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none"></div>
+
+                        {/* Transformable Canvas Container */}
+                        <div
+                            className="relative z-10 transition-transform duration-75 ease-linear will-change-transform"
+                            style={{
+                                transform: `translate(${viewPan.x}px, ${viewPan.y}px) scale(${viewScale})`
+                            }}
+                        >
+                            <div data-testid="card-preview" className={cn("shadow-2xl rounded-xl", (isPanMode || isDraggingPan) && "pointer-events-none")}>
+                                <Card
+                                    {...previewCard}
+                                    deckStyle={currentStyle}
+                                    onSelectElement={(id: string | null) => {
+                                        if (!isPanMode) setSelectedElement(id);
+                                    }}
+                                    isInteractive={!isPanMode} // Disable internal interactivity when in pan mode
+                                    selectedElement={selectedElement}
+                                    onElementUpdate={(id, updates) => id && handleUpdateElement(id, updates as Partial<CardElement>)}
+                                    onDeleteElement={handleDeleteElement}
+                                    isFlipped={isFlipped}
+                                    allowTextEditing={false}
+                                    parentScale={viewScale}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Viewport Controls Toolbar */}
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-2 py-1.5 bg-background/80 backdrop-blur-md border border-border rounded-full shadow-lg z-50">
+                            {/* Front/Back Flip Toggle */}
+                            <div className="flex items-center border-r border-border pr-2 mr-1 gap-1">
+                                <button
+                                    onClick={() => {
+                                        setIsFlipped(false);
+                                        setSelectedElement(null);
+                                    }}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                                        !isFlipped ? "bg-indigo-600 text-white shadow-sm" : "text-muted-foreground hover:bg-muted"
+                                    )}
+                                >
+                                    Front
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsFlipped(!isFlipped);
+                                        setSelectedElement(null);
+                                    }}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                                        isFlipped ? "bg-indigo-600 text-white shadow-sm" : "text-muted-foreground hover:bg-muted"
+                                    )}
+                                >
+                                    Back
+                                </button>
+                            </div>
+
+                            <div className="flex items-center border-r border-border pr-2 mr-1">
+                                <button
+                                    onClick={() => setIsPanMode(false)}
+                                    className={cn(
+                                        "p-2 rounded-full transition-all",
+                                        !isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    )}
+                                    title="Select Mode"
+                                >
+                                    <MousePointer2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setIsPanMode(true)}
+                                    className={cn(
+                                        "p-2 rounded-full transition-all",
+                                        isPanMode ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    )}
+                                    title="Pan Mode"
+                                >
+                                    <Hand className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <button onClick={handleZoomOut} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+                                <ZoomOut className="w-4 h-4" />
+                            </button>
+                            <span className="text-xs font-mono font-medium min-w-[3ch] text-center">
+                                {Math.round(viewScale * 100)}%
+                            </span>
+                            <button onClick={handleZoomIn} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+                                <ZoomIn className="w-4 h-4" />
+                            </button>
+
+                            <div className="w-px h-4 bg-border mx-1" />
+
+                            <button onClick={handleResetView} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors" title="Reset View">
+                                <RotateCcw className="w-3 h-3" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Right Panel: Inspector */}
+                    <div className="w-[350px] flex-shrink-0 h-full border-l border-border bg-card overflow-y-auto custom-scrollbar p-6">
+                        {renderInspectorContent()}
+                    </div>
+
+                    {/* Confirmation Dialog */}
+                    <AnimatePresence>
+                        {showConfirmDialog && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setShowConfirmDialog(false)}
+                                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                />
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    className="relative w-full max-w-md bg-background border border-border rounded-2xl shadow-2xl overflow-hidden z-10"
+                                >
+                                    <div className="p-6">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-foreground">Unsaved Changes</h3>
+                                                <p className="text-sm text-muted-foreground mt-1">
+                                                    You've modified the global deck style. Would you like to save these changes before leaving?
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-3">
                                             <button
-                                                onClick={handleDownloadTemplate}
-                                                disabled={!newTemplateName.trim() || isSaving}
-                                                className="bg-muted text-foreground rounded-xl py-3 font-bold hover:bg-muted/80 transition-all text-sm flex items-center justify-center gap-2"
+                                                onClick={async () => {
+                                                    if (onUpdateStyleAndSync) {
+                                                        await onUpdateStyleAndSync(currentStyle);
+                                                    } else {
+                                                        onUpdateStyle(currentStyle);
+                                                    }
+                                                    setShowConfirmDialog(false);
+                                                    onBack();
+                                                }}
+                                                className="w-full px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2"
                                             >
-                                                <Download className="w-4 h-4" />
-                                                Download SVG
+                                                <Save className="w-4 h-4" />
+                                                Save & Sync Changes
                                             </button>
                                             <button
                                                 onClick={() => {
-                                                    onUpdateStyle(currentStyle);
+                                                    setShowConfirmDialog(false);
                                                     onBack();
                                                 }}
-                                                disabled={isSaving}
-                                                className="bg-muted text-muted-foreground hover:text-foreground rounded-xl py-3 font-bold transition-all text-sm"
+                                                className="w-full px-4 py-3 bg-muted text-foreground rounded-xl font-bold hover:bg-muted/80 transition-colors"
                                             >
-                                                Apply Locally
+                                                Discard Changes
+                                            </button>
+                                            <button
+                                                onClick={() => setShowConfirmDialog(false)}
+                                                className="w-full px-4 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+                                            >
+                                                Keep Editing
                                             </button>
                                         </div>
-
-                                        <button
-                                            onClick={() => setShowSaveTemplateModal(false)}
-                                            disabled={isSaving}
-                                            className="w-full py-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
-                                        >
-                                            Cancel
-                                        </button>
                                     </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
+
+                                    <button
+                                        onClick={() => setShowConfirmDialog(false)}
+                                        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Save Template Modal */}
+                    <AnimatePresence>
+                        {showSaveTemplateModal && (
+                            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => !isSaving && setShowSaveTemplateModal(false)}
+                                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                />
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    className="bg-card border border-border rounded-2xl p-6 w-full max-w-md relative z-10 shadow-2xl"
+                                >
+                                    <h2 className="text-xl font-bold mb-2">Save Custom Template</h2>
+                                    <p className="text-muted-foreground text-sm mb-6">
+                                        Enter a name for your new template. This will generate an SVG file with your layout markers and sync it to your Google Drive.
+                                    </p>
+
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Template Name</label>
+                                            <input
+                                                type="text"
+                                                value={newTemplateName}
+                                                onChange={(e) => setNewTemplateName(e.target.value)}
+                                                placeholder="e.g. My Awesome Layout"
+                                                className="w-full bg-muted border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                autoFocus
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col gap-3 pt-4">
+                                            {driveService.isSignedIn ? (
+                                                <button
+                                                    onClick={handleSaveNewTemplate}
+                                                    disabled={!newTemplateName.trim() || isSaving}
+                                                    className="w-full bg-indigo-600 text-white rounded-xl py-3 font-bold hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                                                >
+                                                    {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Cloud className="w-5 h-5" />}
+                                                    Save & Sync to GDrive
+                                                </button>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase text-center">
+                                                        Google Drive not connected
+                                                    </p>
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                await driveService.signIn();
+                                                                // Force re-render to show sync button
+                                                                setNewTemplateName(prev => prev + ' ');
+                                                                setNewTemplateName(prev => prev.trim());
+                                                            } catch (e) {
+                                                                console.error(e);
+                                                            }
+                                                        }}
+                                                        className="w-full bg-white border border-border text-foreground rounded-xl py-3 font-bold hover:bg-muted transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <Cloud className="w-5 h-5 text-indigo-500" />
+                                                        Connect Google Drive to Sync
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button
+                                                    onClick={handleDownloadTemplate}
+                                                    disabled={!newTemplateName.trim() || isSaving}
+                                                    className="bg-muted text-foreground rounded-xl py-3 font-bold hover:bg-muted/80 transition-all text-sm flex items-center justify-center gap-2"
+                                                >
+                                                    <Download className="w-4 h-4" />
+                                                    Download SVG
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        onUpdateStyle(currentStyle);
+                                                        onBack();
+                                                    }}
+                                                    disabled={isSaving}
+                                                    className="bg-muted text-muted-foreground hover:text-foreground rounded-xl py-3 font-bold transition-all text-sm"
+                                                >
+                                                    Apply Locally
+                                                </button>
+                                            </div>
+
+                                            <button
+                                                onClick={() => setShowSaveTemplateModal(false)}
+                                                disabled={isSaving}
+                                                className="w-full py-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
             <TemplatePickerModal
                 isOpen={isTemplatePickerOpen}

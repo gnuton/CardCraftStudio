@@ -1,15 +1,12 @@
 import { motion } from 'framer-motion';
-import { Check, X, Moon, Sun } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 
-interface PricingPageProps {
-    onBack: () => void;
+interface PricingSectionProps {
     isAuthenticated: boolean;
-    theme: 'light' | 'dark';
-    toggleTheme: () => void;
 }
 
-export const PricingPage = ({ onBack, isAuthenticated, theme, toggleTheme }: PricingPageProps) => {
+export const PricingSection = ({ isAuthenticated }: PricingSectionProps) => {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
     const tiers = [
@@ -30,7 +27,7 @@ export const PricingPage = ({ onBack, isAuthenticated, theme, toggleTheme }: Pri
                 'Team Collaboration'
             ],
             buttonText: isAuthenticated ? 'Current Plan' : 'Get Started',
-            buttonAction: onBack,
+            buttonAction: () => { },
             popular: false
         },
         {
@@ -71,25 +68,10 @@ export const PricingPage = ({ onBack, isAuthenticated, theme, toggleTheme }: Pri
     ];
 
     return (
-        <div className="min-h-screen bg-transparent text-neutral-900 dark:text-neutral-50 font-sans selection:bg-blue-100 dark:selection:bg-blue-900/30">
-
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <section id="pricing" className="py-24 relative bg-transparent text-neutral-900 dark:text-neutral-50 font-sans">
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <div className="flex justify-between items-center mb-8">
-                        <button
-                            onClick={onBack}
-                            className="inline-flex items-center text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
-                        >
-                            ← Back to Home
-                        </button>
-                        <button
-                            onClick={toggleTheme}
-                            className="p-2 rounded-full text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                        >
-                            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                        </button>
-                    </div>
-                    <h1 className="text-4xl md:text-5xl font-bold mb-6">Simple, Transparent Pricing</h1>
+                    <h2 className="text-4xl md:text-5xl font-bold mb-6">Simple, Transparent Pricing</h2>
                     <p className="text-xl text-neutral-600 dark:text-neutral-400 mb-10">
                         Start for free, upgrade when you need AI superpowers.
                     </p>
@@ -122,7 +104,8 @@ export const PricingPage = ({ onBack, isAuthenticated, theme, toggleTheme }: Pri
                         <motion.div
                             key={idx}
                             initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: idx * 0.1 }}
                             className={`relative rounded-3xl p-8 border ${tier.popular
                                 ? 'border-blue-500 dark:border-blue-500 bg-white dark:bg-neutral-900 shadow-2xl shadow-blue-900/10 z-10 scale-105'
@@ -175,6 +158,6 @@ export const PricingPage = ({ onBack, isAuthenticated, theme, toggleTheme }: Pri
                     ))}
                 </div>
             </div>
-        </div>
+        </section>
     );
 };

@@ -16,9 +16,12 @@ import {
     Moon,
     Sun,
     Shield,
-
     Cloud,
-    Heart
+    Heart,
+    FolderPlus,
+    Palette,
+    Wand2,
+    Download
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import logo from '../assets/logo.png';
@@ -27,10 +30,11 @@ import featureAssetManagement from '../assets/feature-asset-management.png';
 import featureCardEditor from '../assets/feature-card-editor.png';
 import featureAiTools from '../assets/feature-ai-tools.png';
 
+import { PricingSection } from './PricingSection';
+
 interface LandingPageProps {
     onEnter: () => void;
     onLogin: () => void;
-    onPricing: () => void;
     isAuthenticated: boolean;
     theme: 'light' | 'dark';
     toggleTheme: () => void;
@@ -38,7 +42,7 @@ interface LandingPageProps {
 
 
 
-export const LandingPage = ({ onEnter, onLogin, onPricing, isAuthenticated, theme, toggleTheme }: LandingPageProps) => {
+export const LandingPage = ({ onEnter, onLogin, isAuthenticated, theme, toggleTheme }: LandingPageProps) => {
     return (
         <div className="min-h-screen bg-transparent text-neutral-900 dark:text-neutral-50 font-sans selection:bg-blue-100 dark:selection:bg-blue-900/30">
 
@@ -46,7 +50,6 @@ export const LandingPage = ({ onEnter, onLogin, onPricing, isAuthenticated, them
                 <Navbar
                     onEnter={onEnter}
                     onLogin={onLogin}
-                    onPricing={onPricing}
                     isAuthenticated={isAuthenticated}
                     theme={theme}
                     toggleTheme={toggleTheme}
@@ -54,6 +57,7 @@ export const LandingPage = ({ onEnter, onLogin, onPricing, isAuthenticated, them
                 <main className="flex flex-col">
                     <HeroSection onEnter={onEnter} onLogin={onLogin} isAuthenticated={isAuthenticated} />
                     <FeatureSection />
+                    <PricingSection isAuthenticated={isAuthenticated} />
                     <PrivacySection />
                     <WorkflowSection />
                     <Footer />
@@ -63,7 +67,7 @@ export const LandingPage = ({ onEnter, onLogin, onPricing, isAuthenticated, them
     );
 };
 
-const Navbar = ({ onEnter, onLogin, onPricing, isAuthenticated, theme, toggleTheme }: LandingPageProps) => {
+const Navbar = ({ onEnter, onLogin, isAuthenticated, theme, toggleTheme }: LandingPageProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
@@ -114,9 +118,8 @@ const Navbar = ({ onEnter, onLogin, onPricing, isAuthenticated, theme, toggleThe
                     {/* Desktop Nav */}
                     <div className="hidden md:flex items-center space-x-8">
                         <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</a>
-                        <button onClick={onPricing} className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</button>
+                        <a href="#pricing" onClick={(e) => scrollToSection(e, 'pricing')} className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</a>
                         <a href="#workflow" onClick={(e) => scrollToSection(e, 'workflow')} className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Workflow</a>
-                        <a href="https://github.com/gnuton/CardCraftStudio" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">GitHub</a>
 
                         <div className="flex items-center gap-3 ml-4">
                             <button
@@ -155,7 +158,7 @@ const Navbar = ({ onEnter, onLogin, onPricing, isAuthenticated, theme, toggleThe
                 <div className="md:hidden border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
                     <div className="px-4 py-6 space-y-4">
                         <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="block text-base font-medium text-neutral-600 dark:text-neutral-400">Features</a>
-                        <button onClick={() => { onPricing(); setIsMenuOpen(false); }} className="block text-base font-medium text-neutral-600 dark:text-neutral-400 w-full text-left">Pricing</button>
+                        <a href="#pricing" onClick={(e) => scrollToSection(e, 'pricing')} className="block text-base font-medium text-neutral-600 dark:text-neutral-400">Pricing</a>
                         <a href="#workflow" onClick={(e) => scrollToSection(e, 'workflow')} className="block text-base font-medium text-neutral-600 dark:text-neutral-400">Workflow</a>
                         <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 flex flex-col gap-3">
                             {!isAuthenticated && (
@@ -443,15 +446,72 @@ const PrivacySection = () => {
 };
 
 const WorkflowSection = () => {
+    const steps = [
+        {
+            icon: <FolderPlus className="w-8 h-8 text-blue-600 dark:text-blue-400" />,
+            title: "1. Create & Organize",
+            description: "Start by creating a deck and importing your flavor text, stats, and image assets."
+        },
+        {
+            icon: <Palette className="w-8 h-8 text-purple-600 dark:text-purple-400" />,
+            title: "2. Design Templates",
+            description: "Use the visual editor to build intelligent layouts using rich text, shapes, and image placeholders."
+        },
+        {
+            icon: <Wand2 className="w-8 h-8 text-orange-600 dark:text-orange-400" />,
+            title: "3. Apply & Generate",
+            description: "Apply your dynamic templates to your cards. Use integrated AI tools to generate artwork instantly."
+        },
+        {
+            icon: <Download className="w-8 h-8 text-green-600 dark:text-green-400" />,
+            title: "4. Export & Print",
+            description: "Export your finished cards as high-resolution PDFs for print-and-play or images for digital tabletop."
+        }
+    ];
+
     return (
-        <section id="workflow" className="py-24 relative">
+        <section id="workflow" className="py-24 relative bg-transparent">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center max-w-3xl mx-auto mb-20"
+                >
+                    <h2 className="text-3xl md:text-5xl font-bold mb-6 text-neutral-900 dark:text-white">How it Works</h2>
+                    <p className="text-lg text-neutral-600 dark:text-neutral-400">
+                        From raw idea to print-ready assets in four simple steps.
+                    </p>
+                </motion.div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-24">
+                    {steps.map((step, idx) => (
+                        <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: idx * 0.1 }}
+                            className="bg-white dark:bg-neutral-900 rounded-2xl p-8 border border-neutral-200 dark:border-neutral-800 hover:shadow-xl transition-all hover:-translate-y-1 shadow-sm"
+                        >
+                            <div className="mb-6 inline-flex p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700">
+                                {step.icon}
+                            </div>
+                            <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3">{step.title}</h3>
+                            <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                {step.description}
+                            </p>
+                        </motion.div>
+                    ))}
+                </div>
+
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5 }}
-                    className="relative rounded-3xl p-12 md:p-24 text-center overflow-hidden group"
+                    className="relative rounded-3xl p-12 md:p-20 text-center overflow-hidden group"
                 >
                     {/* Fancy Background */}
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 z-0"></div>
@@ -462,7 +522,7 @@ const WorkflowSection = () => {
                     <div className="absolute bottom-0 left-0 w-96 h-96 bg-black/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
 
                     <div className="relative z-10 max-w-3xl mx-auto">
-                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-8 drop-shadow-sm">Ready to bring your game to life?</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 drop-shadow-sm">Ready to bring your game to life?</h2>
                         <p className="text-blue-100/90 text-xl mb-10 font-medium max-w-2xl mx-auto">
                             Join thousands of designers creating their prototypes and final assets with CardCraft.
                         </p>
