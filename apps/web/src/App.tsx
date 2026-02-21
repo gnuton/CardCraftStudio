@@ -474,6 +474,7 @@ function App() {
   const [view, setView] = useState<'landing' | 'library' | 'deck' | 'editor' | 'style' | 'pricing'>('landing');
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [isNewDeckDialogOpen, setIsNewDeckDialogOpen] = useState(false);
+  const [initialOpenTemplatePicker, setInitialOpenTemplatePicker] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
   const [deckToDelete, setDeckToDelete] = useState<string | null>(null);
 
@@ -561,7 +562,8 @@ function App() {
     };
     setDecks(prev => [...prev, newDeck]);
     setActiveDeckId(newDeck.id);
-    setView('deck');
+    setInitialOpenTemplatePicker(true);
+    setView('style');
     setIsNewDeckDialogOpen(false);
     addToast(`Created deck "${name}"`, 'success');
   };
@@ -928,7 +930,10 @@ function App() {
                   onUpdateProjectName={handleUpdateProjectName}
                   onUpdateCard={handleUpdateCardInDeck}
                   onDuplicateCard={handleDuplicateCard}
-                  onOpenStyleEditor={() => setView('style')}
+                  onOpenStyleEditor={() => {
+                    setInitialOpenTemplatePicker(false);
+                    setView('style');
+                  }}
                 />
               )}
 
@@ -947,13 +952,17 @@ function App() {
                 <GlobalStyleEditor
                   deckStyle={activeDeck.style}
                   sampleCard={activeDeck.cards[0]}
+                  initialOpenTemplatePicker={initialOpenTemplatePicker}
                   onUpdateStyle={handleUpdateDeckStyle}
                   onUpdateStyleAndSync={async (style: DeckStyle) => {
                     handleUpdateDeckStyle(style);
                     const updatedDeck = { ...activeDeck, style, updatedAt: Date.now() };
                     await handleSync([updatedDeck], false);
                   }}
-                  onBack={() => setView('deck')}
+                  onBack={() => {
+                    setInitialOpenTemplatePicker(false);
+                    setView('deck');
+                  }}
                 />
               )}
             </motion.main>

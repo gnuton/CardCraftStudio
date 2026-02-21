@@ -62,7 +62,7 @@ export const createDefaultElement = (type: CardElement['type'], side: 'front' | 
             return {
                 ...base,
                 name: 'New Text',
-                fontFamily: 'sans-serif',
+                fontFamily: 'inherit / default',
                 fontSize: 16,
                 color: '#000000',
                 textAlign: 'left',
@@ -72,7 +72,7 @@ export const createDefaultElement = (type: CardElement['type'], side: 'front' | 
             return {
                 ...base,
                 name: 'New Description',
-                fontFamily: 'sans-serif',
+                fontFamily: 'inherit / default',
                 fontSize: 14,
                 color: '#000000',
                 textAlign: 'left',

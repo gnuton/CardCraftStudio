@@ -88,6 +88,10 @@ describe('App Component', () => {
             const createDeckBtn = screen.getByRole('button', { name: /Create Deck/i });
             fireEvent.click(createDeckBtn);
 
+            // Skip past the Style Editor to Deck Studio
+            const backToDeckBtn = await screen.findByTitle('Back to Deck');
+            fireEvent.click(backToDeckBtn);
+
             // Navigate: Deck Studio -> Editor (click the Create New Card placeholder)
             const createCardPlaceholder = await screen.findByText('Create New Card');
             fireEvent.click(createCardPlaceholder);
@@ -154,6 +158,10 @@ describe('App Component', () => {
             fireEvent.change(nameInput, { target: { value: 'Card Test Deck' } });
             const createDeckBtn = screen.getByRole('button', { name: /Create Deck/i });
             fireEvent.click(createDeckBtn);
+
+            // Skip past the Style Editor to Deck Studio
+            const backToDeckBtn = await screen.findByTitle('Back to Deck');
+            fireEvent.click(backToDeckBtn);
 
             // 2. Add a Card
             const createCardPlaceholder = await screen.findByText('Create New Card');

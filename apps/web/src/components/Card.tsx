@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ImageIcon } from 'lucide-react';
 import { cn } from '../utils/cn';
 import type { DeckStyle } from '../types/deck';
 import type { CardElement, ImageTransform } from '../types/element';
@@ -78,21 +78,33 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     ) => {
         const [editingElement, setEditingElement] = useState<string | null>(null);
 
-        // Load Global Font
+        const elementFontsStr = deckStyle?.elements?.map(e => e.fontFamily).filter(Boolean).sort().join(',') || '';
+
+        // Load Global and Element Fonts
         useEffect(() => {
+            const fontsToLoad = new Set<string>();
             if (deckStyle?.globalFont) {
-                const url = getGoogleFontUrl([deckStyle.globalFont]);
+                fontsToLoad.add(deckStyle.globalFont);
+            }
+            if (elementFontsStr) {
+                elementFontsStr.split(',').forEach(font => fontsToLoad.add(font));
+            }
+
+            if (fontsToLoad.size > 0) {
+                const url = getGoogleFontUrl(Array.from(fontsToLoad));
                 if (url) {
-                    const link = document.createElement('link');
-                    link.href = url;
-                    link.rel = 'stylesheet';
-                    link.id = `font-${deckStyle.globalFont}`;
-                    if (!document.getElementById(link.id)) {
+                    const cleanNames = Array.from(fontsToLoad).map(f => f.replace(/[^a-zA-Z0-9]/g, '')).join('-');
+                    const linkId = `fonts-${cleanNames}`;
+                    if (!document.getElementById(linkId)) {
+                        const link = document.createElement('link');
+                        link.href = url;
+                        link.rel = 'stylesheet';
+                        link.id = linkId;
                         document.head.appendChild(link);
                     }
                 }
             }
-        }, [deckStyle?.globalFont]);
+        }, [deckStyle?.globalFont, elementFontsStr]);
 
         // Escape to cancel editing
         useEffect(() => {
@@ -127,7 +139,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
 
             // Styles
             const styleProps: React.CSSProperties = {
-                fontFamily: element.fontFamily,
+                fontFamily: element.fontFamily && element.fontFamily !== 'inherit / default' ? element.fontFamily : 'inherit',
                 fontSize: `${element.fontSize}px`,
                 color: element.color,
                 textAlign: (element.textAlign || 'left') as 'left' | 'center' | 'right' | 'justify',
@@ -271,9 +283,20 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
                                     />
                                 </div>
                             </div>
+                        ) : isInteractive ? (
+                            <div className="flex flex-col items-center justify-center w-full h-full bg-slate-50/80 backdrop-blur-sm rounded-lg border-2 border-dashed border-slate-300/80 text-slate-400 select-none overflow-hidden transition-colors hover:bg-slate-100/80 font-sans shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                                <div className="p-3 bg-white shadow-sm rounded-2xl mb-3 border border-slate-100/50 transform transition-transform group-hover:scale-105">
+                                    <ImageIcon className="w-8 h-8 text-slate-400 drop-shadow-sm" strokeWidth={1.5} />
+                                </div>
+                                <span className="text-[11px] font-bold tracking-[0.2em] text-slate-400 text-center px-4 leading-relaxed">
+                                    YOUR IMAGE
+                                    <br />
+                                    HERE
+                                </span>
+                            </div>
                         ) : (
                             <div className="text-xs text-slate-400 text-center px-2 select-none">
-                                {isInteractive ? "Double-click to add image" : "No Content"}
+                                No Content
                             </div>
                         )
                         }

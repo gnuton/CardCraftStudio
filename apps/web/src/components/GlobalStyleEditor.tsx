@@ -248,6 +248,11 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                 type="text"
                                 value={element.name}
                                 onChange={(e) => handleUpdateElement(element.id, { name: e.target.value })}
+                                onBlur={(e) => {
+                                    if (!e.target.value.trim()) {
+                                        handleUpdateElement(element.id, { name: 'Unnamed Element' });
+                                    }
+                                }}
                                 className="w-full bg-muted border border-border rounded px-2 py-1 text-sm"
                             />
                         </div>
@@ -276,6 +281,28 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                             setIsFontPickerOpen(false);
                                         }}
                                     />
+                                </div>
+
+                                <div className="space-y-2 pt-2 border-t border-border">
+                                    <label className="text-xs font-semibold text-foreground/70 flex items-center gap-1">
+                                        Default Text Element Content
+                                    </label>
+                                    {element.type === 'multiline' ? (
+                                        <textarea
+                                            value={element.defaultContent || ''}
+                                            onChange={(e) => handleUpdateElement(element.id, { defaultContent: e.target.value })}
+                                            placeholder="Enter default text..."
+                                            className="w-full bg-muted border border-border rounded px-2 py-2 text-sm min-h-[60px] resize-y"
+                                        />
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={element.defaultContent || ''}
+                                            onChange={(e) => handleUpdateElement(element.id, { defaultContent: e.target.value })}
+                                            placeholder="Enter default text..."
+                                            className="w-full bg-muted border border-border rounded px-2 py-1 text-sm"
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2">
@@ -318,6 +345,45 @@ export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpda
                                             className="flex-1 bg-muted border border-border rounded px-2 py-1 text-sm"
                                         />
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Image Settings */}
+                        {element.type === 'image' && (
+                            <div className="space-y-4 pt-2 border-t border-border">
+                                <h4 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
+                                    <Palette className="w-3 h-3" /> Image Source
+                                </h4>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-foreground/70">Default Image</label>
+                                    {element.url ? (
+                                        <div className="relative group rounded-xl overflow-hidden border border-border aspect-square mt-2 w-32 h-32 mx-auto">
+                                            <ResolvedImage
+                                                src={element.url}
+                                                alt="Default element image"
+                                                className="w-full h-full object-contain"
+                                            />
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                                                <button
+                                                    onClick={() => handleUpdateElement(element.id, { url: null })}
+                                                    className="bg-red-600 text-white px-2 py-1 rounded text-[10px] font-bold"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            onClick={() => {
+                                                setIsImageDialogOpen(true);
+                                            }}
+                                            className="flex flex-col items-center justify-center mt-2 w-full h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
+                                        >
+                                            <span className="text-xs font-semibold text-muted-foreground">Select Default Image</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

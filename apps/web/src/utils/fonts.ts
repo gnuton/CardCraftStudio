@@ -71,8 +71,10 @@ export const GOOGLE_FONTS: FontDef[] = [
 export const getGoogleFontUrl = (fonts: string[]) => {
     if (!fonts || fonts.length === 0) return null;
 
+    const genericFonts = ['sans-serif', 'serif', 'monospace', 'cursive', 'fantasy', 'system-ui', 'inherit / default'];
+
     // Sort and deduplicate
-    const uniqueFonts = Array.from(new Set(fonts.filter(f => f)));
+    const uniqueFonts = Array.from(new Set(fonts.filter(f => f && !genericFonts.includes(f.toLowerCase()))));
     if (uniqueFonts.length === 0) return null;
 
     const query = uniqueFonts

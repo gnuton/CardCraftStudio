@@ -184,7 +184,7 @@ export const TemplatePickerModal = ({
                                                                         alt=""
                                                                     />
                                                                 ) : (
-                                                                    <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: template.style.backgroundColor }}>
+                                                                    <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: isFlipped ? template.style.cardBackBackgroundColor : template.style.backgroundColor }}>
                                                                         <Grid className="w-4 h-4 opacity-30" />
                                                                     </div>
                                                                 )}
@@ -234,12 +234,12 @@ export const TemplatePickerModal = ({
                             </div>
 
                             {/* Right: Live Preview */}
-                            <div className="flex-1 bg-muted/20 relative flex flex-col items-center justify-center p-8 overflow-hidden">
+                            <div className="flex-1 bg-muted/20 relative flex flex-col items-center justify-center p-4 sm:p-8 overflow-y-auto custom-scrollbar">
                                 <div className="absolute inset-0 bg-[radial-gradient(hsl(var(--muted-foreground))_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none"></div>
 
                                 {selectedTemplate ? (
-                                    <div className="relative z-10 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-300">
-                                        <div className="shadow-2xl rounded-xl ring-1 ring-black/5">
+                                    <div className="relative z-10 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-300 my-auto py-4">
+                                        <div className="shadow-2xl rounded-xl ring-1 ring-black/5 shrink-0" style={{ transform: 'scale(0.7)', transformOrigin: 'center', margin: '-75px -56px' }}>
                                             <Card
                                                 {...previewCardData}
                                                 deckStyle={selectedTemplate.style}
