@@ -24,6 +24,7 @@ interface GlobalStyleEditorProps {
     onUpdateStyle: (style: DeckStyle) => void;
     onUpdateStyleAndSync?: (style: DeckStyle) => Promise<void>;
     onBack: () => void;
+    initialOpenTemplatePicker?: boolean;
 }
 
 export const GlobalStyleEditor = ({ deckStyle, sampleCard, onUpdateStyle, onUpdateStyleAndSync, onBack }: GlobalStyleEditorProps) => {
